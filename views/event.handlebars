@@ -1,5 +1,5 @@
 {{#if eventHasCoverImage}}
-	<div id="eventImageContainer" style="background-image: url(/images/{{eventData.image}});"></div>
+	<div id="eventImageContainer" style="background-image: url(/events/{{eventData.image}});"></div>
 {{else}}
 	<div id="genericEventImageContainer" style="background-image: url(/images/seigaiha.png);"></div>
 {{/if}}
@@ -378,7 +378,7 @@
 			label_selected: "Change file",
 			no_label: false
 		});
-		$("#image-preview").css("background-image", "url('/images/{{eventData.image}}')");
+		$("#image-preview").css("background-image", "url('/events/{{eventData.image}}')");
 		$("#image-preview").css("background-size", "cover");
 		$("#image-preview").css("background-position", "center center");
 		{{#if editingEnabled}}

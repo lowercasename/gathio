@@ -3,7 +3,8 @@
 # gathio custom
 
 config/api.js
-config/database.js 
+config/database.js
+public/events/*
 
 # Logs
 logs

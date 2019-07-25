@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const express = require('express');
 
 const mongoose = require('mongoose');
@@ -48,7 +50,7 @@ const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
 	const too_old = moment().subtract(7, 'days').toDate();
 	console.log(too_old);
 
-	Event.find({ end: { $lte: too_old } }).remove().exec().then((RemoveStatus) => {
+	Event.findOne({ end: { $lte: too_old } }).remove().exec().then((RemoveStatus) => {
 		console.log("Documents removed successfully");
 		addToLog("deleteOldEvents", "success", "Old events deleted");
 	}).catch((err) => {
@@ -204,7 +206,7 @@ router.post('/newevent', (req, res) => {
 			img
 				.resize(920, Jimp.AUTO) // resize
 				.quality(60) // set JPEG quality
-				.write('./public/images/' + eventID + '.jpg'); // save
+				.write('./public/events/' + eventID + '.jpg'); // save
 		});
 		eventImageFilename = eventID + '.jpg';
 	}
@@ -341,7 +343,7 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 					img
 						.resize(920, Jimp.AUTO) // resize
 						.quality(60) // set JPEG quality
-						.write('./public/images/' + eventID + '.jpg'); // save
+						.write('./public/events/' + eventID + '.jpg'); // save
 				});
 				eventImageFilename = eventID + '.jpg';
 			}
@@ -366,7 +368,7 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 			})
 			.then(() => {
 				addToLog("editEvent", "success", "Event " + req.params.eventID + " edited");
-				Event.find({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
+				Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
 					console.log(ids)
 					attendeeEmails = ids;
 					if (!error && attendeeEmails != ""){
@@ -409,16 +411,19 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 
 router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 	let submittedEditToken = req.params.editToken;
-	Event.find(({
+	Event.findOne(({
 		id: req.params.eventID,
 		}))
 	.then((event) => {
+		console.log(submittedEditToken);
 		if (event.editToken === submittedEditToken) {
 			// Token matches
 
+			eventImage = event.image;
+
 			// Send emails here otherwise they don't exist lol
 
-			Event.find({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
+			Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
 				attendeeEmails = ids;
 				if (!error){
 					console.log("Sending emails to: " + attendeeEmails);
@@ -450,11 +455,20 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 				}
 			})
 			.then(() => {
-				addToLog("deleteEvent", "success", "Event " + req.params.eventID + " deleted");
-				res.writeHead(302, {
-					'Location': '/'
-					});
-				res.end();
+				// Delete image
+				fs.unlink(global.appRoot + '/public/events/' + eventImage, (err) => {
+				  if (err) {
+					res.send(err);
+					addToLog("deleteEvent", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
+				  }
+				  	// Image removed
+				  	addToLog("deleteEvent", "success", "Event " + req.params.eventID + " deleted");
+	  				res.writeHead(302, {
+	  					'Location': '/'
+	  					});
+	  				res.end();
+				})
+
 			})
 			.catch((err) => { res.send('Sorry! Something went wrong (error deleting): ' + err); addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);});
 		}
@@ -523,7 +537,7 @@ router.post('/post/comment/:eventID', (req, res) => {
 		event.save()
 		.then(() => {
 			addToLog("addEventComment", "success", "Comment added to event " + req.params.eventID);
-			Event.find({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
+			Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
     		attendeeEmails = ids;
 				if (!error){
 					console.log("Sending emails to: " + attendeeEmails);
@@ -572,7 +586,7 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 			event.save()
 			.then(() => {
 				addToLog("addEventReply", "success", "Reply added to comment " + commentID + " in event " + req.params.eventID);
-				Event.find({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
+				Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
 					attendeeEmails = ids;
 					if (!error){
 						console.log("Sending emails to: " + attendeeEmails);
