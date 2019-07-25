@@ -5,6 +5,7 @@
 config/api.js
 config/database.js
 public/events/*
+!public/events/.gitkeep
 
 # Logs
 logs
