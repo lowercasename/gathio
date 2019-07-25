@@ -50,13 +50,29 @@ const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
 	const too_old = moment().subtract(7, 'days').toDate();
 	console.log(too_old);
 
-	Event.findOne({ end: { $lte: too_old } }).remove().exec().then((RemoveStatus) => {
-		console.log("Documents removed successfully");
-		addToLog("deleteOldEvents", "success", "Old events deleted");
+	Event.find({ end: { $lte: too_old } }).then((oldEvents) => {
+		oldEvents.forEach(event => {
+			if (event.image){
+				fs.unlink(global.appRoot + '/public/events/' + event.image, (err) => {
+				  if (err) {
+					addToLog("deleteOldEvents", "error", "Attempt to delete event image for old event "+event.id+" failed with error: " + err);
+				  }
+					// Image removed
+				  addToLog("deleteOldEvents", "error", "Image deleted for old event "+event.id);
+				})
+			}
+			Event.remove({"_id": event._id})
+			.then(response => {
+				addToLog("deleteOldEvents", "success", "Old event "+event.id+" deleted");
+			}).catch((err) => {
+				addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
+			});
+		})
 	}).catch((err) => {
-		addToLog("deleteOldEvents", "error", "Attempt to delete old events failed with error: " + err);
+		addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
 	});
 });
+
 
 // FRONTEND ROUTES
 
@@ -369,7 +385,6 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 			.then(() => {
 				addToLog("editEvent", "success", "Event " + req.params.eventID + " edited");
 				Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-					console.log(ids)
 					attendeeEmails = ids;
 					if (!error && attendeeEmails != ""){
 						console.log("Sending emails to: " + attendeeEmails);
@@ -415,11 +430,12 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 		id: req.params.eventID,
 		}))
 	.then((event) => {
-		console.log(submittedEditToken);
 		if (event.editToken === submittedEditToken) {
 			// Token matches
 
-			eventImage = event.image;
+			if (event.image){
+				eventImage = event.image;
+			}
 
 			// Send emails here otherwise they don't exist lol
 
@@ -456,19 +472,20 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 			})
 			.then(() => {
 				// Delete image
-				fs.unlink(global.appRoot + '/public/events/' + eventImage, (err) => {
-				  if (err) {
-					res.send(err);
-					addToLog("deleteEvent", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
-				  }
-				  	// Image removed
-				  	addToLog("deleteEvent", "success", "Event " + req.params.eventID + " deleted");
-	  				res.writeHead(302, {
-	  					'Location': '/'
-	  					});
-	  				res.end();
-				})
-
+				if (eventImage){
+					fs.unlink(global.appRoot + '/public/events/' + eventImage, (err) => {
+					  if (err) {
+						res.send(err);
+						addToLog("deleteEvent", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
+					  }
+					  	// Image removed
+					  	addToLog("deleteEvent", "success", "Event " + req.params.eventID + " deleted");
+					})
+				}
+				res.writeHead(302, {
+					'Location': '/'
+					});
+				res.end();
 			})
 			.catch((err) => { res.send('Sorry! Something went wrong (error deleting): ' + err); addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);});
 		}
@@ -508,7 +525,6 @@ router.post('/attendevent/:eventID', (req, res) => {
 						eventID: req.params.eventID
 					},
 				};
-				console.log(msg);
 				sgMail.send(msg);
 			}
 
