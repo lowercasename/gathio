@@ -1,8 +1,8 @@
 # gathio
 
-Self-destructing, account-less shareable event pages.
+Self-destructing, shareable, no-registration event pages.
 
-You can use the publically hosted version [here](https://gath.io).
+You can use the publicly hosted version [here](https://gath.io).
 
 # Installation
 
