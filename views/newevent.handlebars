@@ -1,0 +1,120 @@
+{{#if isPublic}}
+  <h2>New public event</h2>
+  <hr>
+	<div class="alert alert-info mb-4 text-center" role="alert">
+  	<i class="fas fa-exclamation-circle"></i> A public event is visible to anyone who knows the link.
+	</div>
+{{else if isPrivate}}
+  <h2>New private event</h2>
+  <hr>
+  <p>A private event is only visible to those who know the <strong>event password</strong>.</p>
+  <hr>
+{{else if isOrganisation}}
+  <h2>New organisation event</h2>
+  <p>An organisation event is linked to an existing <strong>organisation</strong>. It can be made public, in which case it is visible to anyone who has the link, or private, in which case it is only visible to those who know the <strong>event password</strong>. </p>
+  <hr>
+{{else if isUnknownType}}
+	<h2>New event</h2>
+	<hr>
+	<div class="alert alert-warning" role="alert">
+		Event creation error: unknown event type. Please select an event type from the sidebar.
+	</div>
+{{else}}
+ <h2>New event</h2>
+ <hr>
+  <div class="alert alert-warning" role="alert">
+		Event creation error: unknown event type. Please select an event type from the sidebar.
+	</div>
+{{/if}}
+
+
+{{#each errors}}
+	<div class="alert alert-danger" role="alert">{{this.msg}}</div>
+{{/each}}
+
+<div class="container mb-4">
+  <div class="row">
+    <div class="col-sm-6 p-2">
+      <button type="button" id="showNewEventFormButton" class="btn btn-lg btn-secondary w-100"><i class="fas fa-file"></i> Create a new event</button>
+    </div>
+    <div class="col-sm-6 p-2">
+      <button type="button" id="showImportEventFormButton" class="btn btn-lg btn-secondary w-100"><i class="fas fa-file-import"></i> Import an existing event</button>
+    </div>
+  </div>
+</div>
+
+<div id="newEventFormContainer">
+  {{#if isPublic}}
+  	{{>neweventform}}
+  {{else if isPrivate}}
+  	{{>neweventform}}
+  {{else if isOrganisation}}
+  	{{>neweventform}}
+  {{else}}
+  {{/if}}
+</div>
+
+<div id="importEventFormContainer">
+  {{>importeventform}}
+</div>
+
+
+	<script>
+  $.validate({
+    lang: 'en',
+		errorElementClass: "is-invalid",
+		errorMessageClass: "text-danger",
+		successElementClass: "is-valid"
+  });
+  $(document).ready(function(){
+    if ($('#icsImportControl')[0].files[0] != null){
+      var file = $('#icsImportControl')[0].files[0].name;
+      $('#icsImportControl').next('label').html('<i class="far fa-file-alt"></i> ' + file);
+    }
+    $('#eventStart').datepicker({
+      language: 'en',
+      minDate: new Date(),
+      timepicker: true,
+      dateFormat: 'd MM yyyy',
+      dateTimeSeparator: ', ',
+      onSelect: function(formattedDate, rawDate){
+        $('#eventEnd').datepicker().data('datepicker').update('minDate', rawDate).clear();
+      }
+    });
+    $('#eventEnd').datepicker({
+      language: 'en',
+      minDate: new Date(),
+      timepicker: true,
+      dateFormat: 'd MM yyyy',
+      dateTimeSeparator: ', '
+    });
+    $("#showNewEventFormButton").click(function(){
+      $("#showImportEventFormButton").removeClass("active");
+      if ($("#newEventFormContainer").is(":visible")){
+        $("#newEventFormContainer").slideUp("fast");
+        $(this).removeClass("active");
+      }
+      else {
+        $("#newEventFormContainer").slideDown("fast");
+        $("#importEventFormContainer").slideUp("fast");
+        $(this).addClass("active");
+      }
+    })
+    $("#showImportEventFormButton").click(function(){
+      $("#showNewEventFormButton").removeClass("active");
+      if ($("#importEventFormContainer").is(":visible")){
+        $("#importEventFormContainer").slideUp("fast");
+        $(this).removeClass("active");
+      }
+      else {
+        $("#importEventFormContainer").slideDown("fast");
+        $("#newEventFormContainer").slideUp("fast");
+        $(this).addClass("active");
+      }
+    })
+    $('#icsImportControl').change(function(){
+      var file = $('#icsImportControl')[0].files[0].name;
+      $(this).next('label').html('<i class="far fa-file-alt"></i> ' + file);
+    });
+  })
+	</script>
