@@ -132,66 +132,73 @@ router.get('/:eventID', (req, res) => {
 		id: req.params.eventID
 		})
 		.then((event) => {
-			parsedLocation = event['location'].replace(/\s+/g, '+');
-			if (moment(event.end).isSame(event.start, 'day')){
-				// Happening during one day
-				displayDate = moment(event.start).format('dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a') + moment(event.end).format(' [<span class="text-muted">to</span>] h:mm a');
-			}
-			else {
-				displayDate = moment(event.start).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment(event.end).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a');
-			}
-			parsedStart = moment(event.start).format('YYYYMMDD[T]HHmmss');
-			parsedEnd = moment(event.end).format('YYYYMMDD[T]HHmmss');
-			let eventHasConcluded = false;
-			if (moment(event.end).isBefore(moment())){
-				eventHasConcluded = true;
-			}
-			fromNow = moment(event.start).fromNow();
-			parsedDescription = marked(event.description);
-			eventEditToken = event.editToken;
-
-			escapedName = event.name.replace(/\s+/g, '+');
-
-			let eventHasCoverImage = false;
-			if( event.image ) {
-				eventHasCoverImage = true;
-			}
-			else {
-				eventHasCoverImage = false;
-			}
-			let eventHasHost = false;
-			if( event.hostName ) {
-				eventHasHost = true;
-			}
-			else {
-				eventHasHost = false;
-			}
-			let firstLoad = false;
-			if (event.firstLoad === true) {
-				firstLoad = true;
-				Event.findOneAndUpdate({id: req.params.eventID}, {firstLoad: false}, function(err, raw) {
-					if (err) {
-						res.send(err);
-					}
-				});
-			}
-			let editingEnabled = false;
-			if (Object.keys(req.query).length !== 0) {
-				if (!req.query.e) {
-					editingEnabled = false;
-					console.log("No edit token set");
+			if (event) {
+				parsedLocation = event.location.replace(/\s+/g, '+');
+				if (moment(event.end).isSame(event.start, 'day')){
+					// Happening during one day
+					displayDate = moment(event.start).format('dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a') + moment(event.end).format(' [<span class="text-muted">to</span>] h:mm a');
 				}
 				else {
-					if (req.query.e == eventEditToken){
-						editingEnabled = true;
+					displayDate = moment(event.start).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment(event.end).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a');
+				}
+				parsedStart = moment(event.start).format('YYYYMMDD[T]HHmmss');
+				parsedEnd = moment(event.end).format('YYYYMMDD[T]HHmmss');
+				let eventHasConcluded = false;
+				if (moment(event.end).isBefore(moment())){
+					eventHasConcluded = true;
+				}
+				fromNow = moment(event.start).fromNow();
+				parsedDescription = marked(event.description);
+				eventEditToken = event.editToken;
+
+				escapedName = event.name.replace(/\s+/g, '+');
+
+				let eventHasCoverImage = false;
+				if( event.image ) {
+					eventHasCoverImage = true;
+				}
+				else {
+					eventHasCoverImage = false;
+				}
+				let eventHasHost = false;
+				if( event.hostName ) {
+					eventHasHost = true;
+				}
+				else {
+					eventHasHost = false;
+				}
+				let firstLoad = false;
+				if (event.firstLoad === true) {
+					firstLoad = true;
+					Event.findOneAndUpdate({id: req.params.eventID}, {firstLoad: false}, function(err, raw) {
+						if (err) {
+							res.send(err);
+						}
+					});
+				}
+				let editingEnabled = false;
+				if (Object.keys(req.query).length !== 0) {
+					if (!req.query.e) {
+						editingEnabled = false;
+						console.log("No edit token set");
 					}
 					else {
-						editingEnabled = false;
+						if (req.query.e == eventEditToken){
+							editingEnabled = true;
+						}
+						else {
+							editingEnabled = false;
+						}
 					}
 				}
+				res.set("X-Robots-Tag", "noindex");
+				res.render('event', {title: event.name, escapedName: escapedName, eventData: event, parsedLocation: parsedLocation, parsedStart: parsedStart, parsedEnd: parsedEnd, displayDate: displayDate, fromNow: fromNow, parsedDescription: parsedDescription, editingEnabled: editingEnabled, eventHasCoverImage: eventHasCoverImage, eventHasHost: eventHasHost, firstLoad: firstLoad, eventHasConcluded: eventHasConcluded })
 			}
-			res.set("X-Robots-Tag", "noindex");
-			res.render('event', {title: event.name, escapedName: escapedName, eventData: event, parsedLocation: parsedLocation, parsedStart: parsedStart, parsedEnd: parsedEnd, displayDate: displayDate, fromNow: fromNow, parsedDescription: parsedDescription, editingEnabled: editingEnabled, eventHasCoverImage: eventHasCoverImage, eventHasHost: eventHasHost, firstLoad: firstLoad, eventHasConcluded: eventHasConcluded })
+			else {
+				res.status(404);
+				res.render('404', { url: req.url });
+			}
+
 		})
 		.catch((err) => {
 			addToLog("displayEvent", "error", "Attempt to display event " + req.params.eventID + " failed with error: " + err);
