@@ -128,10 +128,13 @@ router.get('/new/event/public', (req, res) => {
 })
 
 router.get('/:eventID', (req, res) => {
+	console.log("Showing event")
+	console.log("req.params.eventID",req.params.eventID)
 	Event.findOne({
 		id: req.params.eventID
 		})
 		.then((event) => {
+			console.log("event",event)
 			if (event) {
 				parsedLocation = event.location.replace(/\s+/g, '+');
 				if (moment(event.end).isSame(event.start, 'day')){

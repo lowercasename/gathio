@@ -24,5 +24,5 @@ const app = require('./app');
 global.appRoot = path.resolve(__dirname);
 
 const server = app.listen(3000, () => {
-  console.log(`Welcome to gathio! The app is now running on https://localhost:${server.address().port}`);
+  console.log(`Welcome to gathio! The app is now running on http://localhost:${server.address().port}`);
 });
