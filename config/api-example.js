@@ -1,3 +1,3 @@
 module.exports = {
-    'sendgrid' : 'SENDGRID API KEY GOES HERE'
+    'sendgrid' : '' // SendGrid API key goes here
 };
