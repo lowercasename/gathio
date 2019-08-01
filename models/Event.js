@@ -95,6 +95,9 @@ const EventSchema = new mongoose.Schema({
     trim: true,
 		required: true
   },
+  timezone: {
+	  type: String
+  },
 	description: {
 		type: String,
 		trim: true,

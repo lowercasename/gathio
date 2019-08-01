@@ -243,6 +243,7 @@ router.post('/newevent', (req, res) => {
 		location: req.body.eventLocation,
 		start: req.body.eventStart,
 		end: req.body.eventEnd,
+		timezone: req.body.timezone,
 		description: req.body.eventDescription,
 		image: eventImageFilename,
 		creatorEmail: req.body.creatorEmail,
