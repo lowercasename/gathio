@@ -15,7 +15,7 @@ const router = express.Router();
 const Event = mongoose.model('Event');
 const Log = mongoose.model('Log');
 
-var moment = require('moment');
+var moment = require('moment-timezone');
 
 const marked = require('marked');
 
@@ -52,8 +52,8 @@ function addToLog(process, status, message) {
 const schedule = require('node-schedule');
 
 const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
-	const too_old = moment().subtract(7, 'days').toDate();
-	console.log(too_old);
+	const too_old = moment.tz('Etc/UTC').subtract(7, 'days').toDate();
+	console.log("Old event deletion running! Deleting all events concluding before ", too_old);
 
 	Event.find({ end: { $lte: too_old } }).then((oldEvents) => {
 		oldEvents.forEach(event => {
@@ -139,20 +139,24 @@ router.get('/:eventID', (req, res) => {
 		.then((event) => {
 			if (event) {
 				parsedLocation = event.location.replace(/\s+/g, '+');
-				if (moment(event.end).isSame(event.start, 'day')){
+				if (moment.tz(event.end, event.timezone).isSame(event.start, 'day')){
 					// Happening during one day
-					displayDate = moment(event.start).format('dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a') + moment(event.end).format(' [<span class="text-muted">to</span>] h:mm a');
+					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">to</span>] h:mm a [<span class="text-muted">](z)[</span>]');
 				}
 				else {
-					displayDate = moment(event.start).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment(event.end).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a');
+					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a [<span class="text-muted">](z)[</span>]');
 				}
-				parsedStart = moment(event.start).format('YYYYMMDD[T]HHmmss');
-				parsedEnd = moment(event.end).format('YYYYMMDD[T]HHmmss');
+				parsedStart = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
+				parsedEnd = moment.tz(event.end, event.timezone).format('YYYYMMDD[T]HHmmss');
 				let eventHasConcluded = false;
-				if (moment(event.end).isBefore(moment())){
+				if (moment.tz(event.end, event.timezone).isBefore(moment.tz(event.timezone))){
 					eventHasConcluded = true;
 				}
-				fromNow = moment(event.start).fromNow();
+				let eventHasBegun = false;
+				if (moment.tz(event.start, event.timezone).isBefore(moment.tz(event.timezone))){
+					eventHasBegun = true;
+				}
+				fromNow = moment.tz(event.start, event.timezone).fromNow();
 				parsedDescription = marked(event.description);
 				eventEditToken = event.editToken;
 
@@ -197,7 +201,24 @@ router.get('/:eventID', (req, res) => {
 					}
 				}
 				res.set("X-Robots-Tag", "noindex");
-				res.render('event', {title: event.name, escapedName: escapedName, eventData: event, parsedLocation: parsedLocation, parsedStart: parsedStart, parsedEnd: parsedEnd, displayDate: displayDate, fromNow: fromNow, parsedDescription: parsedDescription, editingEnabled: editingEnabled, eventHasCoverImage: eventHasCoverImage, eventHasHost: eventHasHost, firstLoad: firstLoad, eventHasConcluded: eventHasConcluded })
+				res.render('event', {
+					title: event.name,
+					escapedName: escapedName,
+					eventData: event,
+					parsedLocation: parsedLocation,
+					parsedStart: parsedStart,
+					parsedEnd: parsedEnd,
+					displayDate: displayDate,
+					fromNow: fromNow,
+					timezone: event.timezone,
+					parsedDescription: parsedDescription,
+					editingEnabled: editingEnabled,
+					eventHasCoverImage: eventHasCoverImage,
+					eventHasHost: eventHasHost,
+					firstLoad: firstLoad,
+					eventHasConcluded: eventHasConcluded,
+					eventHasBegun: eventHasBegun
+				})
 			}
 			else {
 				res.status(404);
@@ -233,18 +254,20 @@ router.post('/newevent', (req, res) => {
 			if (err) addToLog("Jimp", "error", "Attempt to edit image failed with error: " + err);
 			img
 				.resize(920, Jimp.AUTO) // resize
-				.quality(60) // set JPEG quality
+				.quality(80) // set JPEG quality
 				.write('./public/events/' + eventID + '.jpg'); // save
 		});
 		eventImageFilename = eventID + '.jpg';
 	}
+	startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+	endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 	const event = new Event({
 		id: eventID,
 		type: req.body.eventType,
 		name: req.body.eventName,
 		location: req.body.eventLocation,
-		start: req.body.eventStart,
-		end: req.body.eventEnd,
+		start: startUTC,
+		end: endUTC,
 		timezone: req.body.timezone,
 		description: req.body.eventDescription,
 		image: eventImageFilename,
@@ -306,6 +329,7 @@ router.post('/importevent', (req, res) => {
 			location: importedEventData.location,
 			start: importedEventData.start,
 			end: importedEventData.end,
+			timezone: importedEventData.start.tz,
 			description: importedEventData.description,
 			image: '',
 			creatorEmail: creatorEmail,
@@ -373,7 +397,7 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 					if (err) throw err;
 					img
 						.resize(920, Jimp.AUTO) // resize
-						.quality(60) // set JPEG quality
+						.quality(80) // set JPEG  [<span class="text-muted">](z)[</span>]
 						.write('./public/events/' + eventID + '.jpg'); // save
 				});
 				eventImageFilename = eventID + '.jpg';

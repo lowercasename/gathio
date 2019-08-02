@@ -41,12 +41,12 @@
 					<i class="far fa-fw fa-calendar-alt"></i>
 				</span>
 				{{{displayDate}}}
-				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
+				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
 					<i class="far fa-calendar-plus"></i> Add to Google Calendar
 				</a>
 				<br>
 				<span class="text-muted">
-					{{fromNow}}
+					{{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
 				</span>
 			</li>
 			{{#if eventData.url}}
