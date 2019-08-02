@@ -146,8 +146,10 @@ router.get('/:eventID', (req, res) => {
 				else {
 					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a [<span class="text-muted">](z)[</span>]');
 				}
+				eventStartISO = moment.tz(event.start, event.timezone).toISOString();
+				eventEndISO = moment.tz(event.end, event.timezone).toISOString();
 				parsedStart = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
-				parsedEnd = moment.tz(event.end, event.timezone).format('YYYYMMDD[T]HHmmss');
+				parsedEnd = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
 				let eventHasConcluded = false;
 				if (moment.tz(event.end, event.timezone).isBefore(moment.tz(event.timezone))){
 					eventHasConcluded = true;
@@ -205,6 +207,8 @@ router.get('/:eventID', (req, res) => {
 					title: event.name,
 					escapedName: escapedName,
 					eventData: event,
+					eventStartISO: eventStartISO,
+					eventEndISO: eventEndISO,
 					parsedLocation: parsedLocation,
 					parsedStart: parsedStart,
 					parsedEnd: parsedEnd,
@@ -397,16 +401,19 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 					if (err) throw err;
 					img
 						.resize(920, Jimp.AUTO) // resize
-						.quality(80) // set JPEG  [<span class="text-muted">](z)[</span>]
+						.quality(80) // set JPEG
 						.write('./public/events/' + eventID + '.jpg'); // save
 				});
 				eventImageFilename = eventID + '.jpg';
 			}
+			startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+			endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 			const updatedEvent = {
 				name: req.body.eventName,
 				location: req.body.eventLocation,
-				start: req.body.eventStart,
-				end: req.body.eventEnd,
+				start: startUTC,
+				end: endUTC,
+				timezone: req.body.timezone,
 				description: req.body.eventDescription,
 				url: req.body.eventURL,
 				hostName: req.body.hostName,
