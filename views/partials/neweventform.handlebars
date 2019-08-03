@@ -25,6 +25,12 @@
     </div>
   </div>
   <div class="form-group row">
+    <label for="timezone" class="col-sm-2 col-form-label">Timezone</label> 
+    <div class="form-group col-sm-10">
+      <select class="select2" id="timezone" name="timezone"></select>
+    </div>
+  </div>
+  <div class="form-group row">
     <label for="eventDescription" class="col-sm-2 col-form-label">Description</label>
     <div class="form-group col-sm-10">
 			<textarea class="form-control expand" id="eventDescription" name="eventDescription" data-validation="required" placeholder="You can always edit it later."></textarea>
@@ -94,6 +100,8 @@
     </div>
   </div>
 </form>
+
+<script type="text/javascript" src="/js/generate-timezones.js"></script>
 
 <script>
 	$(document).ready(function() {

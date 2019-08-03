@@ -15,7 +15,7 @@ const router = express.Router();
 const Event = mongoose.model('Event');
 const Log = mongoose.model('Log');
 
-var moment = require('moment');
+var moment = require('moment-timezone');
 
 const marked = require('marked');
 
@@ -52,8 +52,8 @@ function addToLog(process, status, message) {
 const schedule = require('node-schedule');
 
 const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
-	const too_old = moment().subtract(7, 'days').toDate();
-	console.log(too_old);
+	const too_old = moment.tz('Etc/UTC').subtract(7, 'days').toDate();
+	console.log("Old event deletion running! Deleting all events concluding before ", too_old);
 
 	Event.find({ end: { $lte: too_old } }).then((oldEvents) => {
 		oldEvents.forEach(event => {
@@ -139,20 +139,26 @@ router.get('/:eventID', (req, res) => {
 		.then((event) => {
 			if (event) {
 				parsedLocation = event.location.replace(/\s+/g, '+');
-				if (moment(event.end).isSame(event.start, 'day')){
+				if (moment.tz(event.end, event.timezone).isSame(event.start, 'day')){
 					// Happening during one day
-					displayDate = moment(event.start).format('dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a') + moment(event.end).format(' [<span class="text-muted">to</span>] h:mm a');
+					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">to</span>] h:mm a [<span class="text-muted">](z)[</span>]');
 				}
 				else {
-					displayDate = moment(event.start).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment(event.end).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a');
+					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a [<span class="text-muted">](z)[</span>]');
 				}
-				parsedStart = moment(event.start).format('YYYYMMDD[T]HHmmss');
-				parsedEnd = moment(event.end).format('YYYYMMDD[T]HHmmss');
+				eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
+				eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
+				parsedStart = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
+				parsedEnd = moment.tz(event.end, event.timezone).format('YYYYMMDD[T]HHmmss');
 				let eventHasConcluded = false;
-				if (moment(event.end).isBefore(moment())){
+				if (moment.tz(event.end, event.timezone).isBefore(moment.tz(event.timezone))){
 					eventHasConcluded = true;
 				}
-				fromNow = moment(event.start).fromNow();
+				let eventHasBegun = false;
+				if (moment.tz(event.start, event.timezone).isBefore(moment.tz(event.timezone))){
+					eventHasBegun = true;
+				}
+				fromNow = moment.tz(event.start, event.timezone).fromNow();
 				parsedDescription = marked(event.description);
 				eventEditToken = event.editToken;
 
@@ -197,7 +203,26 @@ router.get('/:eventID', (req, res) => {
 					}
 				}
 				res.set("X-Robots-Tag", "noindex");
-				res.render('event', {title: event.name, escapedName: escapedName, eventData: event, parsedLocation: parsedLocation, parsedStart: parsedStart, parsedEnd: parsedEnd, displayDate: displayDate, fromNow: fromNow, parsedDescription: parsedDescription, editingEnabled: editingEnabled, eventHasCoverImage: eventHasCoverImage, eventHasHost: eventHasHost, firstLoad: firstLoad, eventHasConcluded: eventHasConcluded })
+				res.render('event', {
+					title: event.name,
+					escapedName: escapedName,
+					eventData: event,
+					eventStartISO: eventStartISO,
+					eventEndISO: eventEndISO,
+					parsedLocation: parsedLocation,
+					parsedStart: parsedStart,
+					parsedEnd: parsedEnd,
+					displayDate: displayDate,
+					fromNow: fromNow,
+					timezone: event.timezone,
+					parsedDescription: parsedDescription,
+					editingEnabled: editingEnabled,
+					eventHasCoverImage: eventHasCoverImage,
+					eventHasHost: eventHasHost,
+					firstLoad: firstLoad,
+					eventHasConcluded: eventHasConcluded,
+					eventHasBegun: eventHasBegun
+				})
 			}
 			else {
 				res.status(404);
@@ -233,18 +258,21 @@ router.post('/newevent', (req, res) => {
 			if (err) addToLog("Jimp", "error", "Attempt to edit image failed with error: " + err);
 			img
 				.resize(920, Jimp.AUTO) // resize
-				.quality(60) // set JPEG quality
+				.quality(80) // set JPEG quality
 				.write('./public/events/' + eventID + '.jpg'); // save
 		});
 		eventImageFilename = eventID + '.jpg';
 	}
+	startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+	endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 	const event = new Event({
 		id: eventID,
 		type: req.body.eventType,
 		name: req.body.eventName,
 		location: req.body.eventLocation,
-		start: req.body.eventStart,
-		end: req.body.eventEnd,
+		start: startUTC,
+		end: endUTC,
+		timezone: req.body.timezone,
 		description: req.body.eventDescription,
 		image: eventImageFilename,
 		creatorEmail: req.body.creatorEmail,
@@ -305,6 +333,7 @@ router.post('/importevent', (req, res) => {
 			location: importedEventData.location,
 			start: importedEventData.start,
 			end: importedEventData.end,
+			timezone: importedEventData.start.tz,
 			description: importedEventData.description,
 			image: '',
 			creatorEmail: creatorEmail,
@@ -372,16 +401,19 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 					if (err) throw err;
 					img
 						.resize(920, Jimp.AUTO) // resize
-						.quality(60) // set JPEG quality
+						.quality(80) // set JPEG
 						.write('./public/events/' + eventID + '.jpg'); // save
 				});
 				eventImageFilename = eventID + '.jpg';
 			}
+			startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+			endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 			const updatedEvent = {
 				name: req.body.eventName,
 				location: req.body.eventLocation,
-				start: req.body.eventStart,
-				end: req.body.eventEnd,
+				start: startUTC,
+				end: endUTC,
+				timezone: req.body.timezone,
 				description: req.body.eventDescription,
 				url: req.body.eventURL,
 				hostName: req.body.hostName,
@@ -556,6 +588,76 @@ router.post('/attendevent/:eventID', (req, res) => {
 	});
 });
 
+router.post('/unattendevent/:eventID', (req, res) => {
+	Event.update(
+	    { id: req.params.eventID },
+	    { $pull: { attendees: { email: req.body.attendeeEmail } } }
+	)
+	.then(response => {
+		console.log(response)
+		addToLog("removeEventAttendee", "success", "Attendee removed from event " + req.params.eventID);
+		if (sendEmails) {
+			if (req.body.attendeeEmail){
+				const msg = {
+					to: req.body.attendeeEmail,
+					from: {
+						name: 'Gathio',
+						email: 'notifications@gath.io',
+					},
+					templateId: 'd-56c97755d6394c23be212fef934b0f1f',
+					dynamic_template_data: {
+						subject: 'gathio: You have been removed from an event',
+						eventID: req.params.eventID
+					},
+				};
+				sgMail.send(msg);
+			}
+		}
+		res.writeHead(302, {
+			'Location': '/' + req.params.eventID
+			});
+		res.end();
+	})
+	.catch((err) => {
+		res.send('Database error, please try again :('); addToLog("removeEventAttendee", "error", "Attempt to remove attendee from event " + req.params.eventID + " failed with error: " + err);
+	});
+});
+
+router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
+	Event.update(
+	    { id: req.params.eventID },
+	    { $pull: { attendees: { _id: req.params.attendeeID } } }
+	)
+	.then(response => {
+		console.log(response)
+		addToLog("removeEventAttendee", "success", "Attendee removed by admin from event " + req.params.eventID);
+		if (sendEmails) {
+			if (req.body.attendeeEmail){
+				const msg = {
+					to: req.body.attendeeEmail,
+					from: {
+						name: 'Gathio',
+						email: 'notifications@gath.io',
+					},
+					templateId: 'd-f8ee9e1e2c8a48e3a329d1630d0d371f',
+					dynamic_template_data: {
+						subject: 'gathio: You have been removed from an event',
+						eventID: req.params.eventID
+					},
+				};
+				sgMail.send(msg);
+			}
+		}
+		res.writeHead(302, {
+			'Location': '/' + req.params.eventID
+			});
+		res.end();
+	})
+	.catch((err) => {
+		res.send('Database error, please try again :('); addToLog("removeEventAttendee", "error", "Attempt to remove attendee by admin from event " + req.params.eventID + " failed with error: " + err);
+	});
+});
+
 router.post('/post/comment/:eventID', (req, res) => {
 	let commentID = shortid.generate();
 	const newComment = {
@@ -623,7 +725,7 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 			event.save()
 			.then(() => {
 				addToLog("addEventReply", "success", "Reply added to comment " + commentID + " in event " + req.params.eventID);
-				if (sendEmails) {				
+				if (sendEmails) {
 					Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
 						attendeeEmails = ids;
 						if (!error){

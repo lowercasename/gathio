@@ -10,7 +10,7 @@
 	{{#if editingEnabled}}
 	<div class="col-lg-2 text-right">
 		<div class="btn-group" role="group" aria-label="Event controls">
-			<button type="button" id="editEvent" class="btn btn-success" data-toggle="modal" data-target="#editModal"><i class="fas fa-pencil-alt"></i></button>
+			<button type="button" id="editEvent" class="btn btn-success" data-toggle="modal" data-target="#editModal" {{#if eventHasConcluded}}disabled{{/if}}><i class="fas fa-edit"></i></button>
 			<button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i></button>
 		</div>
 	</div>
@@ -41,12 +41,12 @@
 					<i class="far fa-fw fa-calendar-alt"></i>
 				</span>
 				{{{displayDate}}}
-				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
+				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
 					<i class="far fa-calendar-plus"></i> Add to Google Calendar
 				</a>
 				<br>
 				<span class="text-muted">
-					{{fromNow}}
+					{{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
 				</span>
 			</li>
 			{{#if eventData.url}}
@@ -75,7 +75,7 @@
 </div>
 {{#if eventHasConcluded}}
 <div class="alert alert-warning mb-4" role="alert">
-  This event has concluded. It will be automatically deleted <span class="daysToDeletion"></span>.
+  This event has concluded. It can no longer be edited, and will be automatically deleted <span class="daysToDeletion"></span>.
 </div>
 {{/if}}
 {{#if firstLoad}}
@@ -95,12 +95,17 @@
 
 {{#if eventData.usersCanAttend}}
 <div class="card mb-4" id="eventAttendees">
-	<h5 class="card-header" style="width:100%;display:flex;justify-content:space-between;align-items:center">Attendees {{#if eventData.attendees}}({{eventData.attendees.length}}){{/if}}<button type="button" id="attendEvent" class="btn btn-primary" data-toggle="modal" data-target="#attendModal"><i class="fas fa-user-plus"></i> I'm going!</button></h5>
+	<h5 class="card-header" style="width:100%;display:flex;justify-content:space-between;align-items:center">Attendees {{#if eventData.attendees}}({{eventData.attendees.length}}){{/if}}
+		<div class="btn-group" role="group" aria-label="Attendance controls">
+			<button type="button" id="attendEvent" class="btn btn-success" data-toggle="modal" data-target="#attendModal"><i class="fas fa-user-plus"></i> Add me</button>
+			<button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
+		</div>
+	</h5>
 	<div class="card-body">
 		{{#if eventData.attendees}}
 			<ul class="attendeesList">
 				{{#each eventData.attendees}}
-					<li>{{this.name}}</li>
+					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}>{{this.name}}{{#if ../editingEnabled}}<a href="#" id="removeAttendee" data-toggle="modal" data-target="#removeAttendeeModal"><i class="fas fa-user-times"></i></a>{{/if}}</li>
 				{{/each}}
 			</ul>
 		{{else}}
@@ -129,8 +134,8 @@
 				<div class="form-group row">
 					<label for="attendeeEmail" class="col-sm-2 col-form-label">Your email</label>
 					<div class="form-group col-sm-10">
-						<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email" data-validation-optional="true">
-						<small class="form-text">Optional - we'll use it to send you any updates to the event.</small>
+						<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email">
+						<small class="form-text">We'll only use it to send you updates to the event.</small>
 					</div>
 				</div>
       </div>
@@ -142,7 +147,60 @@
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="unattendModal" tabindex="-1" role="dialog" aria-labelledby="unattendModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="unattendModalLabel">Remove yourself from '{{eventData.name}}'</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="unattendEventForm" action="/unattendevent/{{eventData.id}}" method="post">
+			<div class="modal-body">
+				<div class="form-group row">
+					<label for="attendeeEmail" class="col-sm-2 col-form-label">Your email</label>
+					<div class="form-group col-sm-10">
+						<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="name@domain.com" data-validation="email" data-validation-optional="true">
+						<small class="form-text">Enter the email you used when signing up for this event.</small>
+					</div>
+				</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Remove myself</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+	{{#if editingEnabled}}
+	<div class="modal fade" id="removeAttendeeModal" tabindex="-1" role="dialog" aria-labelledby="removeAttendeeModalLabel" aria-hidden="true">
+	  <div class="modal-dialog" role="document">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h5 class="modal-title" id="removeAttendeeModalLabel">Remove attendee from '{{eventData.name}}'</h5>
+	        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+	          <span aria-hidden="true">&times;</span>
+	        </button>
+	      </div>
+		  <form id="removeAttendeeForm" action="/removeattendee/{{eventData.id}}/" method="post">
+			<div class="modal-body">
+				<p>Are you sure you want to remove this attendee from the event? This action cannot be undone.</p>
+	      	</div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+	        <button type="submit" class="btn btn-danger">Remove attendee</button>
+	      </div>
+	  	  </form>
+	  	</div>
+		</div>
+	</div>
+	{{/if}}
 {{/if}}
+
 
 {{#if eventData.usersCanComment}}
 <div class="card mb-4" id="eventComments">
@@ -219,96 +277,9 @@
 {{/if}}
 
 {{#if editingEnabled}}
-<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="editModalLabel">Edit '{{eventData.name}}'</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <form id="editEventForm" action="/editevent/{{eventData.id}}/{{eventData.editToken}}" method="post" enctype="multipart/form-data">
-			<div class="modal-body">
-				<div class="form-group row">
-					<label for="eventName" class="col-sm-2 col-form-label">Event name</label>
-					<div class="form-group col-sm-10">
-						<input type="text" class="form-control" id="eventName" name="eventName" placeholder="Make it snappy." value="{{eventData.name}}" data-validation="required length" data-validation-length="3-60">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="eventLocation" class="col-sm-2 col-form-label">Location</label>
-					<div class="form-group col-sm-10">
-						<input type="text" class="form-control" id="eventLocation" name="eventLocation" placeholder="Be specific." value="{{eventData.location}}" data-validation="required length"  data-validation-length="3-60">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="eventStart" class="col-sm-2 col-form-label">Starts</label>
-					<div class="form-group col-sm-10">
-						<input readonly type="text" class="form-control" id="eventStart" name="eventStart"  value="" data-validation="required">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="eventEnd" class="col-sm-2 col-form-label">Ends</label>
-					<div class="form-group col-sm-10">
-						<input readonly type="text" class="form-control" id="eventEnd" name="eventEnd" value="" data-validation="required">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="eventDescription" class="col-sm-2 col-form-label">Description</label>
-					<div class="form-group col-sm-10">
-						<textarea class="form-control" id="eventDescription" name="eventDescription" data-validation="required">{{eventData.description}}</textarea>
-						<small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting supported.</small>
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="eventURL" class="col-sm-2 col-form-label">Link</label>
-					<div class="form-group col-sm-10">
-						<input type="url" class="form-control" id="eventURL" name="eventURL" value="{{eventData.url}}" placeholder="For tickets or another event page (optional)." data-validation="url" data-validation-optional="true">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="hostName" class="col-sm-2 col-form-label">Host name</label>
-					<div class="form-group col-sm-10">
-						<input type="text" class="form-control" id="hostName" name="hostName" placeholder="Will be shown on the event page (optional)." value="{{eventData.hostName}}" data-validation="length" data-validation-length="3-60" data-validation-optional="true">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="eventImage" class="col-sm-2 col-form-label">Cover image</label>
-					<div class="form-group col-sm-10">
-						<div id="image-preview">
-							<label for="image-upload" id="image-label">Choose file</label>
-							<input type="file" name="imageUpload" id="image-upload" />
-						</div>
-						<small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
-					</div>
-				</div>
-     		<div class="form-group row">
-					<div class="col-sm-2">Options</div>
-					<div class="col-sm-10">
-						<div class="form-check">
-							<input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox" {{#if eventData.usersCanAttend}}checked{{/if}}>
-							<label class="form-check-label" for="joinCheckbox">
-								Users can mark themselves as attending this event
-							</label>
-						</div>
-						<div class="form-check">
-							<input class="form-check-input" type="checkbox" id="interactionCheckbox" name="interactionCheckbox" {{#if eventData.usersCanComment}}checked{{/if}}>
-							<label class="form-check-label" for="interactionCheckbox">
-								Users can post comments on this event
-							</label>
-						</div>
-					</div>
-				</div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save changes</button>
-      </div>
-      </form>
-    </div>
-  </div>
-</div>
+{{#unless eventHasConcluded}}
+{{> editeventmodal }}
+{{/unless}}
 
 <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -334,7 +305,9 @@
 
 {{/if}}
 
-
+{{#unless eventHasConcluded}}
+<script type="text/javascript" src="/js/generate-timezones.js"></script>
+{{/unless}}
 <script>
 	$.validate({
     lang: 'en',
@@ -343,9 +316,18 @@
 		successElementClass: "is-valid"
   });
 	{{#if editingEnabled}}
+
+	$('#removeAttendeeModal').on('show.bs.modal', function (event) {
+	  var listItem = $(event.relatedTarget).closest('li'); // List element enclosing button
+	  var attendeeName = listItem.data('attendee-name');
+	  var attendeeID = listItem.data('attendee-id');
+	  var modal = $(this);
+	  modal.find('.modal-title').text('Remove ' + attendeeName + ' from {{eventData.name}}')
+	  modal.find('#removeAttendeeForm').attr('action', '/removeattendee/{{eventData.id}}/' + attendeeID);
+	})
+	{{#unless eventHasConcluded}}
 	$('#eventStart').datepicker({
     language: 'en',
-    minDate: new Date(),
 		timepicker: true,
 		dateFormat: 'd MM yyyy',
 		dateTimeSeparator: ', ',
@@ -355,11 +337,13 @@
 	});
 	$('#eventEnd').datepicker({
     language: 'en',
-    minDate: new Date(),
 		timepicker: true,
 		dateFormat: 'd MM yyyy',
 		dateTimeSeparator: ', '
 	});
+	$("#timezone").val('{{eventData.timezone}}').trigger('change');
+	console.log('{{eventData.timezone}}')
+	{{/unless}}
 	{{/if}}
 	$(".commentTimestamp").html(function(){
 		parsedDate = moment($(this).html()).fromNow();
@@ -370,6 +354,7 @@
 		$(this).closest(".comment").find(".replyContainer").slideToggle();
 	})
 	$(document).ready(function() {
+
 		$.uploadPreview({
 			input_field: "#image-upload",
 			preview_box: "#image-preview",
@@ -382,8 +367,10 @@
 		$("#image-preview").css("background-size", "cover");
 		$("#image-preview").css("background-position", "center center");
 		{{#if editingEnabled}}
-		$('#eventStart').datepicker().data('datepicker').selectDate(moment('{{parsedStart}}', 'YYYYMMDD[T]HHmmss').toDate());
-		$('#eventEnd').datepicker().data('datepicker').selectDate(moment('{{parsedEnd}}', 'YYYYMMDD[T]HHmmss').toDate());
+			{{#unless eventHasConcluded}}
+				$('#eventStart').datepicker().data('datepicker').selectDate(moment('{{parsedStart}}', 'YYYYMMDD[T]HHmmss').toDate());
+				$('#eventEnd').datepicker().data('datepicker').selectDate(moment('{{parsedEnd}}', 'YYYYMMDD[T]HHmmss').toDate());
+			{{/unless}}
 		{{/if}}
 		new ClipboardJS('#copyEventLink');
 		autosize($('textarea'));
@@ -391,7 +378,7 @@
 			$(this).html('<i class="fas fa-copy"></i> Copied!');
 			setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
 		})
-		$(".daysToDeletion").html(moment("{{eventData.end}}").add('days', 7).fromNow());
+		$(".daysToDeletion").html(moment("{{eventEndISO}}").add(7, 'days').fromNow());
 	});
 
 	</script>

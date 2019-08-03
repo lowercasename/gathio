@@ -1,0 +1,96 @@
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalLabel">Edit '{{eventData.name}}'</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="editEventForm" action="/editevent/{{eventData.id}}/{{eventData.editToken}}" method="post" enctype="multipart/form-data">
+			<div class="modal-body">
+				<div class="form-group row">
+					<label for="eventName" class="col-sm-2 col-form-label">Event name</label>
+					<div class="form-group col-sm-10">
+						<input type="text" class="form-control" id="eventName" name="eventName" placeholder="Make it snappy." value="{{eventData.name}}" data-validation="required length" data-validation-length="3-60">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label for="eventLocation" class="col-sm-2 col-form-label">Location</label>
+					<div class="form-group col-sm-10">
+						<input type="text" class="form-control" id="eventLocation" name="eventLocation" placeholder="Be specific." value="{{eventData.location}}" data-validation="required length"  data-validation-length="3-60">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label for="eventStart" class="col-sm-2 col-form-label">Starts</label>
+					<div class="form-group col-sm-10">
+						<input readonly type="text" class="form-control" id="eventStart" name="eventStart"  value="" data-validation="required">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label for="eventEnd" class="col-sm-2 col-form-label">Ends</label>
+					<div class="form-group col-sm-10">
+						<input readonly type="text" class="form-control" id="eventEnd" name="eventEnd" value="" data-validation="required">
+					</div>
+				</div>
+				  <div class="form-group row">
+					<label for="timezone" class="col-sm-2 col-form-label">Timezone</label> 
+					<div class="form-group col-sm-10">
+						<select class="select2" id="timezone" name="timezone"></select>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label for="eventDescription" class="col-sm-2 col-form-label">Description</label>
+					<div class="form-group col-sm-10">
+						<textarea class="form-control" id="eventDescription" name="eventDescription" data-validation="required">{{eventData.description}}</textarea>
+						<small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting supported.</small>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label for="eventURL" class="col-sm-2 col-form-label">Link</label>
+					<div class="form-group col-sm-10">
+						<input type="url" class="form-control" id="eventURL" name="eventURL" value="{{eventData.url}}" placeholder="For tickets or another event page (optional)." data-validation="url" data-validation-optional="true">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label for="hostName" class="col-sm-2 col-form-label">Host name</label>
+					<div class="form-group col-sm-10">
+						<input type="text" class="form-control" id="hostName" name="hostName" placeholder="Will be shown on the event page (optional)." value="{{eventData.hostName}}" data-validation="length" data-validation-length="3-60" data-validation-optional="true">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label for="eventImage" class="col-sm-2 col-form-label">Cover image</label>
+					<div class="form-group col-sm-10">
+						<div id="image-preview">
+							<label for="image-upload" id="image-label">Choose file</label>
+							<input type="file" name="imageUpload" id="image-upload" />
+						</div>
+						<small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
+					</div>
+				</div>
+     		<div class="form-group row">
+					<div class="col-sm-2">Options</div>
+					<div class="col-sm-10">
+						<div class="form-check">
+							<input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox" {{#if eventData.usersCanAttend}}checked{{/if}}>
+							<label class="form-check-label" for="joinCheckbox">
+								Users can mark themselves as attending this event
+							</label>
+						</div>
+						<div class="form-check">
+							<input class="form-check-input" type="checkbox" id="interactionCheckbox" name="interactionCheckbox" {{#if eventData.usersCanComment}}checked{{/if}}>
+							<label class="form-check-label" for="interactionCheckbox">
+								Users can post comments on this event
+							</label>
+						</div>
+					</div>
+				</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>

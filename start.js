@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const databaseCredentials = require('./config/database.js');
 
 mongoose.connect(databaseCredentials.url, { useNewUrlParser: true });
+mongoose.set('useCreateIndex', true);
 mongoose.Promise = global.Promise;
 mongoose.connection
   .on('connected', () => {
@@ -15,6 +16,7 @@ mongoose.connection
   .on('error', (err) => {
     console.log('Connection error: ${err.message}');
   });
+  
 
 require('./models/Event');
 require('./models/Log');

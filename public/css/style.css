@@ -237,3 +237,27 @@ body, html {
 	white-space: nowrap;
 	color: #6c757d;
 }
+
+.select2-container {
+	width: 100% !important;
+}
+.select2-selection__rendered {
+    line-height: 2.25rem !important;
+}
+.select2-container .select2-selection--single {
+    height: 2.25rem !important;
+}
+.select2-selection__arrow {
+    height: 2.25rem !important;
+}
+
+#removeAttendee {
+    position: absolute;
+    top: 110px;
+    left: 53px;
+	color: #fff;
+}
+
+#removeAttendee:hover {
+	color: #c82333;
+}
