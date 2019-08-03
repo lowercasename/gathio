@@ -85,15 +85,19 @@ const EventSchema = new mongoose.Schema({
     trim: true,
 		required: true
   },
-	start: {
+	start: { // Stored as a UTC timestamp
     type: Date,
     trim: true,
 		required: true
   },
-	end: {
+	end: { // Stored as a UTC timestamp
     type: Date,
     trim: true,
 		required: true
+  },
+  timezone: {
+		type: String,
+		default: 'Etc/UTC'
   },
 	description: {
 		type: String,
