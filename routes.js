@@ -146,10 +146,10 @@ router.get('/:eventID', (req, res) => {
 				else {
 					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a [<span class="text-muted">](z)[</span>]');
 				}
-				eventStartISO = moment.tz(event.start, event.timezone).toISOString();
-				eventEndISO = moment.tz(event.end, event.timezone).toISOString();
+				eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
+				eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
 				parsedStart = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
-				parsedEnd = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
+				parsedEnd = moment.tz(event.end, event.timezone).format('YYYYMMDD[T]HHmmss');
 				let eventHasConcluded = false;
 				if (moment.tz(event.end, event.timezone).isBefore(moment.tz(event.timezone))){
 					eventHasConcluded = true;
@@ -588,6 +588,76 @@ router.post('/attendevent/:eventID', (req, res) => {
 	});
 });
 
+router.post('/unattendevent/:eventID', (req, res) => {
+	Event.update(
+	    { id: req.params.eventID },
+	    { $pull: { attendees: { email: req.body.attendeeEmail } } }
+	)
+	.then(response => {
+		console.log(response)
+		addToLog("removeEventAttendee", "success", "Attendee removed from event " + req.params.eventID);
+		if (sendEmails) {
+			if (req.body.attendeeEmail){
+				const msg = {
+					to: req.body.attendeeEmail,
+					from: {
+						name: 'Gathio',
+						email: 'notifications@gath.io',
+					},
+					templateId: 'd-56c97755d6394c23be212fef934b0f1f',
+					dynamic_template_data: {
+						subject: 'gathio: You have been removed from an event',
+						eventID: req.params.eventID
+					},
+				};
+				sgMail.send(msg);
+			}
+		}
+		res.writeHead(302, {
+			'Location': '/' + req.params.eventID
+			});
+		res.end();
+	})
+	.catch((err) => {
+		res.send('Database error, please try again :('); addToLog("removeEventAttendee", "error", "Attempt to remove attendee from event " + req.params.eventID + " failed with error: " + err);
+	});
+});
+
+router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
+	Event.update(
+	    { id: req.params.eventID },
+	    { $pull: { attendees: { _id: req.params.attendeeID } } }
+	)
+	.then(response => {
+		console.log(response)
+		addToLog("removeEventAttendee", "success", "Attendee removed by admin from event " + req.params.eventID);
+		if (sendEmails) {
+			if (req.body.attendeeEmail){
+				const msg = {
+					to: req.body.attendeeEmail,
+					from: {
+						name: 'Gathio',
+						email: 'notifications@gath.io',
+					},
+					templateId: 'd-56c97755d6394c23be212fef934b0f1f',
+					dynamic_template_data: {
+						subject: 'gathio: You have been removed from an event',
+						eventID: req.params.eventID
+					},
+				};
+				sgMail.send(msg);
+			}
+		}
+		res.writeHead(302, {
+			'Location': '/' + req.params.eventID
+			});
+		res.end();
+	})
+	.catch((err) => {
+		res.send('Database error, please try again :('); addToLog("removeEventAttendee", "error", "Attempt to remove attendee by admin from event " + req.params.eventID + " failed with error: " + err);
+	});
+});
+
 router.post('/post/comment/:eventID', (req, res) => {
 	let commentID = shortid.generate();
 	const newComment = {
@@ -655,7 +725,7 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 			event.save()
 			.then(() => {
 				addToLog("addEventReply", "success", "Reply added to comment " + commentID + " in event " + req.params.eventID);
-				if (sendEmails) {				
+				if (sendEmails) {
 					Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
 						attendeeEmails = ids;
 						if (!error){

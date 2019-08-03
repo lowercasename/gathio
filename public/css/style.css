@@ -251,3 +251,13 @@ body, html {
     height: 2.25rem !important;
 }
 
+#removeAttendee {
+    position: absolute;
+    top: 110px;
+    left: 53px;
+	color: #fff;
+}
+
+#removeAttendee:hover {
+	color: #c82333;
+}
