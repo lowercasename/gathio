@@ -639,7 +639,7 @@ router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
 						name: 'Gathio',
 						email: 'notifications@gath.io',
 					},
-					templateId: 'd-56c97755d6394c23be212fef934b0f1f',
+					templateId: 'd-f8ee9e1e2c8a48e3a329d1630d0d371f',
 					dynamic_template_data: {
 						subject: 'gathio: You have been removed from an event',
 						eventID: req.params.eventID
