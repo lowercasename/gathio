@@ -287,7 +287,7 @@
 		$(this).closest(".comment").find(".replyContainer").slideToggle();
 	})
 	$(document).ready(function() {
-		
+
 		$.uploadPreview({
 			input_field: "#image-upload",
 			preview_box: "#image-preview",
@@ -300,18 +300,10 @@
 		$("#image-preview").css("background-size", "cover");
 		$("#image-preview").css("background-position", "center center");
 		{{#if editingEnabled}}
-		{{#unless eventHasConcluded}}
-		// This is meant to determine the time for the date selectors in the editing modal, but there's
-		// some sort of bug which keeps adjusting the time by - I think - the local timezone, and I've
-		// not been able to fix it.
-		localOffset = new Date().getTimezoneOffset() * 60 * 1000; // In milliseconds
-		startOffset = moment.tz.zone('{{eventData.timezone}}').utcOffset(moment('{{eventStartISO}}').format('X')) * 60 * 1000; // In milliseconds
-		endOffset = moment.tz.zone('{{eventData.timezone}}').utcOffset(moment('{{eventEndISO}}').format('X')) * 60 * 1000; // In milliseconds
-		startWithOffset = moment(new Date('{{eventStartISO}}').getTime() + localOffset + startOffset).toISOString();
-		endWithOffset = moment(new Date('{{eventEndISO}}').getTime() + localOffset + endOffset).toISOString();
-		$('#eventStart').datepicker().data('datepicker').selectDate(new Date(startWithOffset));
-		$('#eventEnd').datepicker().data('datepicker').selectDate(new Date(endWithOffset));
-		{{/unless}}
+			{{#unless eventHasConcluded}}
+				$('#eventStart').datepicker().data('datepicker').selectDate(moment('{{parsedStart}}', 'YYYYMMDD[T]HHmmss').toDate());
+				$('#eventEnd').datepicker().data('datepicker').selectDate(moment('{{parsedEnd}}', 'YYYYMMDD[T]HHmmss').toDate());
+			{{/unless}}
 		{{/if}}
 		new ClipboardJS('#copyEventLink');
 		autosize($('textarea'));

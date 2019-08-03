@@ -149,7 +149,7 @@ router.get('/:eventID', (req, res) => {
 				eventStartISO = moment.tz(event.start, event.timezone).toISOString();
 				eventEndISO = moment.tz(event.end, event.timezone).toISOString();
 				parsedStart = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
-				parsedEnd = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
+				parsedEnd = moment.tz(event.end, event.timezone).format('YYYYMMDD[T]HHmmss');
 				let eventHasConcluded = false;
 				if (moment.tz(event.end, event.timezone).isBefore(moment.tz(event.timezone))){
 					eventHasConcluded = true;
@@ -655,7 +655,7 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 			event.save()
 			.then(() => {
 				addToLog("addEventReply", "success", "Reply added to comment " + commentID + " in event " + req.params.eventID);
-				if (sendEmails) {				
+				if (sendEmails) {
 					Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
 						attendeeEmails = ids;
 						if (!error){
