@@ -19,6 +19,47 @@ var moment = require('moment-timezone');
 
 const marked = require('marked');
 
+// Extra marked renderer (used to render plaintext event description for page metadata)
+// Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
+// &#63; to ? helper
+htmlEscapeToText = function (text) {
+    return text.replace(/\&\#[0-9]*;|&amp;/g, function (escapeCode) {
+        if (escapeCode.match(/amp/)) {
+            return '&';
+        }
+        return String.fromCharCode(escapeCode.match(/[0-9]+/));
+    });
+}
+
+render_plain = function () {
+    var render = new marked.Renderer();
+    // render just the text of a link, strong, em
+    render.link = function (href, title, text) {
+        return text;
+    };
+	render.strong = function(text) {
+		return text;
+	}
+	render.em = function(text) {
+		return text;
+	}
+    // render just the text of a paragraph
+    render.paragraph = function (text) {
+        return htmlEscapeToText(text)+'\r\n';
+    };
+    // render nothing for headings, images, and br
+    render.heading = function (text, level) {
+        return '';
+    };
+    render.image = function (href, title, text) {
+        return '';
+    };
+	render.br = function () {
+		return '';
+	};
+    return render;
+}
+
 const ical = require('ical');
 
 const sgMail = require('@sendgrid/mail');
@@ -202,6 +243,12 @@ router.get('/:eventID', (req, res) => {
 						}
 					}
 				}
+				var metadata = {
+					title: event.name,
+					description: marked(event.description, { renderer: render_plain()}).split(" ").splice(0,20).join(" ").trim(),
+					image: (eventHasCoverImage ? 'https://gath.io/events/' + event.image : null),
+					url: 'https://gath.io/' + req.params.eventID
+				};
 				res.set("X-Robots-Tag", "noindex");
 				res.render('event', {
 					title: event.name,
@@ -221,7 +268,8 @@ router.get('/:eventID', (req, res) => {
 					eventHasHost: eventHasHost,
 					firstLoad: firstLoad,
 					eventHasConcluded: eventHasConcluded,
-					eventHasBegun: eventHasBegun
+					eventHasBegun: eventHasBegun,
+					metadata: metadata,
 				})
 			}
 			else {

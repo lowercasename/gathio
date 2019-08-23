@@ -15,15 +15,15 @@
 
 		<meta property="og:image:width" content="260">
 		<meta property="og:image:height" content="260">
-		<meta property="og:description" content="An easier, quicker, and much less privacy-invading way to make and share events">
-		<meta property="og:title" content="gathio">
-		<meta property="og:url" content="http://gath.io/">
-		<meta property="og:image" content="http://gath.io/og-image.jpg">
+		<meta property="og:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
+		<meta property="og:title" content="{{#if metadata.title}}{{metadata.title}} &middot; gathio{{else}}gathio{{/if}}">
+		<meta property="og:url" content="{{#if metadata.url}}{{metadata.url}}{{else}}https://gath.io/{{/if}}">
+		<meta property="og:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}http://gath.io/og-image.jpg{{/if}}">
 
 		<meta name="twitter:card" content="summary">
-		<meta name="twitter:title" content="gathio">
-		<meta name="twitter:description" content="An easier, quicker, and much less privacy-invading way to make and share events. ">
-		<meta name="twitter:image" content="http://gath.io/og-image.jpg">
+		<meta name="twitter:title" content="{{#if metadata.title}}{{metadata.title}} &middot; gathio{{else}}gathio{{/if}}">
+		<meta name="twitter:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
+		<meta name="twitter:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}http://gath.io/og-image.jpg{{/if}}">
 
 
 		<title>{{#if title}}{{title}} &middot; {{/if}}gathio</title>
