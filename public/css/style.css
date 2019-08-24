@@ -140,8 +140,12 @@ body, html {
 	margin-bottom: 0.8em;
 }
 
-.eventInformation > li > .eventInformationAction {
+#copyEventLink {
 	margin-left: 5px;
+}
+
+.eventInformationAction:not(#copyEventLink) {
+	margin-top: 0.25rem;
 }
 
 .commentContainer {
@@ -239,11 +243,19 @@ body, html {
     height: 2.25rem !important;
 }
 
-#removeAttendee {
+.attendee-name {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: "";
+	overflow: hidden;
+	max-width: 62px;
+}
+
+.remove-attendee {
 	color: #fff;
 }
 
-#removeAttendee:hover {
+.remove-attendee:hover {
 	color: #016418;
 }
 

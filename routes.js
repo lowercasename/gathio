@@ -243,7 +243,8 @@ router.get('/:eventID', (req, res) => {
 						}
 					}
 				}
-				var metadata = {
+				let eventAttendees = event.attendees.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
+				let metadata = {
 					title: event.name,
 					description: marked(event.description, { renderer: render_plain()}).split(" ").splice(0,40).join(" ").trim(),
 					image: (eventHasCoverImage ? 'https://gath.io/events/' + event.image : null),
@@ -254,6 +255,7 @@ router.get('/:eventID', (req, res) => {
 					title: event.name,
 					escapedName: escapedName,
 					eventData: event,
+					eventAttendees: eventAttendees,
 					eventStartISO: eventStartISO,
 					eventEndISO: eventEndISO,
 					parsedLocation: parsedLocation,

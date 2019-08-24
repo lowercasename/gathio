@@ -23,9 +23,13 @@
 				<span class="fa-li">
 					<i class="fas fa-map-marker-alt"></i>
 				</span>
-				{{eventData.location}}
-				<a href="http://maps.google.com/?q={{parsedLocation}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
-					<i class="fas fa-map-marker-alt"></i> Find on Google Maps
+				{{eventData.location}}<br />
+				<a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
+					<i class="fas fa-map-marked"></i> Show on Google Maps
+				</a>
+				&nbsp;
+				<a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
+					<i class="fas fa-map-marked"></i> Show on OpenStreetMap
 				</a>
 			</li>
 			{{#if eventHasHost}}
@@ -41,13 +45,14 @@
 					<i class="far fa-fw fa-calendar-alt"></i>
 				</span>
 				{{{displayDate}}}
-				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
-					<i class="far fa-calendar-plus"></i> Add to Google Calendar
-				</a>
 				<br>
 				<span class="text-muted">
 					{{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
 				</span>
+				<br />
+				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
+					<i class="far fa-calendar-plus"></i> Add to Google Calendar
+				</a>
 			</li>
 			{{#if eventData.url}}
 				<li>
@@ -95,17 +100,17 @@
 
 {{#if eventData.usersCanAttend}}
 <div class="card mb-4" id="eventAttendees">
-	<h5 class="card-header">Attendees {{#if eventData.attendees}}({{eventData.attendees.length}}){{/if}}
+	<h5 class="card-header">Attendees {{#if eventAttendees}}({{eventAttendees.length}}){{/if}}
 		<div class="btn-group" role="group" aria-label="Attendance controls">
 			<button type="button" id="attendEvent" class="btn btn-success" data-toggle="modal" data-target="#attendModal"><i class="fas fa-user-plus"></i> Add me</button>
 			<button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
 		</div>
 	</h5>
 	<div class="card-body">
-		{{#if eventData.attendees}}
+		{{#if eventAttendees}}
 			<ul class="attendeesList">
-				{{#each eventData.attendees}}
-					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}>{{this.name}}{{#if ../editingEnabled}}<a href="#" id="removeAttendee" data-toggle="modal" data-target="#removeAttendeeModal"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+				{{#each eventAttendees}}
+					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}}<a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal"><i class="fas fa-user-times"></i></a>{{/if}}</li>
 				{{/each}}
 			</ul>
 		{{else}}
