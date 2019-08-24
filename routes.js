@@ -245,7 +245,7 @@ router.get('/:eventID', (req, res) => {
 				}
 				var metadata = {
 					title: event.name,
-					description: marked(event.description, { renderer: render_plain()}).split(" ").splice(0,20).join(" ").trim(),
+					description: marked(event.description, { renderer: render_plain()}).split(" ").splice(0,40).join(" ").trim(),
 					image: (eventHasCoverImage ? 'https://gath.io/events/' + event.image : null),
 					url: 'https://gath.io/' + req.params.eventID
 				};
