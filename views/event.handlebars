@@ -95,7 +95,7 @@
 
 {{#if eventData.usersCanAttend}}
 <div class="card mb-4" id="eventAttendees">
-	<h5 class="card-header" style="width:100%;display:flex;justify-content:space-between;align-items:center">Attendees {{#if eventData.attendees}}({{eventData.attendees.length}}){{/if}}
+	<h5 class="card-header">Attendees {{#if eventData.attendees}}({{eventData.attendees.length}}){{/if}}
 		<div class="btn-group" role="group" aria-label="Attendance controls">
 			<button type="button" id="attendEvent" class="btn btn-success" data-toggle="modal" data-target="#attendModal"><i class="fas fa-user-plus"></i> Add me</button>
 			<button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
