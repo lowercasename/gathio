@@ -20,6 +20,11 @@ body, html {
   flex: 1;
 }
 
+#fixedContainer {
+	position: sticky;
+	top: 0;
+}
+
 #footerContainer {
 	border-top: 1px solid #e0e0e0;
 	text-align: center;
@@ -31,11 +36,28 @@ body, html {
 	border-bottom: 2px solid #e0e0e0;
 }
 
-#sidebar>h1 {
-	font-family: "Raleway", serif;
-	font-weight: 900;
+#sidebar h1 {
+	font-family: "Fredoka One", sans-serif;
+	font-weight: 700;
 	text-align: center;
 	letter-spacing: -0.5px;
+	font-size: 3rem;
+	color: transparent !important;
+	margin-bottom: 0;
+}
+
+#sidebar h1 a {
+	background: rgb(33, 37, 41);
+	background-clip: text;
+	color: transparent !important;
+}
+
+#sidebar h1 a:hover {
+	text-decoration: none;
+	background: linear-gradient(to right, #27aa45, #7fe0c8, #5d26c1);
+	background-size: 100% 100%;
+	background-clip: text;
+	color: transparent !important;
 }
 
 #content {

@@ -8,7 +8,7 @@
 		<h3 id="eventName">{{eventData.name}}</h3>
 	</div>
 	{{#if editingEnabled}}
-	<div class="col-lg-2 text-right">
+	<div class="col-lg-2 ml-2">
 		<div class="btn-group" role="group" aria-label="Event controls">
 			<button type="button" id="editEvent" class="btn btn-success" data-toggle="modal" data-target="#editModal" {{#if eventHasConcluded}}disabled{{/if}}><i class="fas fa-edit"></i></button>
 			<button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i></button>
