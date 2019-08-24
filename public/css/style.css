@@ -119,9 +119,10 @@ body, html {
 	font-size: 0.95em;
 	font-weight: bold;
 	overflow: hidden;
-	display: inline-block;
-	line-height: 67px;
-	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 }
 
 .expand {
@@ -239,14 +240,11 @@ body, html {
 }
 
 #removeAttendee {
-    position: absolute;
-    top: 110px;
-    left: 53px;
 	color: #fff;
 }
 
 #removeAttendee:hover {
-	color: #c82333;
+	color: #016418;
 }
 
 #eventAttendees h5 {
