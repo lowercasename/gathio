@@ -49,6 +49,7 @@ body, html {
 #sidebar h1 a {
 	background: rgb(33, 37, 41);
 	background-clip: text;
+	-webkit-background-clip: text;
 	color: transparent !important;
 }
 
@@ -57,6 +58,7 @@ body, html {
 	background: linear-gradient(to right, #27aa45, #7fe0c8, #5d26c1);
 	background-size: 100% 100%;
 	background-clip: text;
+	-webkit-background-clip: text;
 	color: transparent !important;
 }
 
