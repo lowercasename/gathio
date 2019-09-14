@@ -8,7 +8,7 @@
 		<h3 id="eventName">{{eventData.name}}</h3>
 	</div>
 	{{#if editingEnabled}}
-	<div class="col-lg-2 ml-2">
+	<div class="col-lg-2 ml-2 edit-buttons">
 		<div class="btn-group" role="group" aria-label="Event controls">
 			<button type="button" id="editEvent" class="btn btn-success" data-toggle="modal" data-target="#editModal" {{#if eventHasConcluded}}disabled{{/if}}><i class="fas fa-edit"></i></button>
 			<button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i></button>
@@ -102,11 +102,20 @@
 <div class="card mb-4" id="eventAttendees">
 	<h5 class="card-header">Attendees {{#if eventAttendees}}({{eventAttendees.length}}){{/if}}
 		<div class="btn-group" role="group" aria-label="Attendance controls">
-			<button type="button" id="attendEvent" class="btn btn-success" data-toggle="modal" data-target="#attendModal"><i class="fas fa-user-plus"></i> Add me</button>
+			{{#unless noMoreSpots}}
+				<button type="button" id="attendEvent" class="btn btn-success" data-toggle="modal" data-target="#attendModal"><i class="fas fa-user-plus"></i> Add me</button>
+			{{/unless}}
 			<button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
 		</div>
 	</h5>
 	<div class="card-body">
+		{{#if eventData.maxAttendees}}
+			{{#if noMoreSpots}}
+				<div class="alert alert-warning text-center">This event is at capacity.</div>
+			{{else}}
+				<div class="alert alert-warning text-center">{{spotsRemaining}} {{plural spotsRemaining "spot(s)"}} remaining - add yourself now!</div>
+			{{/if}}
+		{{/if}}
 		{{#if eventAttendees}}
 			<ul class="attendeesList">
 				{{#each eventAttendees}}
@@ -384,6 +393,30 @@
 			setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
 		})
 		$(".daysToDeletion").html(moment("{{eventEndISO}}").add(7, 'days').fromNow());
+		if ($("#joinCheckbox").is(':checked')){
+			$("#maxAttendeesCheckboxContainer").css("display","flex");
+		}
+		$("#maxAttendeesCheckbox").on("click", function() {
+            if ($(this).is(':checked')) {
+                $("#maxAttendeesContainer").slideDown('fast').css("display","flex");
+                $("#maxAttendees").attr("data-validation-optional","false");
+            }
+            else {
+                $("#maxAttendeesContainer").slideUp('fast');
+                $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
+            }
+        });
+        $("#joinCheckbox").on("click", function() {
+            if ($(this).is(':checked')) {
+                $("#maxAttendeesCheckboxContainer").slideDown('fast').css("display","flex");
+            }
+            else {
+                $("#maxAttendeesCheckboxContainer").slideUp('fast');
+                $("#maxAttendeesCheckbox").prop("checked",false);
+                $("#maxAttendeesContainer").slideUp('fast');
+                $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
+            }
+        });
 	});
 
 	</script>

@@ -7,7 +7,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="editEventForm" action="/editevent/{{eventData.id}}/{{eventData.editToken}}" method="post" enctype="multipart/form-data">
+      <form id="editEventForm" action="/editevent/{{eventData.id}}/{{eventData.editToken}}" method="post" enctype="multipart/form-data" autocomplete="off">
 			<div class="modal-body">
 				<div class="form-group row">
 					<label for="eventName" class="col-sm-2 col-form-label">Event name</label>
@@ -34,7 +34,7 @@
 					</div>
 				</div>
 				  <div class="form-group row">
-					<label for="timezone" class="col-sm-2 col-form-label">Timezone</label> 
+					<label for="timezone" class="col-sm-2 col-form-label">Timezone</label>
 					<div class="form-group col-sm-10">
 						<select class="select2" id="timezone" name="timezone"></select>
 					</div>
@@ -71,20 +71,32 @@
      		<div class="form-group row">
 					<div class="col-sm-2">Options</div>
 					<div class="col-sm-10">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="interactionCheckbox" name="interactionCheckbox" {{#if eventData.usersCanComment}}checked{{/if}}>
+                            <label class="form-check-label" for="interactionCheckbox">
+                                Users can post comments on this event
+                            </label>
+                        </div>
 						<div class="form-check">
-							<input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox" {{#if eventData.usersCanAttend}}checked{{/if}}>
+							<input class="form-check-input {{#unless eventData.usersCanAttend}}unchecked{{/unless}}" type="checkbox" id="joinCheckbox" name="joinCheckbox" {{#if eventData.usersCanAttend}}checked{{/if}}>
 							<label class="form-check-label" for="joinCheckbox">
 								Users can mark themselves as attending this event
 							</label>
 						</div>
-						<div class="form-check">
-							<input class="form-check-input" type="checkbox" id="interactionCheckbox" name="interactionCheckbox" {{#if eventData.usersCanComment}}checked{{/if}}>
-							<label class="form-check-label" for="interactionCheckbox">
-								Users can post comments on this event
-							</label>
-						</div>
+                        <div class="form-check" id="maxAttendeesCheckboxContainer" {{#if eventData.maxAttendees}}style="display:flex"{{/if}}>
+                          <input class="form-check-input" type="checkbox" id="maxAttendeesCheckbox" name="maxAttendeesCheckbox" {{#if eventData.maxAttendees}}checked{{/if}}>
+                          <label class="form-check-label" for="maxAttendeesCheckbox">
+                            Set a limit on the maximum number of attendees
+                          </label>
+                        </div>
 					</div>
 				</div>
+                <div class="form-group row" id="maxAttendeesContainer" {{#if eventData.maxAttendees}}style="display:flex"{{/if}}>
+                  <label for="maxAttendees" class="col-sm-2 col-form-label">Attendee limit</label>
+                  <div class="form-group col-sm-10">
+                    <input type="number" class="form-control" id="maxAttendees" name="maxAttendees" placeholder="Enter a number." data-validation="number" data-validation-optional="true" value="{{eventData.maxAttendees}}">
+                  </div>
+                </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

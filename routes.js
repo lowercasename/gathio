@@ -244,6 +244,13 @@ router.get('/:eventID', (req, res) => {
 					}
 				}
 				let eventAttendees = event.attendees.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
+                let spotsRemaining, noMoreSpots;
+                if (event.maxAttendees) {
+                    spotsRemaining = event.maxAttendees - eventAttendees.length;
+                    if (spotsRemaining <= 0) {
+                        noMoreSpots = true;
+                    }
+                }
 				let metadata = {
 					title: event.name,
 					description: marked(event.description, { renderer: render_plain()}).split(" ").splice(0,40).join(" ").trim(),
@@ -256,6 +263,8 @@ router.get('/:eventID', (req, res) => {
 					escapedName: escapedName,
 					eventData: event,
 					eventAttendees: eventAttendees,
+                    spotsRemaining: spotsRemaining,
+                    noMoreSpots: noMoreSpots,
 					eventStartISO: eventStartISO,
 					eventEndISO: eventEndISO,
 					parsedLocation: parsedLocation,
@@ -334,6 +343,7 @@ router.post('/newevent', (req, res) => {
 		usersCanAttend: req.body.joinCheckbox ? true : false,
 		showUsersList: req.body.guestlistCheckbox ? true : false,
 		usersCanComment: req.body.interactionCheckbox ? true : false,
+        maxAttendees: req.body.maxAttendees,
 		firstLoad: true
 	});
 	event.save()
@@ -470,7 +480,9 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				image: eventImageFilename,
 				usersCanAttend: req.body.joinCheckbox ? true : false,
 				showUsersList: req.body.guestlistCheckbox ? true : false,
-				usersCanComment: req.body.interactionCheckbox ? true : false
+				usersCanComment: req.body.interactionCheckbox ? true : false,
+                maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
+
 			}
 			Event.findOneAndUpdate({id: req.params.eventID}, updatedEvent, function(err, raw) {
 				if (err) {

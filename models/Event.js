@@ -155,6 +155,9 @@ const EventSchema = new mongoose.Schema({
 		default: true
 	},
 	attendees: [Attendees],
+	maxAttendees: {
+		type: Number
+	},
 	comments: [CommentSchema]
 });
 
