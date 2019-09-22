@@ -119,7 +119,7 @@
 		{{#if eventAttendees}}
 			<ul class="attendeesList">
 				{{#each eventAttendees}}
-					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}}<a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
 				{{/each}}
 			</ul>
 		{{else}}
@@ -142,7 +142,7 @@
 				<div class="form-group row">
 					<label for="attendeeName" class="col-sm-2 col-form-label">Your name</label>
 					<div class="form-group col-sm-10">
-						<input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-16">
+						<input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-30">
 					</div>
 				</div>
 				<div class="form-group row">
