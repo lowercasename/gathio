@@ -132,21 +132,15 @@ body, html {
 }
 
 .attendeesList > li {
-	height: 80px;
-	width: 80px;
 	border: 4px solid #0ea130;
-	border-radius: 50%;
+	border-radius: 2em;
+	padding: .5em 1em;
 	margin-right: 5px;
-	margin-bottom: 5px;
+	margin-bottom: 10px;
 	background: #57b76d;
 	color: white;
 	font-size: 0.95em;
 	font-weight: bold;
-	overflow: hidden;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
 }
 
 .expand {
