@@ -505,9 +505,18 @@ router.post('/importevent', (req, res) => {
 	if (req.files && Object.keys(req.files).length != 0) {
 		importediCalObject = ical.parseICS(req.files.icsImportControl.data.toString('utf8'));
 		for (var key in importediCalObject) {
-    	importedEventData = importediCalObject[key];
+    		importedEventData = importediCalObject[key];
 		}
-		creatorEmail = importedEventData.organizer.val.replace("MAILTO:", "")
+		console.log(importedEventData)
+		let creatorEmail;
+		if (req.body.creatorEmail) {
+			creatorEmail = req.body.creatorEmail
+		} else if (importedEventData.organizer) {
+			creatorEmail = importedEventData.organizer.val.replace("MAILTO:", "");
+		} else {
+			res.status(500).send("Please supply an email address on the previous page.");
+		}
+		
 		const event = new Event({
 			id: eventID,
 			type: 'public',
@@ -515,12 +524,12 @@ router.post('/importevent', (req, res) => {
 			location: importedEventData.location,
 			start: importedEventData.start,
 			end: importedEventData.end,
-			timezone: importedEventData.start.tz,
+			timezone: typeof importedEventData.start.tz != 'undefined' ? importedEventData.start.tz : "Etc/UTC",
 			description: importedEventData.description,
 			image: '',
 			creatorEmail: creatorEmail,
 			url: '',
-			hostName: importedEventData.organizer.params.CN,
+			hostName: importedEventData.organizer ? importedEventData.organizer.params.CN : "",
 			viewPassword: '',
 			editPassword: '',
 			editToken: editToken,
