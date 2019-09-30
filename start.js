@@ -20,6 +20,7 @@ mongoose.connection
 
 require('./models/Event');
 require('./models/Log');
+require('./models/EventGroup');
 
 const app = require('./app');
 

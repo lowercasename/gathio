@@ -13,6 +13,7 @@ const { body, validationResult } = require('express-validator/check');
 const router = express.Router();
 
 const Event = mongoose.model('Event');
+const EventGroup = mongoose.model('EventGroup');
 const Log = mongoose.model('Log');
 
 var moment = require('moment-timezone');
@@ -177,6 +178,7 @@ router.get('/:eventID', (req, res) => {
 	Event.findOne({
 		id: req.params.eventID
 		})
+		.populate('eventGroup')
 		.then((event) => {
 			if (event) {
 				parsedLocation = event.location.replace(/\s+/g, '+');
@@ -250,7 +252,7 @@ router.get('/:eventID', (req, res) => {
                     if (spotsRemaining <= 0) {
                         noMoreSpots = true;
                     }
-                }
+				}
 				let metadata = {
 					title: event.name,
 					description: marked(event.description, { renderer: render_plain()}).split(" ").splice(0,40).join(" ").trim(),
@@ -298,6 +300,114 @@ router.get('/:eventID', (req, res) => {
 		});
 })
 
+router.get('/group/:eventGroupID', (req, res) => {
+	EventGroup.findOne({
+		id: req.params.eventGroupID
+		})
+		.then(async (eventGroup) => {
+			if (eventGroup) {
+				parsedDescription = marked(eventGroup.description);
+				eventGroupEditToken = eventGroup.editToken;
+
+				escapedName = eventGroup.name.replace(/\s+/g, '+');
+
+				let eventGroupHasCoverImage = false;
+				if( eventGroup.image ) {
+					eventGroupHasCoverImage = true;
+				}
+				else {
+					eventGroupHasCoverImage = false;
+				}
+				let eventGroupHasHost = false;
+				if( eventGroup.hostName ) {
+					eventGroupHasHost = true;
+				}
+				else {
+					eventGroupHasHost = false;
+				}
+
+				let events = await Event.find({eventGroup: eventGroup._id}).sort('start')
+
+				events.forEach(event => {
+					if (moment.tz(event.end, event.timezone).isSame(event.start, 'day')){
+						// Happening during one day
+						event.displayDate = moment.tz(event.start, event.timezone).format('D MMM YYYY');
+					}
+					else {
+						event.displayDate = moment.tz(event.start, event.timezone).format('D MMM YYYY') + moment.tz(event.end, event.timezone).format(' - D MMM YYYY');
+					}
+					if (moment.tz(event.end, event.timezone).isBefore(moment.tz(event.timezone))){
+						event.eventHasConcluded = true;
+					} else {
+						event.eventHasConcluded = false;
+					}
+				})
+
+				let upcomingEventsExist = false;
+				if (events.some(e => e.eventHasConcluded == false)) {
+					upcomingEventsExist = true;
+				}
+
+				let firstLoad = false;
+				if (eventGroup.firstLoad === true) {
+					firstLoad = true;
+					EventGroup.findOneAndUpdate({id: req.params.eventGroupID}, {firstLoad: false}, function(err, raw) {
+						if (err) {
+							res.send(err);
+						}
+					});
+				}
+				let editingEnabled = false;
+				if (Object.keys(req.query).length !== 0) {
+					if (!req.query.e) {
+						editingEnabled = false;
+						console.log("No edit token set");
+					}
+					else {
+						if (req.query.e == eventGroupEditToken){
+							editingEnabled = true;
+						}
+						else {
+							editingEnabled = false;
+						}
+					}
+				}
+				let metadata = {
+					title: eventGroup.name,
+					description: marked(eventGroup.description, { renderer: render_plain()}).split(" ").splice(0,40).join(" ").trim(),
+					image: (eventGroupHasCoverImage ? 'https://gath.io/events/' + eventGroup.image : null),
+					url: 'https://gath.io/' + req.params.eventID
+				};
+				res.set("X-Robots-Tag", "noindex");
+				res.render('eventgroup', {
+					title: eventGroup.name,
+					eventGroupData: eventGroup,
+					escapedName: escapedName,
+					events: events,
+					upcomingEventsExist: upcomingEventsExist,
+					parsedDescription: parsedDescription,
+					editingEnabled: editingEnabled,
+					eventGroupHasCoverImage: eventGroupHasCoverImage,
+					eventGroupHasHost: eventGroupHasHost,
+					firstLoad: firstLoad,
+					metadata: metadata
+				})
+			}
+			else {
+				res.status(404);
+				res.render('404', { url: req.url });
+			}
+
+		})
+		.catch((err) => {
+			addToLog("displayEventGroup", "error", "Attempt to display event group " + req.params.eventGroupID + " failed with error: " + err);
+			console.log(err)
+			res.status(404);
+			res.render('404', { url: req.url });
+			return;
+		});
+})
+
 // BACKEND ROUTES
 
 //router.post('/login',
@@ -307,10 +417,11 @@ router.get('/:eventID', (req, res) => {
 //);
 
 
-router.post('/newevent', (req, res) => {
+router.post('/newevent', async (req, res) => {
 	let eventID = shortid.generate();
 	let editToken = randomstring.generate();
 	let eventImageFilename = "";
+	let isPartOfEventGroup = false;
 	if (req.files && Object.keys(req.files).length != 0) {
 		let eventImageBuffer = req.files.imageUpload.data;
 		Jimp.read(eventImageBuffer, (err, img) => {
@@ -324,6 +435,16 @@ router.post('/newevent', (req, res) => {
 	}
 	startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 	endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+	let eventGroup;
+	if (req.body.eventGroupCheckbox) {
+		eventGroup = await EventGroup.findOne({
+			id: req.body.eventGroupID,
+			editToken: req.body.eventGroupEditToken
+		})
+		if (eventGroup) {
+			isPartOfEventGroup = true;
+		}
+	}
 	const event = new Event({
 		id: eventID,
 		type: req.body.eventType,
@@ -340,6 +461,7 @@ router.post('/newevent', (req, res) => {
 		viewPassword: req.body.viewPassword,
 		editPassword: req.body.editPassword,
 		editToken: editToken,
+		eventGroup: isPartOfEventGroup ? eventGroup._id : null,
 		usersCanAttend: req.body.joinCheckbox ? true : false,
 		showUsersList: req.body.guestlistCheckbox ? true : false,
 		usersCanComment: req.body.interactionCheckbox ? true : false,
@@ -347,7 +469,7 @@ router.post('/newevent', (req, res) => {
 		firstLoad: true
 	});
 	event.save()
-		.then(() => {
+		.then((event) => {
 			addToLog("createEvent", "success", "Event " + eventID + "created");
 			// Send email with edit link
 			if (sendEmails) {
@@ -374,7 +496,7 @@ router.post('/newevent', (req, res) => {
 			});
 			res.end();
 		})
-		.catch((err) => { res.send('Database error, please try again :('); addToLog("createEvent", "error", "Attempt to create event failed with error: " + err);});
+		.catch((err) => { res.send('Database error, please try again :( - ' + err); addToLog("createEvent", "error", "Attempt to create event failed with error: " + err);});
 });
 
 router.post('/importevent', (req, res) => {
@@ -443,12 +565,70 @@ router.post('/importevent', (req, res) => {
 	}
 });
 
+router.post('/neweventgroup', (req, res) => {
+	let eventGroupID = shortid.generate();
+	let editToken = randomstring.generate();
+	let eventGroupImageFilename = "";
+	if (req.files && Object.keys(req.files).length != 0) {
+		let eventImageBuffer = req.files.imageUpload.data;
+		Jimp.read(eventImageBuffer, (err, img) => {
+			if (err) addToLog("Jimp", "error", "Attempt to edit image failed with error: " + err);
+			img
+				.resize(920, Jimp.AUTO) // resize
+				.quality(80) // set JPEG quality
+				.write('./public/events/' + eventGroupID + '.jpg'); // save
+		});
+		eventGroupImageFilename = eventGroupID + '.jpg';
+	}
+	const eventGroup = new EventGroup({
+		id: eventGroupID,
+		name: req.body.eventGroupName,
+		description: req.body.eventGroupDescription,
+		image: eventGroupImageFilename,
+		creatorEmail: req.body.creatorEmail,
+		url: req.body.eventGroupURL,
+		hostName: req.body.hostName,
+		editToken: editToken,
+		firstLoad: true
+	});
+	eventGroup.save()
+		.then(() => {
+			addToLog("createEventGroup", "success", "Event group " + eventGroupID + " created");
+			// Send email with edit link
+			if (sendEmails) {
+				const msg = {
+					to: req.body.creatorEmail,
+					from: {
+						name: 'Gathio',
+						email: 'notifications@gath.io',
+					},
+					templateId: 'd-4c5ddcb34ac44ec5b2313c6da4e405f3',
+					dynamic_template_data: {
+						subject: 'gathio: ' + req.body.eventGroupName,
+						eventGroupID: eventGroupID,
+						editToken: editToken
+					},
+				};
+				sgMail.send(msg).catch(e => {
+					console.error(e.toString());
+					res.status(500).end();
+				});
+			}
+			res.writeHead(302, {
+				'Location': '/group/' + eventGroupID + '?e=' + editToken
+			});
+			res.end();
+		})
+		.catch((err) => { res.send('Database error, please try again :( - ' + err); addToLog("createEvent", "error", "Attempt to create event failed with error: " + err);});
+});
+
 router.post('/editevent/:eventID/:editToken', (req, res) => {
+	console.log(req.body);
 	let submittedEditToken = req.params.editToken;
 	Event.findOne(({
 		id: req.params.eventID,
 		}))
-	.then((event) => {
+	.then(async (event) => {
 		if (event.editToken === submittedEditToken) {
 			// Token matches
 
@@ -468,6 +648,17 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 			}
 			startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 			endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+			
+			var isPartOfEventGroup = false;
+			if (req.body.eventGroupCheckbox) {
+				var eventGroup = await EventGroup.findOne({
+					id: req.body.eventGroupID,
+					editToken: req.body.eventGroupEditToken
+				})
+				if (eventGroup) {
+					isPartOfEventGroup = true;
+				}
+			}			
 			const updatedEvent = {
 				name: req.body.eventName,
 				location: req.body.eventLocation,
@@ -482,7 +673,7 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				showUsersList: req.body.guestlistCheckbox ? true : false,
 				usersCanComment: req.body.interactionCheckbox ? true : false,
                 maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
-
+				eventGroup: isPartOfEventGroup ? eventGroup._id : null
 			}
 			Event.findOneAndUpdate({id: req.params.eventID}, updatedEvent, function(err, raw) {
 				if (err) {
@@ -532,6 +723,86 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 		}
 	})
 	.catch((err) => { console.error(err); res.send('Sorry! Something went wrong!'); addToLog("editEvent", "error", "Attempt to edit event " + req.params.eventID + " failed with error: " + err);});
+});
+
+router.post('/editeventgroup/:eventGroupID/:editToken', (req, res) => {
+	let submittedEditToken = req.params.editToken;
+	EventGroup.findOne(({
+		id: req.params.eventGroupID,
+		}))
+	.then((eventGroup) => {
+		if (eventGroup.editToken === submittedEditToken) {
+			// Token matches
+
+			// If there is a new image, upload that first
+			let eventGroupID = req.params.eventGroupID;
+			let eventGroupImageFilename = eventGroup.image;
+			if (req.files && Object.keys(req.files).length != 0) {
+				let eventImageBuffer = req.files.eventGroupImageUpload.data;
+				Jimp.read(eventImageBuffer, (err, img) => {
+					if (err) throw err;
+					img
+						.resize(920, Jimp.AUTO) // resize
+						.quality(80) // set JPEG
+						.write('./public/events/' + eventGroupID + '.jpg'); // save
+				});
+				eventGroupImageFilename = eventGroupID + '.jpg';
+			}
+			const updatedEventGroup = {
+				name: req.body.eventGroupName,
+				description: req.body.eventGroupDescription,
+				url: req.body.eventGroupURL,
+				hostName: req.body.hostName,
+				image: eventGroupImageFilename
+			}
+			EventGroup.findOneAndUpdate({id: req.params.eventGroupID}, updatedEventGroup, function(err, raw) {
+				if (err) {
+					addToLog("editEventGroup", "error", "Attempt to edit event group " + req.params.eventGroupID + " failed with error: " + err);
+					res.send(err);
+				}
+			})
+			.then(() => {
+				addToLog("editEventGroup", "success", "Event group " + req.params.eventGroupID + " edited");
+				// if (sendEmails) {
+				// 	Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
+				// 		attendeeEmails = ids;
+				// 		if (!error && attendeeEmails != ""){
+				// 			console.log("Sending emails to: " + attendeeEmails);
+				// 			const msg = {
+				// 				to: attendeeEmails,
+				// 				from: {
+				// 					name: 'Gathio',
+				// 					email: 'notifications@gath.io',
+				// 				},
+				// 				templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
+				// 				dynamic_template_data: {
+				// 					subject: 'gathio: Event edited',
+				// 					actionType: 'edited',
+				// 					eventExists: true,
+				// 					eventID: req.params.eventID
+				// 				}
+				// 			}
+				// 			sgMail.sendMultiple(msg);
+				// 		}
+				// 		else {
+				// 			console.log("Nothing to send!");
+				// 		}
+				// 	})
+				// }
+				res.writeHead(302, {
+					'Location': '/group/' + req.params.eventGroupID  + '?e=' + req.params.editToken
+					});
+				res.end();
+			})
+			.catch((err) => { console.error(err); res.send('Sorry! Something went wrong!'); addToLog("editEventGroup", "error", "Attempt to edit event group " + req.params.eventGroupID + " failed with error: " + err);});
+		}
+		else {
+			// Token doesn't match
+			res.send('Sorry! Something went wrong');
+			addToLog("editEventGroup", "error", "Attempt to edit event group " + req.params.eventGroupID + " failed with error: token does not match");
+		}
+	})
+	.catch((err) => { console.error(err); res.send('Sorry! Something went wrong!'); addToLog("editEventGroup", "error", "Attempt to edit event group " + req.params.eventGroupID + " failed with error: " + err);});
 });
 
 router.post('/deleteevent/:eventID/:editToken', (req, res) => {
@@ -607,6 +878,61 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 		}
 	})
 	.catch((err) => { res.send('Sorry! Something went wrong: ' + err); addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);});
+});
+
+router.post('/deleteeventgroup/:eventGroupID/:editToken', (req, res) => {
+	let submittedEditToken = req.params.editToken;
+	EventGroup.findOne(({
+		id: req.params.eventGroupID,
+		}))
+	.then(async (eventGroup) => {
+		if (eventGroup.editToken === submittedEditToken) {
+			// Token matches
+
+			let linkedEvents = await Event.find({eventGroup: eventGroup._id});
+
+			let linkedEventIDs = linkedEvents.map(event => event._id);
+			let eventGroupImage = false;
+			if (eventGroup.image){
+				eventGroupImage = eventGroup.image;
+			}
+
+			EventGroup.deleteOne({id: req.params.eventGroupID}, function(err, raw) {
+				if (err) {
+					res.send(err);
+					addToLog("deleteEventGroup", "error", "Attempt to delete event group " + req.params.eventGroupID + " failed with error: " + err);
+				}
+			})
+			.then(() => {
+				// Delete image
+				if (eventGroupImage){
+					fs.unlink(global.appRoot + '/public/events/' + eventGroupImage, (err) => {
+					  if (err) {
+						res.send(err);
+						addToLog("deleteEventGroup", "error", "Attempt to delete event image for event group " + req.params.eventGroupID + " failed with error: " + err);
+					  }
+					})
+				}
+				Event.update({_id: {$in: linkedEventIDs}}, { $set: { eventGroup: null } }, { multi: true })
+				.then(response => {
+					console.log(response);
+					addToLog("deleteEventGroup", "success", "Event group " + req.params.eventGroupID + " deleted");
+					res.writeHead(302, {
+						'Location': '/'
+						});
+					res.end();
+				})
+				.catch((err) => { res.send('Sorry! Something went wrong (error deleting): ' + err); addToLog("deleteEventGroup", "error", "Attempt to delete event group " + req.params.eventGroupID + " failed with error: " + err);});
+			})
+			.catch((err) => { res.send('Sorry! Something went wrong (error deleting): ' + err); addToLog("deleteEventGroup", "error", "Attempt to delete event group " + req.params.eventGroupID + " failed with error: " + err);});
+		}
+		else {
+			// Token doesn't match
+			res.send('Sorry! Something went wrong');
+			addToLog("deleteEventGroup", "error", "Attempt to delete event group " + req.params.eventGroupID + " failed with error: token does not match");
+		}
+	})
+	.catch((err) => { res.send('Sorry! Something went wrong: ' + err); addToLog("deleteEventGroup", "error", "Attempt to delete event group " + req.params.eventGroupID + " failed with error: " + err);});
 });
 
 router.post('/attendevent/:eventID', (req, res) => {

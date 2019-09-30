@@ -1,3 +1,4 @@
+<h4 class="mb-2">Create an event</h4>
 <form id="newEventForm" action="/newevent" method="post" enctype="multipart/form-data">
  	<input type="text" hidden class="form-control" id="eventType" name="eventType" value="{{eventType}}">
   <div class="form-group row">
@@ -46,9 +47,9 @@
   <div class="form-group row">
     <label for="eventImage" class="col-sm-2 col-form-label">Cover image</label>
     <div class="form-group col-sm-10">
-			<div id="image-preview">
-				<label for="image-upload" id="image-label">Choose file</label>
-				<input type="file" name="imageUpload" id="image-upload" />
+			<div class="image-preview" id="eventImagePreview">
+				<label for="image-upload" id="eventImageLabel">Choose file</label>
+				<input type="file" name="imageUpload" id="eventImageUpload" />
 			</div>
 			<small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
     </div>
@@ -80,6 +81,33 @@
   <div class="form-group row">
     <div class="col-sm-2">Options</div>
     <div class="col-sm-10">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="eventGroupCheckbox" name="eventGroupCheckbox">
+        <label class="form-check-label" for="eventGroupCheckbox">
+          This event is part of an event group
+        </label>
+      </div>
+      <div class="card text-white bg-secondary my-2" id="eventGroupData">
+        <div class="card-header">
+          <strong>Link this event to an event group</strong>
+        </div>
+        <div class="card-body">
+          <div class="form-group row">
+            <label for="eventGroupID" class="col-sm-2 col-form-label">Event group ID</label>
+            <div class="form-group col-sm-10">
+              <input type="text" class="form-control" id="eventGroupID" name="eventGroupID" placeholder="" data-validation-optional="true">
+              <small class="form-text">You can find this short string of characters in the event group's link, in your confirmation email, or on the event group's page.</small>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="eventGroupEditToken" class="col-sm-2 col-form-label">Event group secret editing code</label>
+            <div class="form-group col-sm-10">
+              <input type="text" class="form-control" id="eventGroupEditToken" name="eventGroupEditToken" placeholder="" data-validation-optional="true">
+              <small class="form-text">You can find this long string of characters in the confirmation email you received when you created the event group.</small>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="form-check">
         <input class="form-check-input" type="checkbox" id="interactionCheckbox" name="interactionCheckbox">
         <label class="form-check-label" for="interactionCheckbox">
@@ -118,9 +146,9 @@
 <script>
 	$(document).ready(function() {
 		$.uploadPreview({
-			input_field: "#image-upload",
-			preview_box: "#image-preview",
-			label_field: "#image-label",
+			input_field: "#eventImageUpload",
+			preview_box: "#eventImagePreview",
+			label_field: "#eventImageLabel",
 			label_default: "Choose file",
 			label_selected: "Change file",
 			no_label: false
@@ -145,6 +173,18 @@
                 $("#maxAttendeesCheckbox").prop("checked",false);
                 $("#maxAttendeesContainer").slideUp('fast');
                 $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
+            }
+        });
+        $("#eventGroupCheckbox").on("click", function() {
+            if ($(this).is(':checked')) {
+                $("#eventGroupData").slideDown('fast');
+                $("#eventGroupID").removeAttr("data-validation-optional").attr("data-validation","required");
+                $("#eventGroupEditToken").removeAttr("data-validation-optional").attr("data-validation","required");
+            }
+            else {
+                $("#eventGroupData").slideUp('fast');
+                $("#eventGroupID").removeAttr("data-validation").attr("data-validation-optional","true").val("");
+                $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
             }
         });
 	});
