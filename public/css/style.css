@@ -295,9 +295,9 @@ body, html {
 #maxAttendeesContainer {
 	display: none;
 }
-#maxAttendeesCheckboxContainer {
+/* #maxAttendeesCheckboxContainer {
 	display: none;
-}
+} */
 
 .edit-buttons {
 	text-align: right;
