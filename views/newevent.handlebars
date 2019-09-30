@@ -34,11 +34,14 @@
 
 <div class="container mb-4">
   <div class="row">
-    <div class="col-sm-6 p-2">
+    <div class="col-sm-4 p-2">
       <button type="button" id="showNewEventFormButton" class="btn btn-lg btn-secondary w-100"><i class="fas fa-file"></i> Create a new event</button>
     </div>
-    <div class="col-sm-6 p-2">
+    <div class="col-sm-4 p-2">
       <button type="button" id="showImportEventFormButton" class="btn btn-lg btn-secondary w-100"><i class="fas fa-file-import"></i> Import an existing event</button>
+    </div>
+    <div class="col-sm-4 p-2">
+      <button type="button" id="showNewEventGroupFormButton" class="btn btn-lg btn-secondary w-100"><i class="fas fa-folder-open"></i> Create a new event group </button>
     </div>
   </div>
 </div>
@@ -58,6 +61,9 @@
   {{>importeventform}}
 </div>
 
+<div id="newEventGroupFormContainer">
+  {{>neweventgroupform}}
+</div>
 
 	<script>
   $.validate({
@@ -89,26 +95,41 @@
       dateTimeSeparator: ', '
     });
     $("#showNewEventFormButton").click(function(){
-      $("#showImportEventFormButton").removeClass("active");
+      $("button").removeClass("active");
+      $("#showImportEventFormButton #showNewEventGroupFormButton").removeClass("active");
       if ($("#newEventFormContainer").is(":visible")){
         $("#newEventFormContainer").slideUp("fast");
-        $(this).removeClass("active");
       }
       else {
         $("#newEventFormContainer").slideDown("fast");
         $("#importEventFormContainer").slideUp("fast");
+        $("#newEventGroupFormContainer").slideUp("fast");
         $(this).addClass("active");
       }
     })
     $("#showImportEventFormButton").click(function(){
-      $("#showNewEventFormButton").removeClass("active");
+      $("button").removeClass("active");
+      $("#showNewEventFormButton #showNewEventGroupFormButton").removeClass("active");
       if ($("#importEventFormContainer").is(":visible")){
         $("#importEventFormContainer").slideUp("fast");
-        $(this).removeClass("active");
       }
       else {
         $("#importEventFormContainer").slideDown("fast");
         $("#newEventFormContainer").slideUp("fast");
+        $("#newEventGroupFormContainer").slideUp("fast");
+        $(this).addClass("active");
+      }
+    })
+    $("#showNewEventGroupFormButton").click(function(){
+      $("button").removeClass("active");
+      $("#showNewEventFormButton #showImportEventFormButton").removeClass("active");
+      if ($("#newEventGroupFormContainer").is(":visible")){
+        $("#newEventGroupFormContainer").slideUp("fast");
+      }
+      else {
+        $("#newEventGroupFormContainer").slideDown("fast");
+        $("#newEventFormContainer").slideUp("fast");
+        $("#importEventFormContainer").slideUp("fast");
         $(this).addClass("active");
       }
     })

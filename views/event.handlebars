@@ -32,17 +32,9 @@
 					<i class="fas fa-map-marked"></i> Show on OpenStreetMap
 				</a>
 			</li>
-			{{#if eventHasHost}}
-				<li>
-					<span class="fa-li">
-						<i class="fas fa-fw fa-user-circle"></i>
-					</span>
-					<span class="text-muted">Hosted by</span> {{eventData.hostName}}
-				</li>
-			{{/if}}
 			<li>
 				<span class="fa-li">
-					<i class="far fa-fw fa-calendar-alt"></i>
+					<i class="fas fa-fw fa-calendar-day"></i>
 				</span>
 				{{{displayDate}}}
 				<br>
@@ -54,10 +46,26 @@
 					<i class="far fa-calendar-plus"></i> Add to Google Calendar
 				</a>
 			</li>
+			{{#if eventHasHost}}
+				<li>
+					<span class="fa-li">
+						<i class="fas fa-fw fa-user-circle"></i>
+					</span>
+					<span class="text-muted">Hosted by</span> {{eventData.hostName}}
+				</li>
+			{{/if}}
+			{{#if eventData.eventGroup}}
+				<li>
+					<span class="fa-li">
+						<i class="fas fa-fw fa-calendar-alt"></i>
+					</span>
+					<span class="text-muted">Part of</span> <a href="/group/{{eventData.eventGroup.id}}">{{eventData.eventGroup.name}}</a>
+				</li>
+			{{/if}}
 			{{#if eventData.url}}
 				<li>
 					<span class="fa-li">
-						<i class="fas fa-link"></i>
+						<i class="fas fa-fw fa-link"></i>
 					</span>
 					<a href="{{eventData.url}}">
 						{{eventData.url}}
@@ -66,11 +74,9 @@
 			{{/if}}
 			<li>
 				<span class="fa-li">
-					<i class="fas fa-share-square"></i>
+					<i class="fas fa-fw fa-share-square"></i>
 				</span>
-				<a href="https://gath.io/{{eventData.id}}">
-					gath.io/{{eventData.id}}
-				</a>
+				<a href="https://gath.io/{{eventData.id}}">gath.io/{{eventData.id}}</a>
 				<button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://gath.io/{{eventData.id}}">
 					<i class="fas fa-copy"></i> Copy
 				</button>
@@ -119,7 +125,7 @@
 		{{#if eventAttendees}}
 			<ul class="attendeesList">
 				{{#each eventAttendees}}
-					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}}<a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
 				{{/each}}
 			</ul>
 		{{else}}
@@ -142,7 +148,7 @@
 				<div class="form-group row">
 					<label for="attendeeName" class="col-sm-2 col-form-label">Your name</label>
 					<div class="form-group col-sm-10">
-						<input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-16">
+						<input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-30">
 					</div>
 				</div>
 				<div class="form-group row">
@@ -415,6 +421,18 @@
                 $("#maxAttendeesCheckbox").prop("checked",false);
                 $("#maxAttendeesContainer").slideUp('fast');
                 $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
+            }
+        });
+		$("#eventGroupCheckbox").on("click", function() {
+            if ($(this).is(':checked')) {
+                $("#eventGroupData").slideDown('fast');
+                $("#eventGroupID").removeAttr("data-validation-optional").attr("data-validation","required");
+                $("#eventGroupEditToken").removeAttr("data-validation-optional").attr("data-validation","required");
+            }
+            else {
+                $("#eventGroupData").slideUp('fast');
+                $("#eventGroupID").removeAttr("data-validation").attr("data-validation-optional","true").val("");
+                $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
             }
         });
 	});

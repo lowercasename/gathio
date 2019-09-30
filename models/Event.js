@@ -19,7 +19,7 @@ const ReplySchema = new mongoose.Schema({
 	id: {
 		type: String,
 		required: true,
-    unique: true,
+		unique: true,
 		sparse: true
 	},
 	author: {
@@ -43,7 +43,7 @@ const CommentSchema = new mongoose.Schema({
 	id: {
 		type: String,
 		required: true,
-    unique: true,
+		unique: true,
 		sparse: true
 	},
 	author: {
@@ -68,37 +68,37 @@ const EventSchema = new mongoose.Schema({
 	id: {
 		type: String,
 		required: true,
-    unique: true
+		unique: true
 	},
 	type: {
-    type: String,
-    trim: true,
+		type: String,
+		trim: true,
 		required: true
-  },
-  name: {
-    type: String,
-    trim: true,
+	},
+	name: {
+		type: String,
+		trim: true,
 		required: true
-  },
-  location: {
-    type: String,
-    trim: true,
+	},
+	location: {
+		type: String,
+		trim: true,
 		required: true
-  },
+	},
 	start: { // Stored as a UTC timestamp
-    type: Date,
-    trim: true,
+		type: Date,
+		trim: true,
 		required: true
-  },
+	},
 	end: { // Stored as a UTC timestamp
-    type: Date,
-    trim: true,
+		type: Date,
+		trim: true,
 		required: true
-  },
-  timezone: {
+	},
+	timezone: {
 		type: String,
 		default: 'Etc/UTC'
-  },
+	},
 	description: {
 		type: String,
 		trim: true,
@@ -121,34 +121,35 @@ const EventSchema = new mongoose.Schema({
 		trim: true
 	},
 	viewPassword: {
-    type: String,
-    trim: true
-  },
+		type: String,
+		trim: true
+	},
 	editPassword: {
-    type: String,
-    trim: true
-  },
+		type: String,
+		trim: true
+	},
 	editToken: {
-    type: String,
-    trim: true,
+		type: String,
+		trim: true,
 		minlength: 32,
 		maxlength: 32
-  },
+	},
+	eventGroup: { type: mongoose.Schema.Types.ObjectId, ref: 'EventGroup' },
 	usersCanAttend: {
-    type: Boolean,
-    trim: true,
+		type: Boolean,
+		trim: true,
 		default: false
-  },
+	},
 	showUsersList: {
-    type: Boolean,
-    trim: true,
+		type: Boolean,
+		trim: true,
 		default: false
-  },
+	},
 	usersCanComment: {
-    type: Boolean,
-    trim: true,
+		type: Boolean,
+		trim: true,
 		default: false
-  },
+	},
 	firstLoad: {
 		type: Boolean,
 		trim: true,

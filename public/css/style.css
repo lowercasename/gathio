@@ -132,21 +132,15 @@ body, html {
 }
 
 .attendeesList > li {
-	height: 80px;
-	width: 80px;
 	border: 4px solid #0ea130;
-	border-radius: 50%;
+	border-radius: 2em;
+	padding: .5em 1em;
 	margin-right: 5px;
-	margin-bottom: 5px;
+	margin-bottom: 10px;
 	background: #57b76d;
 	color: white;
 	font-size: 0.95em;
 	font-weight: bold;
-	overflow: hidden;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
 }
 
 .expand {
@@ -200,7 +194,7 @@ body, html {
 /* IMAGE UPLOAD FORM */
 
 
-#image-preview {
+.image-preview {
   width: 100%;
   height: 200px;
   position: relative;
@@ -210,14 +204,14 @@ body, html {
 	border-radius: 5px;
 	border: 1px dashed #ced4da;
 }
-#image-preview input {
+.image-preview input {
   line-height: 200px;
   font-size: 200px;
   position: absolute;
   opacity: 0;
   z-index: 10;
 }
-#image-preview label {
+.image-preview label {
   position: absolute;
   z-index: 5;
   opacity: 0.8;
@@ -243,7 +237,8 @@ body, html {
 }
 
 #newEventFormContainer,
-#importEventFormContainer {
+#importEventFormContainer,
+#newEventGroupFormContainer {
 	display: none;
 }
 
@@ -299,6 +294,10 @@ body, html {
 	display: none;
 } */
 
+#eventGroupData {
+	display: none;
+}
+
 .edit-buttons {
 	text-align: right;
 }
@@ -329,4 +328,13 @@ body, html {
 	#eventAttendees h5 .btn-group {
 		margin-top: 0;
 	}
+}
+
+.list-group-item-action:hover {
+	background-color: #d4edda;
+}
+
+.code {
+	font-family: 'Courier New', Courier, monospace;
+	overflow-wrap: anywhere;
 }
