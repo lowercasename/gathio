@@ -15,6 +15,17 @@ const Attendees = new mongoose.Schema({
 	}
 })
 
+const Followers = new mongoose.Schema({
+  followId: {
+		type: String,
+		trim: true
+  },
+	account: {
+		type: String,
+		trim: true
+	}
+}, {_id: false})
+
 const ReplySchema = new mongoose.Schema({
 	id: {
 		type: String,
@@ -171,7 +182,8 @@ const EventSchema = new mongoose.Schema({
   privateKey: {
     type: String,
     trim: true
-  }
+  },
+	followers: [Followers],
 });
 
 module.exports = mongoose.model('Event', EventSchema);

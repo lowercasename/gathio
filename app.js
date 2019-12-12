@@ -45,7 +45,7 @@ app.set('view engine', 'handlebars');
 app.use(express.static('public'));
 
 // Router //
-
+app.use(bodyParser.json({ type: "application/activity+json" })); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/', routes);
 

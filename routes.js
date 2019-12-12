@@ -21,6 +21,8 @@ var moment = require('moment-timezone');
 const marked = require('marked');
 
 const generateRSAKeypair = require('generate-rsa-keypair');
+const crypto = require('crypto');
+const request = require('request');
 
 const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
@@ -151,7 +153,7 @@ function createActivityPubActor(eventID, domain, pubkey) {
     'id': `https://${domain}/${eventID}`,
     'type': 'Person',
     'preferredUsername': `${eventID}`,
-    'inbox': `https://${domain}/api/inbox`,
+    'inbox': `https://${domain}/activitypub/inbox`,
     'followers': `https://${domain}/${eventID}/followers`,
 
     'publicKey': {
@@ -160,6 +162,63 @@ function createActivityPubActor(eventID, domain, pubkey) {
       'publicKeyPem': pubkey
     }
   });
+}
+
+function sendAcceptMessage(thebody, eventID, domain, req, res, targetDomain) {
+  const guid = crypto.randomBytes(16).toString('hex');
+  let message = {
+    '@context': 'https://www.w3.org/ns/activitystreams',
+    'id': `https://${domain}/${guid}`,
+    'type': 'Accept',
+    'actor': `https://${domain}/${eventID}`,
+    'object': thebody,
+  };
+  signAndSend(message, eventID, domain, req, res, targetDomain);
+}
+
+function signAndSend(message, eventID, domain, req, res, targetDomain) { 
+  // get the URI of the actor object and append 'inbox' to it
+  let inbox = message.object.actor+'/inbox';
+  let inboxFragment = inbox.replace('https://'+targetDomain,'');
+  // get the private key
+	Event.findOne({
+		id: eventID
+		})
+		.then((event) => {
+      if (event) { 
+        const privateKey = event.privateKey;
+        const signer = crypto.createSign('sha256');
+        let d = new Date();
+        let stringToSign = `(request-target): post ${inboxFragment}\nhost: ${targetDomain}\ndate: ${d.toUTCString()}`;
+        signer.update(stringToSign);
+        signer.end();
+        const signature = signer.sign(privateKey);
+        const signature_b64 = signature.toString('base64');
+        const header = `keyId="https://${domain}/${eventID}",headers="(request-target) host date",signature="${signature_b64}"`;
+        request({
+          url: inbox,
+          headers: {
+            'Host': targetDomain,
+            'Date': d.toUTCString(),
+            'Signature': header
+          },
+          method: 'POST',
+          json: true,
+          body: message
+        }, function (error, response){
+          if (error) {
+            console.log('Error:', error, response.body);
+          }
+          else {
+            console.log('Response:', response.body);
+          }
+        });
+        return res.status(200);
+      }
+      else {
+        return res.status(404).send(`No record found for ${eventID}.`);
+      }
+    });
 }
 
 // FRONTEND ROUTES
@@ -345,19 +404,9 @@ router.get('/:eventID', (req, res) => {
 					image: (eventHasCoverImage ? `https://${domain}/events/` + event.image : null),
 					url: `https://${domain}/` + req.params.eventID
 				};
- /////////////////////
         if (req.headers.accept && (req.headers.accept.includes('application/activity+json') || req.headers.accept.includes('application/json') || req.headers.accept.includes('application/json+ld'))) {
           res.json(JSON.parse(event.activityPubActor));
-
-          //let tempActor = JSON.parse(result.actor);
-          //// Added this followers URI for Pleroma compatibility, see https://github.com/dariusk/rss-to-activitypub/issues/11#issuecomment-471390881
-          //// New Actors should have this followers URI but in case of migration from an old version this will add it in on the fly
-          //if (tempActor.followers === undefined) {
-          //  tempActor.followers = `https://${domain}/u/${username}/followers`;
-          //}
-          //res.json(tempActor);
         }
-     /////////////////
         else {
           res.set("X-Robots-Tag", "noindex");
           res.render('event', {
@@ -401,6 +450,37 @@ router.get('/:eventID', (req, res) => {
 			res.render('404', { url: req.url });
 			return;
 		});
+})
+
+router.get('/:eventID/followers', (req, res) => {
+  const eventID = req.params.eventID;
+	Event.findOne({
+		id: eventID
+		})
+		.then((event) => {
+			if (event) {
+        console.log(event.followers);
+        const followers = event.followers.map(el => el.account);
+        console.log(followers)
+        let followersCollection = {
+          "type": "OrderedCollection",
+          "totalItems": followers.length,
+          "id": `https://${domain}/${eventID}/followers`,
+          "first": {
+            "type": "OrderedCollectionPage",
+            "totalItems": followers.length,
+            "partOf": `https://${domain}/${eventID}/followers`,
+            "orderedItems": followers,
+            "id": `https://${domain}/${eventID}/followers?page=1`
+          },
+          "@context":["https://www.w3.org/ns/activitystreams"]
+        };
+        return res.json(followersCollection);
+      }
+      else {
+        return res.status(400).send('Bad request.');
+      }
+    })
 })
 
 router.get('/group/:eventGroupID', (req, res) => {
@@ -1293,6 +1373,76 @@ router.post('/deletecomment/:eventID/:commentID/:editToken', (req, res) => {
 		}
 	})
 	.catch((err) => { res.send('Sorry! Something went wrong: ' + err); addToLog("deleteComment", "error", "Attempt to delete comment " + req.params.commentID + "from event " + req.params.eventID + " failed with error: " + err);});
+});
+
+router.post('/activitypub/inbox', (req, res) => {
+  console.log('got a inbox message')
+  const myURL = new URL(req.body.actor);
+  let targetDomain = myURL.hostname;
+	// if a Follow activity hits the inbox
+  if (typeof req.body.object === 'string' && req.body.type === 'Follow') {
+    console.log('follow!')
+    let eventID = req.body.object.replace(`https://${domain}/`,'');
+    sendAcceptMessage(req.body, eventID, domain, req, res, targetDomain);
+    // Add the user to the DB of accounts that follow the account
+    console.log(req.body)
+
+    const newFollower = {
+      account: req.body.actor,
+      followId: req.body.id
+    };
+
+    Event.findOne({
+      id: eventID,
+      }, function(err,event) {
+      console.log(event.followers)
+      // if this account is NOT already in our followers list, add it
+      if (!event.followers.map(el => el.account).includes(req.body.actor)) {
+        event.followers.push(newFollower);
+        console.log(event.followers)
+        event.save()
+        .then(() => {
+          addToLog("addEventFollower", "success", "Follower added to event " + eventID);
+          console.log('successful follower add')
+        })
+        .catch((err) => { res.send('Database error, please try again :('); addToLog("addEventFollower", "error", "Attempt to add follower to event " + eventID + " failed with error: " + err); 
+          console.log('error', err)
+        });
+      }
+    });
+  }
+	// if an Undo activity with a Follow object hits the inbox
+  if (req.body && req.body.type === 'Undo' && req.body.object && req.body.object.type === 'Follow') {
+    console.log('undo follow!')
+    console.log(req.body)
+    // get the record of all followers for this account
+    let eventID = req.body.object.object.replace(`https://${domain}/`,'');
+    Event.findOne({
+      id: eventID,
+      }, function(err,event) {
+        // check to see if the Follow object's id matches the id we have on record
+        console.log(event.followers)
+        // is this even someone who follows us
+        const indexOfFollower = event.followers.findIndex(el => {console.log(el.account, req.body.object.actor); return el.account === req.body.object.actor;});
+        console.log(indexOfFollower)
+        if (indexOfFollower !== -1) {
+          // does the id we have match the id we are being given
+          if (event.followers[indexOfFollower].followId === req.body.object.id) {
+            // we have a match and can trust the Undo! remove this person from the followers list
+            event.followers.splice(indexOfFollower, 1);
+            console.log('new', indexOfFollower, event.followers);
+            event.save()
+            .then(() => {
+              addToLog("removeEventFollower", "success", "Follower removed from event " + eventID);
+              console.log('successful follower removal')
+            })
+            .catch((err) => { res.send('Database error, please try again :('); addToLog("removeEventFollower", "error", "Attempt to remove follower from event " + eventID + " failed with error: " + err); 
+              console.log('error', err)
+            });
+          }
+        }
+    });
+  }
 });
 
 router.use(function(req, res, next){
