@@ -173,12 +173,41 @@ function sendAcceptMessage(thebody, eventID, domain, req, res, targetDomain) {
     'actor': `https://${domain}/${eventID}`,
     'object': thebody,
   };
-  signAndSend(message, eventID, domain, req, res, targetDomain);
-}
-
-function signAndSend(message, eventID, domain, req, res, targetDomain) { 
   // get the URI of the actor object and append 'inbox' to it
   let inbox = message.object.actor+'/inbox';
+  signAndSend(message, eventID, domain, req, res, targetDomain, inbox);
+}
+
+function rawMessage(json, eventID, domain, follower) {
+  const guidCreate = crypto.randomBytes(16).toString('hex');
+  const guidNote = crypto.randomBytes(16).toString('hex');
+  // let db = req.app.get('db');
+  let d = new Date();
+
+  let rawMessagePayload = json;
+
+  rawMessagePayload.published = d.toISOString();
+  rawMessagePayload.attributedTo = `https://${domain}/${eventID}`;
+  rawMessagePayload.to = [follower];
+  rawMessagePayload.id = `https://${domain}/m/${guidNote}`;
+  rawMessagePayload.content = unescape(rawMessagePayload.content)
+
+  let createMessage = {
+    '@context': 'https://www.w3.org/ns/activitystreams',
+    'id': `https://${domain}/m/${guidCreate}`,
+    'type': 'Create',
+    'actor': `https://${domain}/${eventID}`,
+    'to': [follower],
+    'object': rawMessagePayload
+  };
+
+  //db.prepare('insert or replace into messages(guid, message) values(?, ?)').run( guidCreate, JSON.stringify(createMessage));
+  //db.prepare('insert or replace into messages(guid, message) values(?, ?)').run( guidNote, JSON.stringify(rawMessagePayload));
+
+  return createMessage;
+}
+
+function signAndSend(message, eventID, domain, req, res, targetDomain, inbox) { 
   let inboxFragment = inbox.replace('https://'+targetDomain,'');
   // get the private key
 	Event.findOne({
@@ -1377,12 +1406,14 @@ router.post('/deletecomment/:eventID/:commentID/:editToken', (req, res) => {
 
 router.post('/activitypub/inbox', (req, res) => {
   console.log('got a inbox message')
+  console.log(req.body);
   const myURL = new URL(req.body.actor);
   let targetDomain = myURL.hostname;
 	// if a Follow activity hits the inbox
   if (typeof req.body.object === 'string' && req.body.type === 'Follow') {
     console.log('follow!')
     let eventID = req.body.object.replace(`https://${domain}/`,'');
+    // Accept the follow request
     sendAcceptMessage(req.body, eventID, domain, req, res, targetDomain);
     // Add the user to the DB of accounts that follow the account
     console.log(req.body)
@@ -1403,7 +1434,28 @@ router.post('/activitypub/inbox', (req, res) => {
         event.save()
         .then(() => {
           addToLog("addEventFollower", "success", "Follower added to event " + eventID);
-          console.log('successful follower add')
+          console.log('successful follower add');
+          // send a Question to the new follower
+					let inbox = req.body.actor+'/inbox';
+					let myURL = new URL(req.body.actor);
+					let targetDomain = myURL.hostname;
+          const jsonObject = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "id": "http://polls.example.org/question/1",
+            "name": `RSVP to ${event.name}`,
+            "type": "Question",
+             "content": `Will you attend ${event.name}?`,
+             "oneOf": [
+               {"type":"Note","name": "Yes"},
+               {"type":"Note","name": "No"},
+               {"type":"Note","name": "Maybe"}
+             ],
+            "endTime":event.start.toISOString()
+          }
+					let message = rawMessage(jsonObject, eventID, domain, req.body.actor);
+          console.log('!!!!!!!!! sending')
+          console.log(message)
+					signAndSend(message, eventID, domain, req, res, targetDomain, inbox);
         })
         .catch((err) => { res.send('Database error, please try again :('); addToLog("addEventFollower", "error", "Attempt to add follower to event " + eventID + " failed with error: " + err); 
           console.log('error', err)
