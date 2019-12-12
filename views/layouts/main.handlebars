@@ -18,13 +18,13 @@
 		<meta property="og:image:height" content="260">
 		<meta property="og:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
 		<meta property="og:title" content="{{#if metadata.title}}{{metadata.title}} &middot; gathio{{else}}gathio{{/if}}">
-		<meta property="og:url" content="{{#if metadata.url}}{{metadata.url}}{{else}}https://gath.io/{{/if}}">
-		<meta property="og:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}http://gath.io/og-image.jpg{{/if}}">
+		<meta property="og:url" content="{{#if metadata.url}}{{metadata.url}}{{else}}https://{{domain}}/{{/if}}">
+		<meta property="og:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}http://{{domain}}/og-image.jpg{{/if}}">
 
 		<meta name="twitter:card" content="summary">
 		<meta name="twitter:title" content="{{#if metadata.title}}{{metadata.title}} &middot; gathio{{else}}gathio{{/if}}">
 		<meta name="twitter:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
-		<meta name="twitter:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}http://gath.io/og-image.jpg{{/if}}">
+		<meta name="twitter:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}http://{{domain}}/og-image.jpg{{/if}}">
 
 
 		<title>{{#if title}}{{title}} &middot; {{/if}}gathio</title>
@@ -73,7 +73,7 @@
 					</div>
 					<div id="footerContainer">
 						<small class="text-muted">
-							<a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="http://raphaelkabo.com">Raphael</a> &middot; Need help? <a href="mailto:support@gath.io">Email us</a>.<br />
+							<a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="http://raphaelkabo.com">Raphael</a> &middot; Need help? <a href="mailto:{{email}}">Email us</a>.<br />
 							If you like gathio, you might like <strong><a href="http://sweet.sh/" style="color:#ed5e5e;">sweet</a></strong>, my utopian social network.
 						</small>
 					</div>

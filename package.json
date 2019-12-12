@@ -20,6 +20,7 @@
     "express-jwt": "^5.3.1",
     "express-session": "^1.15.6",
     "express-validator": "^5.3.0",
+    "generate-rsa-keypair": "^0.2.1",
     "greenlock": "^2.6.7",
     "greenlock-express": "^2.6.7",
     "ical": "^0.6.0",

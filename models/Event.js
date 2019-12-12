@@ -159,7 +159,19 @@ const EventSchema = new mongoose.Schema({
 	maxAttendees: {
 		type: Number
 	},
-	comments: [CommentSchema]
+	comments: [CommentSchema],
+  activityPubActor: {
+    type: String,
+    trim: true
+  },
+  publicKey: {
+    type: String,
+    trim: true
+  },
+  privateKey: {
+    type: String,
+    trim: true
+  }
 });
 
 module.exports = mongoose.model('Event', EventSchema);

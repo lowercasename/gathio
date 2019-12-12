@@ -20,6 +20,11 @@ var moment = require('moment-timezone');
 
 const marked = require('marked');
 
+const generateRSAKeypair = require('generate-rsa-keypair');
+
+const domain = require('./config/domain.js').domain;
+const contactEmail = require('./config/domain.js').email;
+
 // Extra marked renderer (used to render plaintext event description for page metadata)
 // Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
 // &#63; to ? helper
@@ -121,10 +126,49 @@ const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
 });
 
 
+// ACTIVITYPUB HELPER FUNCTIONS
+function createWebfinger(eventID, domain) {
+  return {
+    'subject': `acct:${eventID}@${domain}`,
+
+    'links': [
+      {
+        'rel': 'self',
+        'type': 'application/activity+json',
+        'href': `https://${domain}/${eventID}`
+      }
+    ]
+  };
+}
+
+function createActivityPubActor(eventID, domain, pubkey) {
+  return JSON.stringify({
+    '@context': [
+      'https://www.w3.org/ns/activitystreams',
+      'https://w3id.org/security/v1'
+    ],
+
+    'id': `https://${domain}/u/${eventID}`,
+    'type': 'Person',
+    'preferredUsereventID': `${eventID}`,
+    'inbox': `https://${domain}/api/inbox`,
+    'followers': `https://${domain}/u/${eventID}/followers`,
+
+    'publicKey': {
+      'id': `https://${domain}/u/${eventID}#main-key`,
+      'owner': `https://${domain}/u/${eventID}`,
+      'publicKeyPem': pubkey
+    }
+  });
+}
+
 // FRONTEND ROUTES
 
 router.get('/', (req, res) => {
-  res.render('home');
+  res.render('home', {
+    domain: domain,
+    email: contactEmail,
+  });
 });
 
 router.get('/new', (req, res) => {
@@ -173,6 +217,48 @@ router.get('/new/event/public', (req, res) => {
 		eventType: 'public'
 	});
 })
+
+router.get('/.well-known/webfinger', (req, res) => {
+  console.log(req.query);
+  let resource = req.query.resource;
+  if (!resource || !resource.includes('acct:')) {
+    return res.status(400).send('Bad request. Please make sure "acct:USER@DOMAIN" is what you are sending as the "resource" query parameter.');
+  }
+  else {
+    // "foo@domain"
+    let activityPubAccount = resource.replace('acct:','');
+    // "foo"
+    let eventID = activityPubAccount.replace(/@.*/,'');
+    console.log(eventID);
+    Event.findOne({
+      id: eventID
+    })
+    .then((event) => {
+      if (!event) {
+        res.status(404);
+        res.render('404', { url: req.url });
+      }
+      else {
+        res.json(createWebfinger(eventID, domain));
+      }
+    })
+		.catch((err) => {
+			addToLog("renderWebfinger", "error", "Attempt to render webfinger for " + req.params.eventID + " failed with error: " + err);
+			console.log(err)
+			res.status(404);
+			res.render('404', { url: req.url });
+			return;
+		});
+    //let db = req.app.get('db');
+    //let result = db.prepare('select webfinger from accounts where name = ?').get(name);
+    //if (result === undefined) {
+    //  return res.status(404).send(`No record found for ${name}.`);
+    //}
+    //else {
+    //  res.json(JSON.parse(result.webfinger));
+    //}
+  }
+});
 
 router.get('/:eventID', (req, res) => {
 	Event.findOne({
@@ -256,34 +342,51 @@ router.get('/:eventID', (req, res) => {
 				let metadata = {
 					title: event.name,
 					description: marked(event.description, { renderer: render_plain()}).split(" ").splice(0,40).join(" ").trim(),
-					image: (eventHasCoverImage ? 'https://gath.io/events/' + event.image : null),
-					url: 'https://gath.io/' + req.params.eventID
+					image: (eventHasCoverImage ? `https://${domain}/events/` + event.image : null),
+					url: `https://${domain}/` + req.params.eventID
 				};
-				res.set("X-Robots-Tag", "noindex");
-				res.render('event', {
-					title: event.name,
-					escapedName: escapedName,
-					eventData: event,
-					eventAttendees: eventAttendees,
-                    spotsRemaining: spotsRemaining,
-                    noMoreSpots: noMoreSpots,
-					eventStartISO: eventStartISO,
-					eventEndISO: eventEndISO,
-					parsedLocation: parsedLocation,
-					parsedStart: parsedStart,
-					parsedEnd: parsedEnd,
-					displayDate: displayDate,
-					fromNow: fromNow,
-					timezone: event.timezone,
-					parsedDescription: parsedDescription,
-					editingEnabled: editingEnabled,
-					eventHasCoverImage: eventHasCoverImage,
-					eventHasHost: eventHasHost,
-					firstLoad: firstLoad,
-					eventHasConcluded: eventHasConcluded,
-					eventHasBegun: eventHasBegun,
-					metadata: metadata,
-				})
+ /////////////////////
+        if (req.headers.accept && (req.headers.accept.includes('application/activity+json') || req.headers.accept.includes('application/json') || req.headers.accept.includes('application/json+ld'))) {
+          res.json(JSON.parse(event.activityPubActor));
+
+          //let tempActor = JSON.parse(result.actor);
+          //// Added this followers URI for Pleroma compatibility, see https://github.com/dariusk/rss-to-activitypub/issues/11#issuecomment-471390881
+          //// New Actors should have this followers URI but in case of migration from an old version this will add it in on the fly
+          //if (tempActor.followers === undefined) {
+          //  tempActor.followers = `https://${domain}/u/${username}/followers`;
+          //}
+          //res.json(tempActor);
+        }
+     /////////////////
+        else {
+          res.set("X-Robots-Tag", "noindex");
+          res.render('event', {
+            domain: domain,
+            email: contactEmail,
+            title: event.name,
+            escapedName: escapedName,
+            eventData: event,
+            eventAttendees: eventAttendees,
+                      spotsRemaining: spotsRemaining,
+                      noMoreSpots: noMoreSpots,
+            eventStartISO: eventStartISO,
+            eventEndISO: eventEndISO,
+            parsedLocation: parsedLocation,
+            parsedStart: parsedStart,
+            parsedEnd: parsedEnd,
+            displayDate: displayDate,
+            fromNow: fromNow,
+            timezone: event.timezone,
+            parsedDescription: parsedDescription,
+            editingEnabled: editingEnabled,
+            eventHasCoverImage: eventHasCoverImage,
+            eventHasHost: eventHasHost,
+            firstLoad: firstLoad,
+            eventHasConcluded: eventHasConcluded,
+            eventHasBegun: eventHasBegun,
+            metadata: metadata,
+          })
+        }
 			}
 			else {
 				res.status(404);
@@ -375,11 +478,12 @@ router.get('/group/:eventGroupID', (req, res) => {
 				let metadata = {
 					title: eventGroup.name,
 					description: marked(eventGroup.description, { renderer: render_plain()}).split(" ").splice(0,40).join(" ").trim(),
-					image: (eventGroupHasCoverImage ? 'https://gath.io/events/' + eventGroup.image : null),
-					url: 'https://gath.io/' + req.params.eventID
+					image: (eventGroupHasCoverImage ? `https://${domain}/events/` + eventGroup.image : null),
+					url: `https://${domain}/` + req.params.eventID
 				};
 				res.set("X-Robots-Tag", "noindex");
 				res.render('eventgroup', {
+          domain: domain,
 					title: eventGroup.name,
 					eventGroupData: eventGroup,
 					escapedName: escapedName,
@@ -445,6 +549,10 @@ router.post('/newevent', async (req, res) => {
 			isPartOfEventGroup = true;
 		}
 	}
+
+  // generate RSA keypair for ActivityPub
+  let pair = generateRSAKeypair();
+
 	const event = new Event({
 		id: eventID,
 		type: req.body.eventType,
@@ -466,7 +574,10 @@ router.post('/newevent', async (req, res) => {
 		showUsersList: req.body.guestlistCheckbox ? true : false,
 		usersCanComment: req.body.interactionCheckbox ? true : false,
         maxAttendees: req.body.maxAttendees,
-		firstLoad: true
+		firstLoad: true,
+    activityPubActor: createActivityPubActor(eventID, domain, pair.public),
+    publicKey: pair.public,
+    privateKey: pair.private
 	});
 	event.save()
 		.then((event) => {
@@ -477,7 +588,7 @@ router.post('/newevent', async (req, res) => {
 					to: req.body.creatorEmail,
 					from: {
 						name: 'Gathio',
-						email: 'notifications@gath.io',
+						email: contactEmail,
 					},
 					templateId: 'd-00330b8278ab463e9f88c16566487d97',
 					dynamic_template_data: {
@@ -547,7 +658,7 @@ router.post('/importevent', (req, res) => {
 						to: creatorEmail,
 						from: {
 							name: 'Gathio',
-							email: 'notifications@gath.io',
+							email: contactEmail,
 						},
 						templateId: 'd-00330b8278ab463e9f88c16566487d97',
 						dynamic_template_data: {
@@ -609,7 +720,7 @@ router.post('/neweventgroup', (req, res) => {
 					to: req.body.creatorEmail,
 					from: {
 						name: 'Gathio',
-						email: 'notifications@gath.io',
+						email: contactEmail,
 					},
 					templateId: 'd-4c5ddcb34ac44ec5b2313c6da4e405f3',
 					dynamic_template_data: {
@@ -701,7 +812,7 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 								to: attendeeEmails,
 								from: {
 									name: 'Gathio',
-									email: 'notifications@gath.io',
+									email: contactEmail,
 								},
 								templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
 								dynamic_template_data: {
@@ -781,7 +892,7 @@ router.post('/editeventgroup/:eventGroupID/:editToken', (req, res) => {
 				// 				to: attendeeEmails,
 				// 				from: {
 				// 					name: 'Gathio',
-				// 					email: 'notifications@gath.io',
+				// 					email: contactEmail,
 				// 				},
 				// 				templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
 				// 				dynamic_template_data: {
@@ -837,7 +948,7 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 							to: attendeeEmails,
 							from: {
 								name: 'Gathio',
-								email: 'notifications@gath.io',
+								email: contactEmail,
 							},
 							templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
 							dynamic_template_data: {
@@ -964,7 +1075,7 @@ router.post('/attendevent/:eventID', (req, res) => {
 						to: req.body.attendeeEmail,
 						from: {
 							name: 'Gathio',
-							email: 'notifications@gath.io',
+							email: contactEmail,
 						},
 						templateId: 'd-977612474bba49c48b58e269f04f927c',
 						dynamic_template_data: {
@@ -999,7 +1110,7 @@ router.post('/unattendevent/:eventID', (req, res) => {
 					to: req.body.attendeeEmail,
 					from: {
 						name: 'Gathio',
-						email: 'notifications@gath.io',
+						email: contactEmail,
 					},
 					templateId: 'd-56c97755d6394c23be212fef934b0f1f',
 					dynamic_template_data: {
@@ -1034,7 +1145,7 @@ router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
 					to: req.body.attendeeEmail,
 					from: {
 						name: 'Gathio',
-						email: 'notifications@gath.io',
+						email: contactEmail,
 					},
 					templateId: 'd-f8ee9e1e2c8a48e3a329d1630d0d371f',
 					dynamic_template_data: {
@@ -1080,7 +1191,7 @@ router.post('/post/comment/:eventID', (req, res) => {
 							to: attendeeEmails,
 							from: {
 								name: 'Gathio',
-								email: 'notifications@gath.io',
+								email: contactEmail,
 							},
 							templateId: 'd-756d078561e047aba307155f02b6686d',
 							dynamic_template_data: {
@@ -1131,7 +1242,7 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 								to: attendeeEmails,
 								from: {
 									name: 'Gathio',
-									email: 'notifications@gath.io',
+									email: contactEmail,
 								},
 								templateId: 'd-756d078561e047aba307155f02b6686d',
 								dynamic_template_data: {
