@@ -148,15 +148,15 @@ function createActivityPubActor(eventID, domain, pubkey) {
       'https://w3id.org/security/v1'
     ],
 
-    'id': `https://${domain}/u/${eventID}`,
+    'id': `https://${domain}/${eventID}`,
     'type': 'Person',
-    'preferredUsereventID': `${eventID}`,
+    'preferredUsername': `${eventID}`,
     'inbox': `https://${domain}/api/inbox`,
-    'followers': `https://${domain}/u/${eventID}/followers`,
+    'followers': `https://${domain}/${eventID}/followers`,
 
     'publicKey': {
-      'id': `https://${domain}/u/${eventID}#main-key`,
-      'owner': `https://${domain}/u/${eventID}`,
+      'id': `https://${domain}/${eventID}#main-key`,
+      'owner': `https://${domain}/${eventID}`,
       'publicKeyPem': pubkey
     }
   });
