@@ -144,7 +144,7 @@ function createWebfinger(eventID, domain) {
   };
 }
 
-function createActivityPubActor(eventID, domain, pubkey, description, name, location, imageFilename) {
+function createActivityPubActor(eventID, domain, pubkey, description, name, location, imageFilename, startUTC, endUTC, timezone) {
   let actor = {
     '@context': [
       'https://www.w3.org/ns/activitystreams',
@@ -156,7 +156,7 @@ function createActivityPubActor(eventID, domain, pubkey, description, name, loca
     'preferredUsername': `${eventID}`,
     'inbox': `https://${domain}/activitypub/inbox`,
     'followers': `https://${domain}/${eventID}/followers`,
-    'summary': description,
+    'summary': `<p>${description}</p>`,
     'name': name,
 
     'publicKey': {
@@ -166,7 +166,34 @@ function createActivityPubActor(eventID, domain, pubkey, description, name, loca
     }
   };
   if (location) {
-    actor.summary += ` Location: ${location}.`
+    actor.summary += `<p>Location: ${location}.</p>`
+  }
+  let displayDate;
+  if (startUTC && timezone) {
+    displayDate = moment.tz(startUTC, timezone).format('D MMMM YYYY h:mm a');
+    actor.summary += `<p>Starting ${displayDate}.</p>`;
+  }
+  if (imageFilename) {
+    actor.icon = {
+      'type': 'Image',
+      'mediaType': 'image/jpg',
+      'url': `https://${domain}/events/${imageFilename}`,
+    };
+  }
+  return JSON.stringify(actor);
+}
+
+function updateActivityPubActor(actor, description, name, location, imageFilename, startUTC, endUTC, timezone) {
+  if (!actor) return;
+  actor.summary = `<p>${description}</p>`;
+  actor.name = name;
+  if (location) {
+    actor.summary += `<p>Location: ${location}.</p>`
+  }
+  let displayDate;
+  if (startUTC && timezone) {
+    displayDate = moment.tz(startUTC, timezone).format('D MMMM YYYY h:mm a');
+    actor.summary += `<p>Starting ${displayDate}.</p>`;
   }
   if (imageFilename) {
     actor.icon = {
@@ -301,6 +328,54 @@ function broadcastMessage(apObject, followers, eventID, callback) {
   } // end followers
 }
 
+function broadcastUpdateMessage(apObject, followers, eventID, callback) {
+  callback = callback || function() {};
+  let guidUpdate = crypto.randomBytes(16).toString('hex');
+  console.log('broadcasting update');
+  // iterate over followers
+  for (const follower of followers) {
+    let actorId = follower.actorId;
+    let myURL = new URL(actorId);
+    let targetDomain = myURL.hostname;
+    // get the inbox
+    Event.findOne({
+      id: eventID,
+      }, function(err, event) {
+      console.log('found the event for broadcast')
+      if (event) {
+        const follower = event.followers.find(el => el.actorId === actorId);
+        if (follower) {
+          const actorJson = JSON.parse(follower.actorJson);
+          const inbox = actorJson.inbox;
+          console.log('found the inbox for', actorId)
+          const createMessage = {
+            '@context': 'https://www.w3.org/ns/activitystreams',
+            'id': `https://${domain}/m/${guidUpdate}`,
+            'type': 'Update',
+            'actor': `https://${domain}/${eventID}`,
+            'object': apObject
+          };
+          console.log('UPDATE')
+          console.log(JSON.stringify(createMessage));
+          signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
+            if (err) {
+              console.log(`Didn't sent to ${actorId}, status ${status} with error ${err}`);
+            }
+            else {
+              console.log('sent to', actorId);
+            }
+          });
+        }
+        else {
+          callback(`No follower found with the id ${actorId}`, null, 404);
+        }
+      }
+      else {
+        callback(`No event found with the id ${eventID}`, null, 404);
+      }
+    });
+  } // end followers
+}
 function signAndSend(message, eventID, targetDomain, inbox, callback) {
   let inboxFragment = inbox.replace('https://'+targetDomain,'');
   // get the private key
@@ -803,7 +878,7 @@ router.post('/newevent', async (req, res) => {
 		usersCanComment: req.body.interactionCheckbox ? true : false,
         maxAttendees: req.body.maxAttendees,
 		firstLoad: true,
-    activityPubActor: createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename),
+    activityPubActor: createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename, req.body.startUTC, req.body.endUTC, req.body.timezone),
     publicKey: pair.public,
     privateKey: pair.private
 	});
@@ -1021,7 +1096,8 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				showUsersList: req.body.guestlistCheckbox ? true : false,
 				usersCanComment: req.body.interactionCheckbox ? true : false,
                 maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
-				eventGroup: isPartOfEventGroup ? eventGroup._id : null
+				eventGroup: isPartOfEventGroup ? eventGroup._id : null,
+        activityPubActor: updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone)
 			}
       let diffText = '<p>This event was just updated with new information.</p><ul>';
       let displayDate;
@@ -1068,6 +1144,11 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
                "content": `${diffText} See here: <a href="https://${domain}/${req.params.eventID}">https://${domain}/${req.params.eventID}</a>`,
             }
             broadcastMessage(jsonObject, event.followers, eventID)
+            // also broadcast an Update profile message to all followers so that at least Mastodon servers will update the local profile information
+            const guidUpdateObject = crypto.randomBytes(16).toString('hex');
+            const jsonUpdateObject = JSON.parse(event.activityPubActor);
+            broadcastUpdateMessage(jsonUpdateObject, event.followers, eventID)
+
             // DM to attendees
             for (const attendee of attendees) {
                 const jsonObject = {
@@ -1672,7 +1753,7 @@ function processInbox(req, res) {
                       "@context": "https://www.w3.org/ns/activitystreams",
                       "name": `RSVP to ${event.name}`,
                       "type": "Question",
-                       "content": `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}?`,
+                       "content": `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}? (If you reply "Yes", you'll be listed as an attendee on the event page.)`,
                        "oneOf": [
                          {"type":"Note","name": "Yes"},
                          {"type":"Note","name": "No"},
@@ -1840,18 +1921,17 @@ function processInbox(req, res) {
     console.log('create note!!')
     // figure out what this is in reply to -- it should be addressed specifically to us
     let {name, attributedTo, inReplyTo, to, cc} = req.body.object;
-    // if it's an array just grab the first element, since a poll should only broadcast back to the pollster
-    if (Array.isArray(to)) {
-      to = to[0];
-    }
-
     // normalize cc into an array
     if (typeof cc === 'string') {
       cc = [cc];
     }
+    // normalize to into an array
+    if (typeof to === 'string') {
+      to = [to];
+    }
     
     // if this is a public message (in the to or cc fields)
-    if (to === 'https://www.w3.org/ns/activitystreams#Public' || (Array.isArray(cc) && cc.includes('https://www.w3.org/ns/activitystreams#Public'))) {
+    if (to.includes('https://www.w3.org/ns/activitystreams#Public') || (Array.isArray(cc) && cc.includes('https://www.w3.org/ns/activitystreams#Public'))) {
       // figure out which event(s) of ours it was addressing
       ourEvents = cc.filter(el => el.includes(`https://${domain}/`))
                     .map(el => el.replace(`https://${domain}/`,''));
