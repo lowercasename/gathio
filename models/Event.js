@@ -12,18 +12,33 @@ const Attendees = new mongoose.Schema({
 	email: {
 		type: String,
 		trim: true
-	}
+	},
+  id: {
+		type: String,
+		trim: true
+  }
 })
 
 const Followers = new mongoose.Schema({
+  // this is the id of the original follow *request*, which we use to validate Undo events
   followId: {
 		type: String,
 		trim: true
   },
-	account: {
+  // this is the actual remote user profile id
+	actorId: {
 		type: String,
 		trim: true
-	}
+	},
+  // this is the stringified JSON of the entire user profile
+	actorJson: {
+		type: String,
+		trim: true
+	},
+  name: {
+		type: String,
+		trim: true
+  },
 }, {_id: false})
 
 const ReplySchema = new mongoose.Schema({
@@ -45,6 +60,20 @@ const ReplySchema = new mongoose.Schema({
 	},
 	timestamp: {
 		type: Date,
+		trim: true,
+		required: true
+	}
+})
+
+const ActivityPubMessages = new mongoose.Schema({
+	id: {
+		type: String,
+		required: true,
+		unique: true,
+		sparse: true
+	},
+	content: {
+		type: String,
 		trim: true,
 		required: true
 	}
@@ -72,6 +101,22 @@ const CommentSchema = new mongoose.Schema({
 		trim: true,
 		required: true
 	},
+  activityJson: {
+		type: String,
+		trim: true
+  },
+  actorJson: {
+		type: String,
+		trim: true
+  },
+  activityId: {
+		type: String,
+		trim: true
+  },
+  actorId: {
+		type: String,
+		trim: true
+  },
 	replies: [ReplySchema]
 })
 
@@ -184,6 +229,7 @@ const EventSchema = new mongoose.Schema({
     trim: true
   },
 	followers: [Followers],
+  activityPubMessages: [ActivityPubMessages]
 });
 
 module.exports = mongoose.model('Event', EventSchema);

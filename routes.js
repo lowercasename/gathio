@@ -26,6 +26,7 @@ const request = require('request');
 
 const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
+var sanitizeHtml = require('sanitize-html');
 
 // Extra marked renderer (used to render plaintext event description for page metadata)
 // Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
@@ -143,8 +144,8 @@ function createWebfinger(eventID, domain) {
   };
 }
 
-function createActivityPubActor(eventID, domain, pubkey) {
-  return JSON.stringify({
+function createActivityPubActor(eventID, domain, pubkey, description, name, location, imageFilename) {
+  let actor = {
     '@context': [
       'https://www.w3.org/ns/activitystreams',
       'https://w3id.org/security/v1'
@@ -155,17 +156,32 @@ function createActivityPubActor(eventID, domain, pubkey) {
     'preferredUsername': `${eventID}`,
     'inbox': `https://${domain}/activitypub/inbox`,
     'followers': `https://${domain}/${eventID}/followers`,
+    'summary': description,
+    'name': name,
 
     'publicKey': {
       'id': `https://${domain}/${eventID}#main-key`,
       'owner': `https://${domain}/${eventID}`,
       'publicKeyPem': pubkey
     }
-  });
+  };
+  if (location) {
+    actor.summary += ` Location: ${location}.`
+  }
+  if (imageFilename) {
+    actor.icon = {
+      'type': 'Image',
+      'mediaType': 'image/jpg',
+      'url': `https://${domain}/events/${imageFilename}`,
+    };
+  }
+  return JSON.stringify(actor);
 }
 
-function sendAcceptMessage(thebody, eventID, domain, req, res, targetDomain) {
+function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
+  callback = callback || function() {};
   const guid = crypto.randomBytes(16).toString('hex');
+  const actorId = thebody.actor;
   let message = {
     '@context': 'https://www.w3.org/ns/activitystreams',
     'id': `https://${domain}/${guid}`,
@@ -173,41 +189,119 @@ function sendAcceptMessage(thebody, eventID, domain, req, res, targetDomain) {
     'actor': `https://${domain}/${eventID}`,
     'object': thebody,
   };
-  // get the URI of the actor object and append 'inbox' to it
-  let inbox = message.object.actor+'/inbox';
-  signAndSend(message, eventID, domain, req, res, targetDomain, inbox);
+  // get the inbox
+  Event.findOne({
+    id: eventID,
+    }, function(err, event) {
+    if (event) {
+      const follower = event.followers.find(el => el.actorId === actorId);
+      if (follower) {
+        const actorJson = JSON.parse(follower.actorJson);
+        const inbox = actorJson.inbox;
+        signAndSend(message, eventID, targetDomain, inbox, callback);
+      }
+    }
+    else {
+      callback(`Could not find event ${eventID}`, null, 404);
+    }
+  });
 }
 
-function rawMessage(json, eventID, domain, follower) {
+// this sends a message "to:" an individual fediverse user
+function sendDirectMessage(apObject, actorId, eventID, callback) {
+  callback = callback || function() {};
   const guidCreate = crypto.randomBytes(16).toString('hex');
-  const guidNote = crypto.randomBytes(16).toString('hex');
-  // let db = req.app.get('db');
+  const guidObject = crypto.randomBytes(16).toString('hex');
   let d = new Date();
 
-  let rawMessagePayload = json;
-
-  rawMessagePayload.published = d.toISOString();
-  rawMessagePayload.attributedTo = `https://${domain}/${eventID}`;
-  rawMessagePayload.to = [follower];
-  rawMessagePayload.id = `https://${domain}/m/${guidNote}`;
-  rawMessagePayload.content = unescape(rawMessagePayload.content)
+  apObject.published = d.toISOString();
+  apObject.attributedTo = `https://${domain}/${eventID}`;
+  apObject.to = actorId;
+  apObject.id = `https://${domain}/m/${guidObject}`;
+  apObject.content = unescape(apObject.content)
 
   let createMessage = {
     '@context': 'https://www.w3.org/ns/activitystreams',
     'id': `https://${domain}/m/${guidCreate}`,
     'type': 'Create',
     'actor': `https://${domain}/${eventID}`,
-    'to': [follower],
-    'object': rawMessagePayload
+    'to': [actorId],
+    'object': apObject
   };
 
-  //db.prepare('insert or replace into messages(guid, message) values(?, ?)').run( guidCreate, JSON.stringify(createMessage));
-  //db.prepare('insert or replace into messages(guid, message) values(?, ?)').run( guidNote, JSON.stringify(rawMessagePayload));
-
-  return createMessage;
+  let myURL = new URL(actorId);
+  let targetDomain = myURL.hostname;
+  // get the inbox
+  Event.findOne({
+    id: eventID,
+    }, function(err, event) {
+    if (event) {
+      const follower = event.followers.find(el => el.actorId === actorId);
+      if (follower) {
+        const actorJson = JSON.parse(follower.actorJson);
+        const inbox = actorJson.inbox;
+        signAndSend(createMessage, eventID, targetDomain, inbox, callback);
+      }
+      else {
+        callback(`No follower found with the id ${actorId}`, null, 404);
+      }
+    }
+    else {
+      callback(`No event found with the id ${eventID}`, null, 404);
+    }
+  });
 }
 
-function signAndSend(message, eventID, domain, req, res, targetDomain, inbox) { 
+// this function sends something to the timeline of every follower in the followers array
+function broadcastMessage(apObject, followers, eventID, callback) {
+  callback = callback || function() {};
+  let guidCreate = crypto.randomBytes(16).toString('hex');
+  console.log('broadcasting');
+  // iterate over followers
+  for (const follower of followers) {
+    let actorId = follower.actorId;
+    let myURL = new URL(actorId);
+    let targetDomain = myURL.hostname;
+    // get the inbox
+    Event.findOne({
+      id: eventID,
+      }, function(err, event) {
+      console.log('found the event for broadcast')
+      if (event) {
+        const follower = event.followers.find(el => el.actorId === actorId);
+        if (follower) {
+          const actorJson = JSON.parse(follower.actorJson);
+          const inbox = actorJson.inbox;
+          console.log('found the inbox for', actorId)
+          const createMessage = {
+            '@context': 'https://www.w3.org/ns/activitystreams',
+            'id': `https://${domain}/m/${guidCreate}`,
+            'type': 'Create',
+            'actor': `https://${domain}/${eventID}`,
+            'to': [actorId],
+            'object': apObject
+          };
+          signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
+            if (err) {
+              console.log(`Didn't sent to ${actorId}, status ${status} with error ${err}`);
+            }
+            else {
+              console.log('sent to', actorId);
+            }
+          });
+        }
+        else {
+          callback(`No follower found with the id ${actorId}`, null, 404);
+        }
+      }
+      else {
+        callback(`No event found with the id ${eventID}`, null, 404);
+      }
+    });
+  } // end followers
+}
+
+function signAndSend(message, eventID, targetDomain, inbox, callback) {
   let inboxFragment = inbox.replace('https://'+targetDomain,'');
   // get the private key
 	Event.findOne({
@@ -237,15 +331,37 @@ function signAndSend(message, eventID, domain, req, res, targetDomain, inbox) {
         }, function (error, response){
           if (error) {
             console.log('Error:', error, response.body);
+            callback(error, null, 500);
           }
           else {
-            console.log('Response:', response.body);
+            console.log('Response:', response.statusCode);
+            // Add the message to the database
+            const messageID = message.id;
+            const newMessage = {
+              id: message.id,
+              content: JSON.stringify(message)
+            };
+            Event.findOne({
+              id: eventID,
+              }, function(err,event) {
+              if (!event) return;
+              event.activityPubMessages.push(newMessage);
+              event.save()
+              .then(() => {
+                addToLog("addActivityPubMessage", "success", "ActivityPubMessage added to event " + eventID);
+                console.log('successful ActivityPubMessage add');
+                callback(null, message.id, 200);
+              })
+              .catch((err) => { addToLog("addActivityPubMessage", "error", "Attempt to add ActivityPubMessage to event " + eventID + " failed with error: " + err);
+                console.log('error', err)
+                callback(err, null, 500);
+              });
+            })
           }
         });
-        return res.status(200);
       }
       else {
-        return res.status(404).send(`No record found for ${eventID}.`);
+        callback(`No record found for ${eventID}.`, null, 404);
       }
     });
 }
@@ -411,7 +527,7 @@ router.get('/:eventID', (req, res) => {
 						console.log("No edit token set");
 					}
 					else {
-						if (req.query.e == eventEditToken){
+						if (req.query.e === eventEditToken){
 							editingEnabled = true;
 						}
 						else {
@@ -489,7 +605,7 @@ router.get('/:eventID/followers', (req, res) => {
 		.then((event) => {
 			if (event) {
         console.log(event.followers);
-        const followers = event.followers.map(el => el.account);
+        const followers = event.followers.map(el => el.actorId);
         console.log(followers)
         let followersCollection = {
           "type": "OrderedCollection",
@@ -556,7 +672,7 @@ router.get('/group/:eventGroupID', (req, res) => {
 				})
 
 				let upcomingEventsExist = false;
-				if (events.some(e => e.eventHasConcluded == false)) {
+				if (events.some(e => e.eventHasConcluded === false)) {
 					upcomingEventsExist = true;
 				}
 
@@ -576,7 +692,7 @@ router.get('/group/:eventGroupID', (req, res) => {
 						console.log("No edit token set");
 					}
 					else {
-						if (req.query.e == eventGroupEditToken){
+						if (req.query.e === eventGroupEditToken){
 							editingEnabled = true;
 						}
 						else {
@@ -632,10 +748,13 @@ router.get('/group/:eventGroupID', (req, res) => {
 
 router.post('/newevent', async (req, res) => {
 	let eventID = shortid.generate();
+  // this is a hack, activitypub does not like "-" in ids so we are essentially going
+  // to have a 63-character alphabet instead of a 64-character one
+  eventID = eventID.replace(/-/g,'_');
 	let editToken = randomstring.generate();
 	let eventImageFilename = "";
 	let isPartOfEventGroup = false;
-	if (req.files && Object.keys(req.files).length != 0) {
+	if (req.files && Object.keys(req.files).length !== 0) {
 		let eventImageBuffer = req.files.imageUpload.data;
 		Jimp.read(eventImageBuffer, (err, img) => {
 			if (err) addToLog("Jimp", "error", "Attempt to edit image failed with error: " + err);
@@ -684,7 +803,7 @@ router.post('/newevent', async (req, res) => {
 		usersCanComment: req.body.interactionCheckbox ? true : false,
         maxAttendees: req.body.maxAttendees,
 		firstLoad: true,
-    activityPubActor: createActivityPubActor(eventID, domain, pair.public),
+    activityPubActor: createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename),
     publicKey: pair.public,
     privateKey: pair.private
 	});
@@ -722,7 +841,7 @@ router.post('/newevent', async (req, res) => {
 router.post('/importevent', (req, res) => {
 	let eventID = shortid.generate();
 	let editToken = randomstring.generate();
-	if (req.files && Object.keys(req.files).length != 0) {
+	if (req.files && Object.keys(req.files).length !== 0) {
 		importediCalObject = ical.parseICS(req.files.icsImportControl.data.toString('utf8'));
 		for (var key in importediCalObject) {
     		importedEventData = importediCalObject[key];
@@ -744,7 +863,7 @@ router.post('/importevent', (req, res) => {
 			location: importedEventData.location,
 			start: importedEventData.start,
 			end: importedEventData.end,
-			timezone: typeof importedEventData.start.tz != 'undefined' ? importedEventData.start.tz : "Etc/UTC",
+			timezone: typeof importedEventData.start.tz !== 'undefined' ? importedEventData.start.tz : "Etc/UTC",
 			description: importedEventData.description,
 			image: '',
 			creatorEmail: creatorEmail,
@@ -798,7 +917,7 @@ router.post('/neweventgroup', (req, res) => {
 	let eventGroupID = shortid.generate();
 	let editToken = randomstring.generate();
 	let eventGroupImageFilename = "";
-	if (req.files && Object.keys(req.files).length != 0) {
+	if (req.files && Object.keys(req.files).length !== 0) {
 		let eventImageBuffer = req.files.imageUpload.data;
 		Jimp.read(eventImageBuffer, (err, img) => {
 			if (err) addToLog("Jimp", "error", "Attempt to edit image failed with error: " + err);
@@ -864,7 +983,7 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 			// If there is a new image, upload that first
 			let eventID = req.params.eventID;
 			let eventImageFilename = event.image;
-			if (req.files && Object.keys(req.files).length != 0) {
+			if (req.files && Object.keys(req.files).length !== 0) {
 				let eventImageBuffer = req.files.imageUpload.data;
 				Jimp.read(eventImageBuffer, (err, img) => {
 					if (err) throw err;
@@ -887,7 +1006,7 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				if (eventGroup) {
 					isPartOfEventGroup = true;
 				}
-			}			
+			}
 			const updatedEvent = {
 				name: req.body.eventName,
 				location: req.body.eventLocation,
@@ -904,6 +1023,28 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
                 maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
 				eventGroup: isPartOfEventGroup ? eventGroup._id : null
 			}
+      let diffText = '<p>This event was just updated with new information.</p><ul>';
+      let displayDate;
+      // TODO: send an Update Profile message if needed?
+      if (event.location !== updatedEvent.location) {
+        diffText += `<li>the location changed to ${updatedEvent.location}</li>`;
+      }
+      if (event.start.toISOString() !== updatedEvent.start.toISOString()) {
+        displayDate = moment.tz(updatedEvent.start, updatedEvent.timezone).format('dddd D MMMM YYYY h:mm a');
+        diffText += `<li>the start time changed to ${displayDate}</li>`;
+      }
+      if (event.end.toISOString() !== updatedEvent.end.toISOString()) {
+        displayDate = moment.tz(updatedEvent.end, updatedEvent.timezone).format('dddd D MMMM YYYY h:mm a');
+        diffText += `<li>the end time changed to ${displayDate}</li>`;
+      }
+      if (event.timezone !== updatedEvent.timezone) {
+        console.log(typeof event.timezone, JSON.stringify(event.timezone), JSON.stringify(updatedEvent.timezone))
+        diffText += `<li>the time zone changed to ${updatedEvent.timezone}</li>`;
+      }
+      if (event.description !== updatedEvent.description) {
+        diffText += `<li>the event description changed</li>`; 
+      }
+      diffText += `</ul>`;
 			Event.findOneAndUpdate({id: req.params.eventID}, updatedEvent, function(err, raw) {
 				if (err) {
 					addToLog("editEvent", "error", "Attempt to edit event " + req.params.eventID + " failed with error: " + err);
@@ -912,10 +1053,39 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 			})
 			.then(() => {
 				addToLog("editEvent", "success", "Event " + req.params.eventID + " edited");
+        // send update to ActivityPub subscribers
+        Event.findOne({id: req.params.eventID}, function(err,event) {
+          if (!event) return;
+          let attendees = event.attendees.filter(el => el.id);
+          if (!err) {
+            // broadcast an identical message to all followers, will show in home timeline
+            const guidObject = crypto.randomBytes(16).toString('hex');
+            const jsonObject = {
+              "@context": "https://www.w3.org/ns/activitystreams",
+              "id": `https://${domain}/m/${guidObject}`,
+              "name": `RSVP to ${event.name}`,
+              "type": "Note",
+               "content": `${diffText} See here: <a href="https://${domain}/${req.params.eventID}">https://${domain}/${req.params.eventID}</a>`,
+            }
+            broadcastMessage(jsonObject, event.followers, eventID)
+            // DM to attendees
+            for (const attendee of attendees) {
+                const jsonObject = {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "name": `RSVP to ${event.name}`,
+                "type": "Note",
+                "content": `<span class=\"h-card\"><a href="${attendee.id}" class="u-url mention">@<span>${attendee.name}</span></a></span> ${diffText} See here: <a href="https://${domain}/${req.params.eventID}">https://${domain}/${req.params.eventID}</a>`,
+                "tag":[{"type":"Mention","href":attendee.id,"name":attendee.name}]
+              }
+              // send direct message to user
+              sendDirectMessage(jsonObject, attendee.id, eventID);
+            }
+          }
+        })
 				if (sendEmails) {
 					Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
 						attendeeEmails = ids;
-						if (!error && attendeeEmails != ""){
+						if (!error && attendeeEmails !== ""){
 							console.log("Sending emails to: " + attendeeEmails);
 							const msg = {
 								to: attendeeEmails,
@@ -966,7 +1136,7 @@ router.post('/editeventgroup/:eventGroupID/:editToken', (req, res) => {
 			// If there is a new image, upload that first
 			let eventGroupID = req.params.eventGroupID;
 			let eventGroupImageFilename = eventGroup.image;
-			if (req.files && Object.keys(req.files).length != 0) {
+			if (req.files && Object.keys(req.files).length !== 0) {
 				let eventImageBuffer = req.files.eventGroupImageUpload.data;
 				Jimp.read(eventImageBuffer, (err, img) => {
 					if (err) throw err;
@@ -1174,6 +1344,7 @@ router.post('/attendevent/:eventID', (req, res) => {
 	Event.findOne({
 		id: req.params.eventID,
 		}, function(err,event) {
+    if (!event) return;
 		event.attendees.push(newAttendee);
 		event.save()
 		.then(() => {
@@ -1287,6 +1458,7 @@ router.post('/post/comment/:eventID', (req, res) => {
 	Event.findOne({
 		id: req.params.eventID,
 		}, function(err,event) {
+    if (!event) return;
 		event.comments.push(newComment);
 		event.save()
 		.then(() => {
@@ -1337,6 +1509,7 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 	Event.findOne({
 		id: req.params.eventID,
 		}, function(err,event) {
+      if (!event) return;
 			var parentComment = event.comments.id(commentID);
 			parentComment.replies.push(newReply);
 			event.save()
@@ -1405,86 +1578,149 @@ router.post('/deletecomment/:eventID/:commentID/:editToken', (req, res) => {
 });
 
 router.post('/activitypub/inbox', (req, res) => {
-  console.log('got a inbox message')
-  console.log(req.body);
-  const myURL = new URL(req.body.actor);
-  let targetDomain = myURL.hostname;
+  console.log('got an inbox message of type', req.body.type, req.body)
+
+  // validate the incoming message
+  const signature = req.get('Signature');
+  let signature_header = signature.split(',').map(pair => {
+    return pair.split('=').map(value => {
+      return value.replace(/^"/g, '').replace(/"$/g, '') 
+    });
+  }).reduce((acc, el) => {
+    acc[el[0]] = el[1];
+    return acc;
+  }, {});
+
+  // get the actor
+  request({
+    url: signature_header.keyId,
+    headers: {
+      'Accept': 'application/activity+json',
+      'Content-Type': 'application/activity+json'
+    }}, function (error, response, actor) {
+    publicKey = JSON.parse(actor).publicKey.publicKeyPem;
+
+    let comparison_string = signature_header.headers.split(' ').map(header => {
+      if (header === '(request-target)') {
+        return '(request-target): post /activitypub/inbox';
+      }
+      else {
+        return `${header}: ${req.get(header)}`
+      }
+    }).join('\n');
+
+    const verifier = crypto.createVerify('RSA-SHA256')
+    verifier.update(comparison_string, 'ascii')
+    const publicKeyBuf = new Buffer(publicKey, 'ascii')
+    const signatureBuf = new Buffer(signature_header.signature, 'base64')
+    const result = verifier.verify(publicKeyBuf, signatureBuf)
+    console.log('VALIDATE RESULT:', result)
+    if (!result) {
+      res.status(401).send('Signature could not be verified.');
+    }
+    else {
+      processInbox(req, res);
+    }
+  });
+});
+
+
+function processInbox(req, res) {
+  if (req.body.object) console.log('containing object of type', req.body.object.type)
 	// if a Follow activity hits the inbox
   if (typeof req.body.object === 'string' && req.body.type === 'Follow') {
-    console.log('follow!')
+    const myURL = new URL(req.body.actor);
+    let targetDomain = myURL.hostname;
     let eventID = req.body.object.replace(`https://${domain}/`,'');
-    // Accept the follow request
-    sendAcceptMessage(req.body, eventID, domain, req, res, targetDomain);
     // Add the user to the DB of accounts that follow the account
-    console.log(req.body)
-
-    const newFollower = {
-      account: req.body.actor,
-      followId: req.body.id
-    };
-
-    Event.findOne({
-      id: eventID,
-      }, function(err,event) {
-      console.log(event.followers)
-      // if this account is NOT already in our followers list, add it
-      if (!event.followers.map(el => el.account).includes(req.body.actor)) {
-        event.followers.push(newFollower);
-        console.log(event.followers)
-        event.save()
-        .then(() => {
-          addToLog("addEventFollower", "success", "Follower added to event " + eventID);
-          console.log('successful follower add');
-          // send a Question to the new follower
-					let inbox = req.body.actor+'/inbox';
-					let myURL = new URL(req.body.actor);
-					let targetDomain = myURL.hostname;
-          const jsonObject = {
-            "@context": "https://www.w3.org/ns/activitystreams",
-            "id": "http://polls.example.org/question/1",
-            "name": `RSVP to ${event.name}`,
-            "type": "Question",
-             "content": `Will you attend ${event.name}?`,
-             "oneOf": [
-               {"type":"Note","name": "Yes"},
-               {"type":"Note","name": "No"},
-               {"type":"Note","name": "Maybe"}
-             ],
-            "endTime":event.start.toISOString()
+    // get the follower's username
+    request({
+      url: req.body.actor,
+      headers: {
+        'Accept': 'application/activity+json',
+        'Content-Type': 'application/activity+json'
+      }}, function (error, response, body) {
+        body = JSON.parse(body)
+        const name = body.preferredUsername || body.name || attributedTo;
+        const newFollower = {
+          actorId: req.body.actor,
+          followId: req.body.id,
+          name: name,
+          actorJson: JSON.stringify(body)
+        };
+        Event.findOne({
+          id: eventID,
+          }, function(err,event) {
+          // if this account is NOT already in our followers list, add it
+          if (event && !event.followers.map(el => el.actorId).includes(req.body.actor)) {
+            console.log('made it!')
+            event.followers.push(newFollower);
+            event.save()
+            .then(() => {
+              addToLog("addEventFollower", "success", "Follower added to event " + eventID);
+              console.log('successful follower add');
+              // Accept the follow request
+              sendAcceptMessage(req.body, eventID, targetDomain, function(err, resp, status) {
+                if (err) {
+                  console.log(`Didn't send Accept to ${req.body.actor}, status ${status} with error ${err}`);
+                }
+                else {
+                  console.log('sent Accept to', req.body.actor);
+                  // if users can self-RSVP, send a Question to the new follower
+                  if (event.usersCanAttend) {
+                    const jsonObject = {
+                      "@context": "https://www.w3.org/ns/activitystreams",
+                      "name": `RSVP to ${event.name}`,
+                      "type": "Question",
+                       "content": `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}?`,
+                       "oneOf": [
+                         {"type":"Note","name": "Yes"},
+                         {"type":"Note","name": "No"},
+                         {"type":"Note","name": "Maybe"}
+                       ],
+                      "endTime":event.start.toISOString(),
+                      "tag":[{"type":"Mention","href":req.body.actor,"name":name}]
+                    }
+                    // send direct message to user
+                    sendDirectMessage(jsonObject, req.body.actor, eventID, function (error, response, statuscode) {
+                      if (error) {
+                        console.log(error);
+                        res.status(statuscode).json(error);
+                      }
+                      else {
+                        res.status(statuscode).json({messageid: response});
+                      }
+                    });
+                  }
+                }
+              });
+            })
+            .catch((err) => { res.status(500).send('Database error, please try again :('); addToLog("addEventFollower", "error", "Attempt to add follower to event " + eventID + " failed with error: " + err); 
+            console.log('ERROR', err);
+            });
           }
-					let message = rawMessage(jsonObject, eventID, domain, req.body.actor);
-          console.log('!!!!!!!!! sending')
-          console.log(message)
-					signAndSend(message, eventID, domain, req, res, targetDomain, inbox);
         })
-        .catch((err) => { res.send('Database error, please try again :('); addToLog("addEventFollower", "error", "Attempt to add follower to event " + eventID + " failed with error: " + err); 
-          console.log('error', err)
-        });
-      }
-    });
+      }) //end request
   }
 	// if an Undo activity with a Follow object hits the inbox
   if (req.body && req.body.type === 'Undo' && req.body.object && req.body.object.type === 'Follow') {
-    console.log('undo follow!')
-    console.log(req.body)
     // get the record of all followers for this account
-    let eventID = req.body.object.object.replace(`https://${domain}/`,'');
+    const eventID = req.body.object.object.replace(`https://${domain}/`,'');
     Event.findOne({
       id: eventID,
       }, function(err,event) {
+        if (!event) return;
         // check to see if the Follow object's id matches the id we have on record
-        console.log(event.followers)
         // is this even someone who follows us
-        const indexOfFollower = event.followers.findIndex(el => {console.log(el.account, req.body.object.actor); return el.account === req.body.object.actor;});
-        console.log(indexOfFollower)
+        const indexOfFollower = event.followers.findIndex(el => el.actorId === req.body.object.actor);
         if (indexOfFollower !== -1) {
           // does the id we have match the id we are being given
           if (event.followers[indexOfFollower].followId === req.body.object.id) {
             // we have a match and can trust the Undo! remove this person from the followers list
             event.followers.splice(indexOfFollower, 1);
-            console.log('new', indexOfFollower, event.followers);
             event.save()
             .then(() => {
+              res.send(200);
               addToLog("removeEventFollower", "success", "Follower removed from event " + eventID);
               console.log('successful follower removal')
             })
@@ -1495,7 +1731,210 @@ router.post('/activitypub/inbox', (req, res) => {
         }
     });
   }
-});
+	// if a Create activity with a Note object hits the inbox, it might be a vote in a poll
+  if (req.body && req.body.type === 'Create' && req.body.object && req.body.object.type === 'Note' && req.body.object.inReplyTo && req.body.object.to) {
+    console.log('create note inreplyto!!!')
+    // figure out what this is in reply to -- it should be addressed specifically to us
+    let {name, attributedTo, inReplyTo, to} = req.body.object;
+    // if it's an array just grab the first element, since a poll should only broadcast back to the pollster
+    if (Array.isArray(to)) {
+      to = to[0];
+    }
+    const eventID = to.replace(`https://${domain}/`,'');
+    // make sure this person is actually a follower
+    Event.findOne({
+      id: eventID,
+      }, function(err,event) {
+        if (!event) return;
+        // is this even someone who follows us
+        const indexOfFollower = event.followers.findIndex(el => el.actorId === req.body.object.attributedTo);
+        if (indexOfFollower !== -1) {
+          console.log('this person does follow us!')
+          // compare the inReplyTo to its stored message, if it exists and it's going to the right follower then this is a valid reply
+          const message = event.activityPubMessages.find(el => {
+            const content = JSON.parse(el.content);
+            return inReplyTo === (content.object && content.object.id);
+          });
+          if (message) {
+            console.log(message);
+            const content = JSON.parse(message.content);
+            // check if the message we sent out was sent to the actor this incoming message is attributedTo
+            if (content.to[0] === attributedTo) {
+              // it's a match, this is a valid poll response, add RSVP to database
+              // fetch the profile information of the user
+							request({
+								url: attributedTo,
+								headers: {
+									'Accept': 'application/activity+json',
+									'Content-Type': 'application/activity+json'
+								}}, function (error, response, body) {
+                  body = JSON.parse(body)
+                  // if this account is NOT already in our attendees list, add it
+                  if (!event.attendees.map(el => el.id).includes(attributedTo)) {
+                    const attendeeName = body.preferredUsername || body.name || attributedTo;
+                    const newAttendee = {
+                      name: attendeeName,
+                      status: 'attending',
+                      id: attributedTo
+                    };
+                    event.attendees.push(newAttendee);
+                    event.save()
+                    .then(() => {
+                      addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
+                      console.log('added attendee', attendeeName)
+                      res.send(200);
+                    })
+                    .catch((err) => { res.send('Database error, please try again :('); addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err); });
+                  }
+							});
+            }
+          }
+        }
+    });
+  }
+  if (req.body && req.body.type === 'Delete') {
+    // figure out if we have a matching comment by id
+    const deleteObjectId = req.body.object.id;
+    // find all events with comments from the author
+    Event.find({
+      "comments.actorId":req.body.actor
+      }, function(err,events) {
+      if (!events) {
+        res.sendStatus(404);
+        return;
+      }
+
+      // find the event with THIS comment from the author
+      let eventWithComment = events.find(event => {
+        let comments = event.comments;
+        return comments.find(comment => {
+          if (!comment.activityJson) {
+            return false;
+          }
+          return JSON.parse(comment.activityJson).object.id === req.body.object.id;
+        })
+      });
+
+      if (!eventWithComment) {
+        res.sendStatus(404);
+        return;
+      }
+
+      // delete the comment
+      // find the index of the comment
+      let indexOfComment = eventWithComment.comments.findIndex(comment => {
+        return JSON.parse(comment.activityJson).object.id === req.body.object.id;
+      });
+      eventWithComment.comments.splice(indexOfComment, 1);
+			eventWithComment.save()
+			.then(() => {
+				addToLog("deleteComment", "success", "Comment deleted from event " + eventWithComment.id);
+        console.log('deleted comment!')
+        res.sendStatus(200);
+			})
+			.catch((err) => { res.sendStatus(500); addToLog("deleteComment", "error", "Attempt to delete comment " + req.body.object.id + "from event " + eventWithComment.id + " failed with error: " + err);});
+    });
+  }
+	// if we are CC'ed on a public or unlisted Create/Note, then this is a comment to us we should replicate
+  if (req.body && req.body.type === 'Create' && req.body.object && req.body.object.type === 'Note' && req.body.object.to) {
+    console.log('create note!!')
+    // figure out what this is in reply to -- it should be addressed specifically to us
+    let {name, attributedTo, inReplyTo, to, cc} = req.body.object;
+    // if it's an array just grab the first element, since a poll should only broadcast back to the pollster
+    if (Array.isArray(to)) {
+      to = to[0];
+    }
+
+    // normalize cc into an array
+    if (typeof cc === 'string') {
+      cc = [cc];
+    }
+    
+    // if this is a public message (in the to or cc fields)
+    if (to === 'https://www.w3.org/ns/activitystreams#Public' || (Array.isArray(cc) && cc.includes('https://www.w3.org/ns/activitystreams#Public'))) {
+      // figure out which event(s) of ours it was addressing
+      ourEvents = cc.filter(el => el.includes(`https://${domain}/`))
+                    .map(el => el.replace(`https://${domain}/`,''));
+      // comments should only be on one event. if more than one, ignore (spam, probably) 
+      if (ourEvents.length === 1) {
+        let eventID = ourEvents[0];
+        // add comment
+        let commentID = shortid.generate();
+        // get the actor for the commenter
+        request({
+          url: req.body.actor,
+          headers: {
+            'Accept': 'application/activity+json',
+            'Content-Type': 'application/activity+json'
+          }}, function (error, response, actor) {
+          if (!error) {
+            const parsedActor = JSON.parse(actor);
+            const name = parsedActor.preferredUsername || parsedActor.name || req.body.actor;
+            const newComment = {
+              id: commentID,
+              actorId: req.body.actor,
+              activityId: req.body.object.id,
+              author: name,
+              content: sanitizeHtml(req.body.object.content, {allowedTags: [], allowedAttributes: {}}).replace('@'+eventID,''),
+              timestamp: moment(),
+              activityJson: JSON.stringify(req.body),
+              actorJson: actor
+            };
+
+            Event.findOne({
+              id: eventID,
+              }, function(err,event) {
+              if (!event) {
+                return res.sendStatus(404);
+              }
+              if (!event.usersCanComment) {
+                return res.sendStatus(200);
+              }
+              event.comments.push(newComment);
+              event.save()
+              .then(() => {
+                addToLog("addEventComment", "success", "Comment added to event " + eventID);
+                console.log('added comment');
+                res.sendStatus(200);
+              })
+              .catch((err) => { res.status(500).send('Database error, please try again :(' + err); addToLog("addEventComment", "error", "Attempt to add comment to event " + eventID + " failed with error: " + err); console.log('error', err)});
+            });
+          }
+        });
+      } // end ourevent
+    } // end public message
+    // if it's not a public message, let them know that we only support public messages right now
+    else {
+      // figure out which event(s) of ours it was addressing
+      ourEvents = cc.concat(to).filter(el => el.includes(`https://${domain}/`))
+                    .map(el => el.replace(`https://${domain}/`,''));
+      // comments should only be on one event. if more than one, ignore (spam, probably) 
+      if (ourEvents.length === 1) {
+        let eventID = ourEvents[0];
+        // get the user's actor info
+        request({
+          url: req.body.actor,
+          headers: {
+            'Accept': 'application/activity+json',
+            'Content-Type': 'application/activity+json'
+          }}, function (error, response, actor) { 
+            actor = JSON.parse(actor);
+            const name = actor.preferredUsername || actor.name || req.body.actor;
+            const jsonObject = {
+              "@context": "https://www.w3.org/ns/activitystreams",
+              "type": "Note",
+              "inReplyTo": req.body.object.id,
+              "content": `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Sorry, this service only supports posting public messages to the event page. Try contacting the event organizer directly if you need to have a private conversation.`,
+              "tag":[{"type":"Mention","href":req.body.actor,"name":name}]
+            }
+            res.send(200);
+            sendDirectMessage(jsonObject, req.body.actor, eventID);
+          }
+        );
+      }
+    }
+  }
+}
 
 router.use(function(req, res, next){
 	res.status(404);

@@ -81,6 +81,15 @@
 					<i class="fas fa-copy"></i> Copy
 				</button>
 			</li>
+			<li>
+				<span class="fa-li">
+					<i class="fas fa-fw fa-share-square"></i>
+				</span>
+				@{{eventData.id}}@{{domain}}
+				<button type="button" id="copyAPLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="@{{eventData.id}}@{{domain}}">
+					<i class="fas fa-copy"></i> Copy
+				</button>
+			</li>
   	</ul>
 	</div>
 </div>
@@ -125,7 +134,7 @@
 		{{#if eventAttendees}}
 			<ul class="attendeesList">
 				{{#each eventAttendees}}
-					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><a href="{{this.id}}"><span class="attendee-name">{{this.name}}</span></a>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
 				{{/each}}
 			</ul>
 		{{else}}
@@ -246,7 +255,11 @@
 				<div class="comment">
 					<div class="row commentContainer">
 						<div class="col-lg commentText">
-							<p class="mb-0"><strong>{{this.author}}</strong> <small class="commentTimestamp text-muted">{{this.timestamp}}</small></p>
+              {{#if this.actorId}}
+                <p class="mb-0"><a href="{{this.actorId}}"><strong>{{this.author}}</strong></a> <a href="{{this.activityId}}"><small class="commentTimestamp text-muted">{{this.timestamp}}</small></a></p>
+              {{else}}
+                <p class="mb-0"><strong>{{this.author}}</strong> <small class="commentTimestamp text-muted">{{this.timestamp}}</small></p>
+              {{/if}}
 							<p>{{this.content}}</p>
 							{{#if this.replies}}
 								<hr>
@@ -397,6 +410,12 @@
 		$("#copyEventLink").click(function(){
 			$(this).html('<i class="fas fa-copy"></i> Copied!');
 			setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
+		})
+		new ClipboardJS('#copyAPLink');
+		$("#copyAPLink").click(function(){
+      console.log('hhhhh')
+			$(this).html('<i class="fas fa-copy"></i> Copied!');
+			setTimeout(function(){ $("#copyAPLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
 		})
 		$(".daysToDeletion").html(moment("{{eventEndISO}}").add(7, 'days').fromNow());
 		if ($("#joinCheckbox").is(':checked')){
