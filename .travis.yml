@@ -1,0 +1,9 @@
+language: minimal
+
+services:
+    - docker
+
+script:
+    - docker-compose up --build
+    - curl -v http://localhost:3000/
+    - curl -v http://localhost:3000/new/event/public
