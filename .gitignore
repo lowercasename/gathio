@@ -6,6 +6,7 @@ config/api.js
 config/database.js
 public/events/*
 !public/events/.gitkeep
+wait-for-it.sh
 
 # Logs
 logs
