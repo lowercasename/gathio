@@ -5,9 +5,9 @@ services:
     - docker
 
 script:
-    - docker-compose up --build &
-    - curl https://raw.githubusercontent.com/vishnubob/wait-for-it/9995b721327eac7a88f0dce314ea074d5169634f/wait-for-it.sh -o wait-for-it.sh
-    - chmod +x wait-for-it.sh
-    - ./wait-for-it-sh localhost:3000 --timeout=0
-    - curl -v http://localhost:3000/
-    - curl -v http://localhost:3000/new/event/public
+    - docker-compose up --build& || travis_terminate 1
+    - curl https://raw.githubusercontent.com/vishnubob/wait-for-it/9995b721327eac7a88f0dce314ea074d5169634f/wait-for-it.sh -o wait-for-it.sh || travis_terminate 1
+    - chmod +x wait-for-it.sh || travis_terminate 1
+    - ./wait-for-it-sh localhost:3000 --timeout=0 || travis_terminate 1
+    - curl -v http://localhost:3000/ || travis_terminate 1
+    - curl -v http://localhost:3000/new/event/public || travis_terminate 1
