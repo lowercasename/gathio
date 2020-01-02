@@ -62,6 +62,11 @@ render_plain = function () {
 }
 
 const ical = require('ical');
+const icalGenerator = require('ical-generator');
+const cal = icalGenerator({
+	domain: 'gath.io',
+	name: 'Gathio'
+});
 
 const sgMail = require('@sendgrid/mail');
 
@@ -408,6 +413,42 @@ router.get('/group/:eventGroupID', (req, res) => {
 		});
 })
 
+router.get('/exportevent/:eventID', (req, res) => {
+	Event.findOne({
+		id: req.params.eventID
+		})
+		.populate('eventGroup')
+		.then((event) => {
+			if (event) {
+				const icalEvent = cal.createEvent({
+					start: moment.tz(event.start, event.timezone),
+					end: moment.tz(event.start, event.timezone),
+					timezone: event.timezone,
+					timestamp: moment(),
+					summary: event.name,
+					description: event.description,
+					organizer: {
+						name: event.hostName ? event.hostName : "Anonymous",
+						email: event.creatorEmail
+					},
+					location: event.location,
+					url: 'https://gath.io/' + event.id
+				});
+
+				let string = cal.toString();
+				console.log(string)
+				res.send(string);
+			}
+		})
+		.catch((err) => {
+			addToLog("exportEvent", "error", "Attempt to export event " + req.params.eventID + " failed with error: " + err);
+			console.log(err)
+			res.status(404);
+			res.render('404', { url: req.url });
+			return;
+		});
+})
+
 // BACKEND ROUTES
 
 //router.post('/login',
@@ -529,7 +570,7 @@ router.post('/importevent', (req, res) => {
 			image: '',
 			creatorEmail: creatorEmail,
 			url: '',
-			hostName: importedEventData.organizer ? importedEventData.organizer.params.CN : "",
+			hostName: importedEventData.organizer ? importedEventData.organizer.params.CN.replace(/["]+/g, '') : "",
 			viewPassword: '',
 			editPassword: '',
 			editToken: editToken,

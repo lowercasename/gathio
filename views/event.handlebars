@@ -45,6 +45,9 @@
 				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
 					<i class="far fa-calendar-plus"></i> Add to Google Calendar
 				</a>
+				<button type="button" id="exportICS" class="eventInformationAction btn btn-outline-secondary btn-sm" data-event-id="{{eventData.id}}">
+					<i class="fas fa-download"></i> Export as ICS
+				</button>
 			</li>
 			{{#if eventHasHost}}
 				<li>
@@ -375,6 +378,29 @@
 	})
 	$(document).ready(function() {
 
+		// From https://davidwalsh.name/javascript-download
+		function downloadFile(data, fileName, type="text/plain") {
+			// Create an invisible A element
+			const a = document.createElement("a");
+			a.style.display = "none";
+			document.body.appendChild(a);
+
+			// Set the HREF to a Blob representation of the data to be downloaded
+			a.href = window.URL.createObjectURL(
+				new Blob([data], { type })
+			);
+
+			// Use download attribute to set set desired file name
+			a.setAttribute("download", fileName);
+
+			// Trigger the download by simulating click
+			a.click();
+
+			// Cleanup
+			window.URL.revokeObjectURL(a.href);
+			document.body.removeChild(a);
+		}
+
 		$.uploadPreview({
 			input_field: "#image-upload",
 			preview_box: "#image-preview",
@@ -394,6 +420,12 @@
 		{{/if}}
 		new ClipboardJS('#copyEventLink');
 		autosize($('textarea'));
+		$("#exportICS").click(function(){
+			let eventID = $(this).attr('data-event-id');
+			$.get('/exportevent/' + eventID, function(response) {
+				downloadFile(response, eventID + '.ics');
+			})
+		})
 		$("#copyEventLink").click(function(){
 			$(this).html('<i class="fas fa-copy"></i> Copied!');
 			setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);

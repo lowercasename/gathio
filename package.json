@@ -23,6 +23,7 @@
     "greenlock": "^2.6.7",
     "greenlock-express": "^2.6.7",
     "ical": "^0.6.0",
+    "ical-generator": "^1.9.2",
     "jimp": "^0.6.0",
     "jsonwebtoken": "^8.4.0",
     "marked": "^0.7.0",
