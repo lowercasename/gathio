@@ -115,6 +115,11 @@ body, html {
 	text-transform:capitalize;
 }
 
+#eventActions {
+	padding-left: 0;
+	margin-top: 1rem;
+}
+
 /*
 .location, .eventLink {
 	display: flex;
@@ -160,10 +165,6 @@ body, html {
 
 #copyEventLink {
 	margin-left: 5px;
-}
-
-.eventInformationAction:not(#copyEventLink) {
-	margin-top: 0.25rem;
 }
 
 .commentContainer {
@@ -305,6 +306,13 @@ body, html {
 @media (max-width: 1199.98px) {
 	.edit-buttons {
 		text-align: left;
+	}
+}
+
+@media (min-width: 1120px) {
+	#eventActions {
+		margin-top: 0;
+		padding-left: 1rem;
 	}
 }
 
