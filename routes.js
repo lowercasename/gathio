@@ -989,7 +989,8 @@ router.post('/attendevent/:eventID', (req, res) => {
 	const newAttendee = {
 		name: req.body.attendeeName,
 		status: 'attending',
-		email: req.body.attendeeEmail
+		email: req.body.attendeeEmail,
+		removalPassword: req.body.removeAttendancePassword
 	};
 
 	Event.findOne({
@@ -1029,7 +1030,7 @@ router.post('/attendevent/:eventID', (req, res) => {
 router.post('/unattendevent/:eventID', (req, res) => {
 	Event.update(
 	    { id: req.params.eventID },
-	    { $pull: { attendees: { email: req.body.attendeeEmail } } }
+	    { $pull: { attendees: { removalPassword: req.body.removeAttendancePassword } } }
 	)
 	.then(response => {
 		console.log(response)

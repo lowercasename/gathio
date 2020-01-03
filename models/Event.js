@@ -12,6 +12,10 @@ const Attendees = new mongoose.Schema({
 	email: {
 		type: String,
 		trim: true
+	},
+	removalPassword: {
+		type: String,
+		trim: true
 	}
 })
 

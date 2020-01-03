@@ -18,7 +18,7 @@
 </div>
 <div class="container my-4 pr-0">
 	<div class="row">
-		<div class="col-lg-9 card">
+		<div class="col-lg-9 card p-0">
 			<div class="card-body">
 				<ul class="fa-ul eventInformation">
 					<li>
@@ -154,21 +154,26 @@
         </button>
       </div>
       <form id="attendEventForm" action="/attendevent/{{eventData.id}}" method="post">
-			<div class="modal-body">
-				<div class="form-group row">
-					<label for="attendeeName" class="col-sm-2 col-form-label">Your name</label>
-					<div class="form-group col-sm-10">
-						<input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-30">
-					</div>
+		<div class="modal-body">
+			<div class="form-group">
+				<label for="attendeeName">Your name</label>
+				<div class="form-group">
+					<input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-30">
 				</div>
-				<div class="form-group row">
-					<label for="attendeeEmail" class="col-sm-2 col-form-label">Your email</label>
-					<div class="form-group col-sm-10">
-						<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email">
-						<small class="form-text">We'll only use it to send you updates to the event.</small>
-					</div>
+			</div>
+			<div class="form-group">
+				<label for="attendeeEmail">Your email (optional)</label>
+				<p class="form-text small">If you provide your email, you will receive updates to the event.</p>
+				<div class="form-group">
+					<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email" data-validation-optional="true">
 				</div>
-      </div>
+			</div>
+			<div class="form-group">
+				<label for="removeAttendancePassword">Deletion password</label>
+				<p class="form-text small">You will need this password if you want to remove yourself from the list of event attendees. Write it down now because it will <strong>not be shown again</strong>.</p>
+				<input type="text" class="form-control" readonly id="removeAttendancePassword" name="removeAttendancePassword">
+			</div>
+		</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         <button type="submit" class="btn btn-primary">Add myself</button>
@@ -189,12 +194,10 @@
       </div>
       <form id="unattendEventForm" action="/unattendevent/{{eventData.id}}" method="post">
 			<div class="modal-body">
-				<div class="form-group row">
-					<label for="attendeeEmail" class="col-sm-2 col-form-label">Your email</label>
-					<div class="form-group col-sm-10">
-						<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="name@domain.com" data-validation="email" data-validation-optional="true">
-						<small class="form-text">Enter the email you used when signing up for this event.</small>
-					</div>
+				<div class="form-group">
+					<label for="removeAttendancePassword" class="form-label">Your deletion password</label>
+					<p class="form-text small">Lost your password? Get in touch with the event organiser.</p>
+					<input type="text" class="form-control" id="removeAttendancePassword" name="removeAttendancePassword">
 				</div>
       </div>
       <div class="modal-footer">
@@ -337,6 +340,7 @@
 
 {{#unless eventHasConcluded}}
 <script type="text/javascript" src="/js/generate-timezones.js"></script>
+<script src='/js/niceware.js'></script>
 {{/unless}}
 <script>
 	$.validate({
@@ -474,6 +478,11 @@
                 $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
             }
         });
+		$('#attendModal').on('show.bs.modal', function (event) {
+			var modal = $(this);
+			const passphrase = window.niceware.generatePassphrase(6).join('-');
+			modal.find('#removeAttendancePassword').val(passphrase);
+		});
 	});
 
 	</script>
