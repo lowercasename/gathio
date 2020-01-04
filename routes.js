@@ -855,11 +855,46 @@ router.post('/editeventgroup/:eventGroupID/:editToken', (req, res) => {
 	.catch((err) => { console.error(err); res.send('Sorry! Something went wrong!'); addToLog("editEventGroup", "error", "Attempt to edit event group " + req.params.eventGroupID + " failed with error: " + err);});
 });
 
-router.post('/deleteevent/:eventID/:editToken', (req, res) => {
+router.post('/deleteimage/:eventID/:editToken', (req, res) => {
 	let submittedEditToken = req.params.editToken;
 	Event.findOne(({
 		id: req.params.eventID,
-		}))
+	}))
+	.then((event) => {
+		if (event.editToken === submittedEditToken) {
+			// Token matches
+			if (event.image){
+				eventImage = event.image;
+			} else {
+				res.status(500).send('This event doesn\'t have a linked image. What are you even doing');
+			}
+			fs.unlink(global.appRoot + '/public/events/' + eventImage, (err) => {
+				if (err) {
+					res.status(500).send(err);
+					addToLog("deleteEventImage", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
+				}
+				// Image removed
+				addToLog("deleteEventImage", "success", "Image for event " + req.params.eventID + " deleted");
+				event.image = "";
+				event.save()
+				.then(response => {
+					res.status(200).send('Success');
+				})
+				.catch(err => {
+					res.status(500).send(err);
+					addToLog("deleteEventImage", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
+				})
+			});
+		}
+	});
+});
+
+router.post('/deleteevent/:eventID/:editToken', (req, res) => {
+	let submittedEditToken = req.params.editToken;
+	let eventImage;
+	Event.findOne(({
+		id: req.params.eventID,
+	}))
 	.then((event) => {
 		if (event.editToken === submittedEditToken) {
 			// Token matches
