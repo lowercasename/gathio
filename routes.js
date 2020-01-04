@@ -26,6 +26,7 @@ const request = require('request');
 
 const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
+const siteName = require('./config/domain.js').sitename
 var sanitizeHtml = require('sanitize-html');
 
 // Extra marked renderer (used to render plaintext event description for page metadata)
@@ -610,13 +611,23 @@ router.get('/:eventID', (req, res) => {
 						}
 					}
 				}
-				let eventAttendees = event.attendees.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
-                let spotsRemaining, noMoreSpots;
-                if (event.maxAttendees) {
-                    spotsRemaining = event.maxAttendees - eventAttendees.length;
-                    if (spotsRemaining <= 0) {
-                        noMoreSpots = true;
-                    }
+				let eventAttendees = event.attendees.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0))
+        .map(el => {
+          if (!el.id) {
+            el.id = el._id;
+          }
+          return el;
+        })
+        .filter((obj, pos, arr) => {
+            return arr.map(mapObj => mapObj.id).indexOf(obj.id) === pos;
+        });
+
+        let spotsRemaining, noMoreSpots;
+        if (event.maxAttendees) {
+          spotsRemaining = event.maxAttendees - eventAttendees.length;
+          if (spotsRemaining <= 0) {
+            noMoreSpots = true;
+          }
 				}
 				let metadata = {
 					title: event.name,
@@ -887,30 +898,28 @@ router.post('/newevent', async (req, res) => {
 			addToLog("createEvent", "success", "Event " + eventID + "created");
 			// Send email with edit link
 			if (sendEmails) {
-				const msg = {
-					to: req.body.creatorEmail,
-					from: {
-						name: 'Gathio',
-						email: contactEmail,
-					},
-					templateId: 'd-00330b8278ab463e9f88c16566487d97',
-					dynamic_template_data: {
-						subject: 'gathio: ' + req.body.eventName,
-						eventID: eventID,
-						editToken: editToken
-					},
-				};
-				sgMail.send(msg).catch(e => {
-					console.error(e.toString());
-					res.status(500).end();
-				});
+        req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', {eventID, editToken, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+          const msg = {
+            to: req.body.creatorEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+            subject: `${siteName}: ${req.body.eventName}`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
 			}
 			res.writeHead(302, {
 			'Location': '/' + eventID + '?e=' + editToken
 			});
 			res.end();
 		})
-		.catch((err) => { res.send('Database error, please try again :( - ' + err); addToLog("createEvent", "error", "Attempt to create event failed with error: " + err);});
+		.catch((err) => { res.status(500).send('Database error, please try again :( - ' + err); addToLog("createEvent", "error", "Attempt to create event failed with error: " + err);});
 });
 
 router.post('/importevent', (req, res) => {
@@ -957,23 +966,21 @@ router.post('/importevent', (req, res) => {
 				addToLog("createEvent", "success", "Event " + eventID + " created");
 				// Send email with edit link
 				if (sendEmails) {
-					const msg = {
-						to: creatorEmail,
-						from: {
-							name: 'Gathio',
-							email: contactEmail,
-						},
-						templateId: 'd-00330b8278ab463e9f88c16566487d97',
-						dynamic_template_data: {
-							subject: 'gathio: ' + req.body.eventName,
-							eventID: eventID,
-							editToken: editToken
-						},
-					};
-					sgMail.send(msg).catch(e => {
-						console.error(e.toString());
-						res.status(500).end();
-					});
+          req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', {eventID, editToken, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+            const msg = {
+              to: req.body.creatorEmail,
+              from: {
+                name: siteName,
+                email: contactEmail,
+              },
+              subject: `${siteName}: ${req.body.eventName}`,
+              html,
+            };
+            sgMail.send(msg).catch(e => {
+              console.error(e.toString());
+              res.status(500).end();
+            });
+          });
 				}
 				res.writeHead(302, {
 				'Location': '/' + eventID + '?e=' + editToken
@@ -1019,23 +1026,21 @@ router.post('/neweventgroup', (req, res) => {
 			addToLog("createEventGroup", "success", "Event group " + eventGroupID + " created");
 			// Send email with edit link
 			if (sendEmails) {
-				const msg = {
-					to: req.body.creatorEmail,
-					from: {
-						name: 'Gathio',
-						email: contactEmail,
-					},
-					templateId: 'd-4c5ddcb34ac44ec5b2313c6da4e405f3',
-					dynamic_template_data: {
-						subject: 'gathio: ' + req.body.eventGroupName,
-						eventGroupID: eventGroupID,
-						editToken: editToken
-					},
-				};
-				sgMail.send(msg).catch(e => {
-					console.error(e.toString());
-					res.status(500).end();
-				});
+        req.app.get('hbsInstance').renderView('./views/emails/createeventgroup.handlebars', {eventGroupID, editToken, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+          const msg = {
+            to: req.body.creatorEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+            subject: `${siteName}: ${req.body.eventGroupName}`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
 			}
 			res.writeHead(302, {
 				'Location': '/group/' + eventGroupID + '?e=' + editToken
@@ -1168,21 +1173,21 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 						attendeeEmails = ids;
 						if (!error && attendeeEmails !== ""){
 							console.log("Sending emails to: " + attendeeEmails);
-							const msg = {
-								to: attendeeEmails,
-								from: {
-									name: 'Gathio',
-									email: contactEmail,
-								},
-								templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
-								dynamic_template_data: {
-									subject: 'gathio: Event edited',
-									actionType: 'edited',
-									eventExists: true,
-									eventID: req.params.eventID
-								}
-							}
-							sgMail.sendMultiple(msg);
+              req.app.get('hbsInstance').renderView('./views/emails/editevent.handlebars', {diffText, eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+                const msg = {
+                  to: attendeeEmails,
+                  from: {
+                    name: siteName,
+                    email: contactEmail,
+                  },
+                  subject: `${siteName}: ${event.name} was just edited`,
+                  html,
+                };
+                sgMail.sendMultiple(msg).catch(e => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+              });
 						}
 						else {
 							console.log("Nothing to send!");
@@ -1294,6 +1299,7 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 		if (event.editToken === submittedEditToken) {
 			// Token matches
 
+      let eventImage;
 			if (event.image){
 				eventImage = event.image;
 			}
@@ -1304,21 +1310,21 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 					attendeeEmails = ids;
 					if (!error){
 						console.log("Sending emails to: " + attendeeEmails);
-						const msg = {
-							to: attendeeEmails,
-							from: {
-								name: 'Gathio',
-								email: contactEmail,
-							},
-							templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
-							dynamic_template_data: {
-								subject: 'gathio: Event "' + event.name + '" deleted',
-								actionType: 'deleted',
-								eventExists: false,
-								eventID: req.params.eventID
-							}
-						}
-						sgMail.sendMultiple(msg);
+            req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', {siteName, domain, eventName: event.name, cache: true, layout: 'email.handlebars'}, function(err, html) {
+              const msg = {
+                to: attendeeEmails,
+                from: {
+                  name: siteName,
+                  email: contactEmail,
+                },
+                subject: `${siteName}: ${event.name} was deleted`,
+                html,
+              };
+              sgMail.sendMultiple(msg).catch(e => {
+                console.error(e.toString());
+                res.status(500).end();
+              });
+            });
 					}
 					else {
 						console.log("Nothing to send!");
@@ -1432,22 +1438,23 @@ router.post('/attendevent/:eventID', (req, res) => {
 			addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
 			if (sendEmails) {
 				if (req.body.attendeeEmail){
-					const msg = {
-						to: req.body.attendeeEmail,
-						from: {
-							name: 'Gathio',
-							email: contactEmail,
-						},
-						templateId: 'd-977612474bba49c48b58e269f04f927c',
-						dynamic_template_data: {
-							subject: 'gathio: ' + event.name,
-							eventID: req.params.eventID
-						},
-					};
-					sgMail.send(msg);
+          req.app.get('hbsInstance').renderView('./views/emails/addeventattendee.handlebars', {eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+            const msg = {
+              to: req.body.attendeeEmail,
+              from: {
+                name: siteName,
+                email: contactEmail,
+              },
+              subject: `${siteName}: You're RSVPed to ${event.name}`,
+              html,
+            };
+            sgMail.send(msg).catch(e => {
+              console.error(e.toString());
+              res.status(500).end();
+            });
+          });
 				}
 			}
-
 			res.writeHead(302, {
 				'Location': '/' + req.params.eventID
 				});
@@ -1464,22 +1471,23 @@ router.post('/unattendevent/:eventID', (req, res) => {
 	)
 	.then(response => {
 		console.log(response)
-		addToLog("removeEventAttendee", "success", "Attendee removed from event " + req.params.eventID);
+		addToLog("unattendEvent", "success", "Attendee removed self from event " + req.params.eventID);
 		if (sendEmails) {
 			if (req.body.attendeeEmail){
-				const msg = {
-					to: req.body.attendeeEmail,
-					from: {
-						name: 'Gathio',
-						email: contactEmail,
-					},
-					templateId: 'd-56c97755d6394c23be212fef934b0f1f',
-					dynamic_template_data: {
-						subject: 'gathio: You have been removed from an event',
-						eventID: req.params.eventID
-					},
-				};
-				sgMail.send(msg);
+        req.app.get('hbsInstance').renderView('./views/emails/unattendevent.handlebars', {eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
+            to: req.body.attendeeEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+						subject: `${siteName}: You have been removed from an event`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
 			}
 		}
 		res.writeHead(302, {
@@ -1501,20 +1509,22 @@ router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
 		console.log(response)
 		addToLog("removeEventAttendee", "success", "Attendee removed by admin from event " + req.params.eventID);
 		if (sendEmails) {
+      // currently this is never called because we don't have the email address
 			if (req.body.attendeeEmail){
-				const msg = {
-					to: req.body.attendeeEmail,
-					from: {
-						name: 'Gathio',
-						email: contactEmail,
-					},
-					templateId: 'd-f8ee9e1e2c8a48e3a329d1630d0d371f',
-					dynamic_template_data: {
-						subject: 'gathio: You have been removed from an event',
-						eventID: req.params.eventID
-					},
-				};
-				sgMail.send(msg);
+        req.app.get('hbsInstance').renderView('./views/emails/removeeventattendee.handlebars', {eventName: req.params.eventName, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
+            to: req.body.attendeeEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+						subject: `${siteName}: You have been removed from an event`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
 			}
 		}
 		res.writeHead(302, {
@@ -1549,20 +1559,21 @@ router.post('/post/comment/:eventID', (req, res) => {
 				attendeeEmails = ids;
 					if (!error){
 						console.log("Sending emails to: " + attendeeEmails);
-						const msg = {
-							to: attendeeEmails,
-							from: {
-								name: 'Gathio',
-								email: contactEmail,
-							},
-							templateId: 'd-756d078561e047aba307155f02b6686d',
-							dynamic_template_data: {
-								subject: 'gathio: New comment in ' + event.name,
-								commentAuthor: req.body.commentAuthor,
-								eventID: req.params.eventID
-							}
-						}
-						sgMail.sendMultiple(msg);
+            req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, domain, eventID: req.params.eventID, commentAuthor: req.body.commentAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
+              const msg = {
+                to: attendeeEmails,
+                from: {
+                  name: siteName,
+                  email: contactEmail,
+                },
+                subject: `${siteName}: New comment in ${event.name}`,
+                html,
+              };
+              sgMail.sendMultiple(msg).catch(e => {
+                console.error(e.toString());
+                res.status(500).end();
+              });
+            });
 					}
 					else {
 						console.log("Nothing to send!");
@@ -1601,20 +1612,21 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 						attendeeEmails = ids;
 						if (!error){
 							console.log("Sending emails to: " + attendeeEmails);
-							const msg = {
-								to: attendeeEmails,
-								from: {
-									name: 'Gathio',
-									email: contactEmail,
-								},
-								templateId: 'd-756d078561e047aba307155f02b6686d',
-								dynamic_template_data: {
-									subject: 'gathio: New comment in ' + event.name,
-									commentAuthor: req.body.commentAuthor,
-									eventID: req.params.eventID
-								}
-							}
-							sgMail.sendMultiple(msg);
+              req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, domain, eventID: req.params.eventID, commentAuthor: req.body.replyAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
+                const msg = {
+                  to: attendeeEmails,
+                  from: {
+                    name: siteName,
+                    email: contactEmail,
+                  },
+                  subject: `${siteName}: New comment in ${event.name}`,
+                  html,
+                };
+                sgMail.sendMultiple(msg).catch(e => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+              });
 						}
 						else {
 							console.log("Nothing to send!");
@@ -1673,13 +1685,23 @@ router.post('/activitypub/inbox', (req, res) => {
   }, {});
 
   // get the actor
+  // TODO if this is a Delete for an Actor this won't work
   request({
     url: signature_header.keyId,
     headers: {
       'Accept': 'application/activity+json',
       'Content-Type': 'application/activity+json'
     }}, function (error, response, actor) {
-    publicKey = JSON.parse(actor).publicKey.publicKeyPem;
+    let publicKey = '';
+
+    try {
+      if (JSON.parse(actor).publicKey) {
+        publicKey = JSON.parse(actor).publicKey.publicKeyPem;
+      }
+    }
+    catch(err) {
+      return res.status(500).send('Actor could not be parsed' + err);
+    }
 
     let comparison_string = signature_header.headers.split(' ').map(header => {
       if (header === '(request-target)') {
@@ -1694,10 +1716,14 @@ router.post('/activitypub/inbox', (req, res) => {
     verifier.update(comparison_string, 'ascii')
     const publicKeyBuf = new Buffer(publicKey, 'ascii')
     const signatureBuf = new Buffer(signature_header.signature, 'base64')
-    const result = verifier.verify(publicKeyBuf, signatureBuf)
-    console.log('VALIDATE RESULT:', result)
+    try {
+      const result = verifier.verify(publicKeyBuf, signatureBuf)
+    }
+    catch(err) {
+      return res.status(401).send('Signature could not be verified: ' + err);
+    }
     if (!result) {
-      res.status(401).send('Signature could not be verified.');
+      return res.status(401).send('Signature could not be verified.');
     }
     else {
       processInbox(req, res);
@@ -1863,9 +1889,13 @@ function processInbox(req, res) {
                     .then(() => {
                       addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
                       console.log('added attendee', attendeeName)
-                      res.send(200);
+                      return res.sendStatus(200);
                     })
-                    .catch((err) => { res.send('Database error, please try again :('); addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err); });
+                    .catch((err) => { addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err); return res.status(500).send('Database error, please try again :('); });
+                  }
+                  else {
+                    // it's a duplicate and this person is already rsvped so just say OK
+                    return res.status(200).send("Attendee is already registered.");
                   }
 							});
             }
@@ -1874,6 +1904,7 @@ function processInbox(req, res) {
     });
   }
   if (req.body && req.body.type === 'Delete') {
+		// TODO: only do this if it's a delete for a Note
     // figure out if we have a matching comment by id
     const deleteObjectId = req.body.object.id;
     // find all events with comments from the author
@@ -1920,7 +1951,7 @@ function processInbox(req, res) {
   if (req.body && req.body.type === 'Create' && req.body.object && req.body.object.type === 'Note' && req.body.object.to) {
     console.log('create note!!')
     // figure out what this is in reply to -- it should be addressed specifically to us
-    let {name, attributedTo, inReplyTo, to, cc} = req.body.object;
+    let {attributedTo, inReplyTo, to, cc} = req.body.object;
     // normalize cc into an array
     if (typeof cc === 'string') {
       cc = [cc];
@@ -1983,8 +2014,11 @@ function processInbox(req, res) {
         });
       } // end ourevent
     } // end public message
-    // if it's not a public message, let them know that we only support public messages right now
-    else {
+    // if it's not a public message, AND it's not a vote let them know that we only support public messages right now
+    else if (req.body.object.name !== 'Yes') {
+      if (!cc) {
+        cc = [];
+      }
       // figure out which event(s) of ours it was addressing
       ourEvents = cc.concat(to).filter(el => el.includes(`https://${domain}/`))
                     .map(el => el.replace(`https://${domain}/`,''));
@@ -2007,7 +2041,7 @@ function processInbox(req, res) {
               "content": `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Sorry, this service only supports posting public messages to the event page. Try contacting the event organizer directly if you need to have a private conversation.`,
               "tag":[{"type":"Mention","href":req.body.actor,"name":name}]
             }
-            res.send(200);
+            res.sendStatus(200);
             sendDirectMessage(jsonObject, req.body.actor, eventID);
           }
         );

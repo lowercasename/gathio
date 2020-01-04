@@ -19,6 +19,7 @@ const app = express();
 hbsInstance = hbs.create({
     defaultLayout: 'main',
     partialsDir: ['views/partials/'],
+    layoutsDir: 'views/layouts/',
     helpers: {
         plural: function(number, text) {
             var singular = number === 1;
@@ -39,6 +40,7 @@ hbsInstance = hbs.create({
 });
 app.engine('handlebars', hbsInstance.engine);
 app.set('view engine', 'handlebars');
+app.set('hbsInstance', hbsInstance);
 
 // Static files //
 
