@@ -2079,8 +2079,6 @@ function processInbox(req, res) {
     });
   }
   if (req.body && req.body.type === 'Delete') {
-		// TODO: only do this if it's a delete for a Note
-    // figure out if we have a matching comment by id
     const deleteObjectId = req.body.object.id;
     // find all events with comments from the author
     Event.find({
