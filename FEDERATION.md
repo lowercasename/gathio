@@ -10,19 +10,25 @@ To keep things simple, sometimes you will see things formatted like `Create/Note
 * `Delete/Event`: a `Delete` activity containing an `Event` in the `object` field
 * `Undo/Follow`: an `Undo` activity containing a `Follow` in the `object` field
 
+When the word "broadcast" is used in this document, it means to send an Activity to individual inbox of each of the followers of a given Actor.
+
 This document has three main sections:
 
 * __Federation philosophy__ lays out the general model of how this is intended to federate
 * __Inbox behavior__ lists every incoming ActivityPub activity that the server recognizes, and tells you what it does in response to that activity, including any other ActivityPub activities it sends back out.
 * __Activities triggered from the web app__ tells you what circumstances on the web application cause the server to emit ActivityPub activities. (For example, when an event is updated via the web application, it lets all the ActivityPub followers know that the event has been updated.)
 
+Please note: there is an unfortunate collision between the English language and the ActivityPub spec that can make this document confusing. When this document uses the word 'event' with a lowercase-e and not in monospace, it refers to the thing that is being tracked in gathio: events that are being organized. When this document uses the word `Event` with a capital E and in monospace, it refers to the [`Event` object defined in the ActivityStreams Vocabulary spec](https://www.w3.org/TR/activitystreams-vocabulary/#dfn-event).
+
 ## Federation philosophy
 
 The first-class Actor in gathio is an event. So every time an event organizer creates a page for a new event, there is a new, followable Actor on the fediverse. The idea is that humans want to follow events and get updates on important changes to the events.
 
-This differs from other ActivityPub-compatible software I've seen, which considers _people_ first class, and you follow an Actor representing a person and then you get updates on all their events. I think that is silly, and I like my model better.
+This differs from other ActivityPub-compatible software I've seen, which considers _people_ first class, and you follow an Actor representing a person and then you get updates on all their events. I think that is silly, and I like my model better. From my perspective, the accounts of _people_ should live on people-focused services like Mastodon/Pleroma/Friendica/etc. This service is for events, and thus events are its first-class Actor.
 
 Also, gathio prides itself on deleting ALL data related to an event 7 days after the event is over. So we don't retain old messages once an event is deleted, and events are meant to be represented by Actors that only exist for the duration of the event plus 7 days. This is handled via thorough `Delete` messaging.
+
+The point of federating this is so that people can simply follow an event and get all the updates they care about, and even RSVP to and comment on the event directly from their ActivityPub client. This is all without signing up or anything on gathio.
 
 ## Inbox behavior
 
@@ -34,7 +40,7 @@ Gathio has a single, universal inbox shared between all Actors. The url is:
 
 `https://DOMAIN/activitypub/inbox`
 
-You can talk to gathio by POSTing to that url as you would any ActivityPub server.
+You can talk to gathio by POSTing to that url as you would any ActivityPub server. The `to` (or sometimes `cc` field) is what lets us know which event Actor you're interacting with.
 
 ### Follow
 
@@ -44,7 +50,7 @@ Assuming we can find the `Actor ` object, then we emit an `Accept` Activity back
 
 After this, we *also* send a `Create` Activity to the actor's inbox, containing an `Event` object with the information for this event. This is, at the moment, future compatibility for servers that consume `Event` objects. This is sent as a "direct message", directly to the inbox with no `cc` field and not addressing the public timeline.
 
-And finally we send the user a `Create` Activity containing a `Question` object. Mastodon renders this as a poll to the user, which lets them send back to us a "Yes" RSVP directly from their client UI should they so choose. This is also sent as a "direct message".
+And finally we send the user a `Create` Activity containing a `Question` object. The `Question` is an invitation to RSVP to the event. Mastodon renders this as a poll to the user, which lets them send back to us a "Yes" RSVP directly from their client UI should they so choose. This is also sent as a "direct message".
 
 ### Unfollow
 
@@ -52,7 +58,14 @@ When the server receives an `Undo/Follow`, it checks to see if that follower exi
 
 We currently do _not_ send an `Accept/Undo` in response, as I'm not sure this is ever needed in the wild.
 
-### RSVP (aka voting in the poll)
+### RSVP
+
+The plan is to have this support two ways to RSVP:
+
+1. The user answers the `Question` sent out to the prospective attendee in the form of a `Create/Note` in the style of Mastodon polls. This is mostly a hack for implementations like Mastodon that don't have vocabulary built in to RSVP to `Event`s.
+2. (TODO) The user sends a `Accept/Event`, `Reject/Event`, or `TentativeAccept/Event` back to our server. This is for implementations that support `Event` and do things like automatically render incoming events in their UI with an RSVP interface.
+
+The first method is the only one implemented right now. It works as follows.
 
 If the inbox gets a `Create/Note`, there is a chance that this is a response to a `Question` that we sent a user. So the first thing we do is check its `inReplyTo` property. If it matches the id of a `Question` we sent this user, and this user is still following us, then we fetch the user's profile info. This is to make sure we have their newest `preferredName` in their Actor object, which we will honor as the name we display on the RSVP. We then add this person to our database as an attendee of the event.
 
@@ -62,7 +75,7 @@ Next we confirm that the user has RSVPed. We do this by sending them a `Create/N
 
 If we are CC'ed on a _public or unlisted_ `Create/Note`, then that is considered to be a comment on the event, which we store in our database and render on the event page if the administrator has enabled commenting.
 
-After the comment is added and rendered on the front page, we also broadcast the comment as a `Create/Note` to all followers. It appears in their home timelines as though the event they are following posted some content for them to see.
+After the comment is added and rendered on the front page, we also broadcast to our followers an `Announce/Note`, containing a copy of the `Note` we just received. Some implementations treat this as a "boost", where people following our account, but not necessarily following the account that wrote the `Note`, will see the `Note` rendered with credit to the original author, promoted on behalf of our account.
 
 ### Delete comment
 
