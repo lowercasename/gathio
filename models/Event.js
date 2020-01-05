@@ -220,6 +220,10 @@ const EventSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  activityPubEvent: {
+    type: String,
+    trim: true
+  },
   publicKey: {
     type: String,
     trim: true

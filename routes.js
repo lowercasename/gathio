@@ -117,12 +117,18 @@ const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
 				  addToLog("deleteOldEvents", "error", "Image deleted for old event "+event.id);
 				})
 			}
-			Event.remove({"_id": event._id})
-			.then(response => {
-				addToLog("deleteOldEvents", "success", "Old event "+event.id+" deleted");
-			}).catch((err) => {
-				addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
-			});
+      // broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
+      const guidUpdateObject = crypto.randomBytes(16).toString('hex');
+      const jsonUpdateObject = JSON.parse(event.activityPubActor);
+      // first broadcast AP messages, THEN delete from DB
+      broadcastDeleteMessage(jsonUpdateObject, event.followers, event.id, function(statuses) {
+        Event.remove({"_id": event._id})
+        .then(response => {
+          addToLog("deleteOldEvents", "success", "Old event "+event.id+" deleted");
+        }).catch((err) => {
+          addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
+        });
+      });
 		})
 	}).catch((err) => {
 		addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
@@ -143,6 +149,33 @@ function createWebfinger(eventID, domain) {
       }
     ]
   };
+}
+
+function createActivityPubEvent(name, startUTC, endUTC, timezone) {
+  const guid = crypto.randomBytes(16).toString('hex');
+  let eventObject = {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    'id': `https://${domain}/${guid}`,
+    "name": name,
+    "type": "Event",
+    "startTime": moment.tz(startUTC, timezone).format(),
+    "endTime": moment.tz(endUTC, timezone).format(),
+  }
+  return JSON.stringify(eventObject);
+}
+
+function updateActivityPubEvent(oldEvent, name, startUTC, endUTC, timezone) {
+  // we want to persist the old ID no matter what happens to the Event itself
+  const id = oldEvent.id;
+  let eventObject = {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    'id': id,
+    "name": name,
+    "type": "Event",
+    "startTime": moment.tz(startUTC, timezone).format(),
+    "endTime": moment.tz(endUTC, timezone).format(),
+  }
+  return JSON.stringify(eventObject);
 }
 
 function createActivityPubActor(eventID, domain, pubkey, description, name, location, imageFilename, startUTC, endUTC, timezone) {
@@ -348,7 +381,6 @@ function broadcastUpdateMessage(apObject, followers, eventID, callback) {
         if (follower) {
           const actorJson = JSON.parse(follower.actorJson);
           const inbox = actorJson.inbox;
-          console.log('found the inbox for', actorId)
           const createMessage = {
             '@context': 'https://www.w3.org/ns/activitystreams',
             'id': `https://${domain}/m/${guidUpdate}`,
@@ -356,8 +388,6 @@ function broadcastUpdateMessage(apObject, followers, eventID, callback) {
             'actor': `https://${domain}/${eventID}`,
             'object': apObject
           };
-          console.log('UPDATE')
-          console.log(JSON.stringify(createMessage));
           signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
             if (err) {
               console.log(`Didn't sent to ${actorId}, status ${status} with error ${err}`);
@@ -377,6 +407,69 @@ function broadcastUpdateMessage(apObject, followers, eventID, callback) {
     });
   } // end followers
 }
+
+function broadcastDeleteMessage(apObject, followers, eventID, callback) {
+  callback = callback || function() {};
+  // we need to build an array of promises for each message we're sending, run Promise.all(), and then that will resolve when every message has been sent (or failed)
+  // per spec, each promise will execute *as it is built*, which is fine, we just need the guarantee that they are all done
+  let promises = [];
+
+  let guidUpdate = crypto.randomBytes(16).toString('hex');
+  console.log('building promises');
+  // iterate over followers
+  for (const follower of followers) {
+    promises.push(new Promise((resolve, reject) => {
+      let actorId = follower.actorId;
+      let myURL = new URL(actorId);
+      let targetDomain = myURL.hostname;
+      // get the inbox
+      Event.findOne({
+        id: eventID,
+        }, function(err, event) {
+        console.log('found the event for broadcast');
+        if (event) {
+          const follower = event.followers.find(el => el.actorId === actorId);
+          if (follower) {
+            const actorJson = JSON.parse(follower.actorJson);
+            const inbox = actorJson.inbox;
+            const createMessage = {
+              '@context': 'https://www.w3.org/ns/activitystreams',
+              'id': `https://${domain}/m/${guidUpdate}`,
+              'type': 'Delete',
+              'actor': `https://${domain}/${eventID}`,
+              'object': apObject
+            };
+            signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
+              if (err) {
+                console.log(`Didn't send to ${actorId}, status ${status} with error ${err}`);
+                reject(`Didn't send to ${actorId}, status ${status} with error ${err}`);
+              }
+              else {
+                console.log('sent to', actorId);
+                resolve('sent to', actorId);
+              }
+            });
+          }
+          else {
+            console.log(`No follower found with the id ${actorId}`, null, 404);
+            reject(`No follower found with the id ${actorId}`, null, 404);
+          }
+        }
+        else {
+          console.log(`No event found with the id ${eventID}`, null, 404);
+          reject(`No event found with the id ${eventID}`, null, 404);
+        }
+      });
+    }));
+  } // end followers
+
+  Promise.all(promises.map(p => p.catch(e => e))).then(statuses => {
+    console.log('DONE')
+    console.log(statuses)
+    callback(statuses);
+  });
+}
+
 function signAndSend(message, eventID, targetDomain, inbox, callback) {
   let inboxFragment = inbox.replace('https://'+targetDomain,'');
   // get the private key
@@ -448,6 +541,7 @@ router.get('/', (req, res) => {
   res.render('home', {
     domain: domain,
     email: contactEmail,
+    siteName: siteName,
   });
 });
 
@@ -665,6 +759,7 @@ router.get('/:eventID', (req, res) => {
             eventHasConcluded: eventHasConcluded,
             eventHasBegun: eventHasBegun,
             metadata: metadata,
+            siteName: siteName
           })
         }
 			}
@@ -890,6 +985,7 @@ router.post('/newevent', async (req, res) => {
         maxAttendees: req.body.maxAttendees,
 		firstLoad: true,
     activityPubActor: createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename, req.body.startUTC, req.body.endUTC, req.body.timezone),
+    activityPubEvent: createActivityPubEvent(req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
     publicKey: pair.public,
     privateKey: pair.private
 	});
@@ -1102,11 +1198,14 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				usersCanComment: req.body.interactionCheckbox ? true : false,
                 maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
 				eventGroup: isPartOfEventGroup ? eventGroup._id : null,
-        activityPubActor: updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone)
+        activityPubActor: updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
+        activityPubEvent: updateActivityPubEvent(JSON.parse(event.activityPubEvent), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
 			}
       let diffText = '<p>This event was just updated with new information.</p><ul>';
       let displayDate;
-      // TODO: send an Update Profile message if needed?
+      if (event.name !== updatedEvent.name) {
+        diffText += `<li>the event name changed to ${updatedEvent.name}</li>`;
+      }
       if (event.location !== updatedEvent.location) {
         diffText += `<li>the location changed to ${updatedEvent.location}</li>`;
       }
@@ -1150,9 +1249,11 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
             }
             broadcastMessage(jsonObject, event.followers, eventID)
             // also broadcast an Update profile message to all followers so that at least Mastodon servers will update the local profile information
-            const guidUpdateObject = crypto.randomBytes(16).toString('hex');
             const jsonUpdateObject = JSON.parse(event.activityPubActor);
             broadcastUpdateMessage(jsonUpdateObject, event.followers, eventID)
+            // also broadcast an Update/Event for any calendar apps that are consuming our Events
+            const jsonEventObject = JSON.parse(event.activityPubEvent);
+            broadcastUpdateMessage(jsonEventObject, event.followers, eventID)
 
             // DM to attendees
             for (const attendee of attendees) {
@@ -1304,58 +1405,63 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 				eventImage = event.image;
 			}
 
-			// Send emails here otherwise they don't exist lol
-			if (sendEmails) {
-				Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-					attendeeEmails = ids;
-					if (!error){
-						console.log("Sending emails to: " + attendeeEmails);
-            req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', {siteName, domain, eventName: event.name, cache: true, layout: 'email.handlebars'}, function(err, html) {
-              const msg = {
-                to: attendeeEmails,
-                from: {
-                  name: siteName,
-                  email: contactEmail,
-                },
-                subject: `${siteName}: ${event.name} was deleted`,
-                html,
-              };
-              sgMail.sendMultiple(msg).catch(e => {
-                console.error(e.toString());
-                res.status(500).end();
-              });
+      // broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
+      const guidUpdateObject = crypto.randomBytes(16).toString('hex');
+      const jsonUpdateObject = JSON.parse(event.activityPubActor);
+      // first broadcast AP messages, THEN delete from DB
+      broadcastDeleteMessage(jsonUpdateObject, event.followers, req.params.eventID, function(statuses) {
+        Event.deleteOne({id: req.params.eventID}, function(err, raw) {
+          if (err) {
+            res.send(err);
+            addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);
+          }
+        })
+        .then(() => {
+          // Delete image
+          if (eventImage){
+            fs.unlink(global.appRoot + '/public/events/' + eventImage, (err) => {
+              if (err) {
+              res.send(err);
+              addToLog("deleteEvent", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
+              }
+                // Image removed
+                addToLog("deleteEvent", "success", "Event " + req.params.eventID + " deleted");
+            })
+          }
+          res.writeHead(302, {
+            'Location': '/'
             });
-					}
-					else {
-						console.log("Nothing to send!");
-					}
-				});
-			}
-
-			Event.deleteOne({id: req.params.eventID}, function(err, raw) {
-				if (err) {
-					res.send(err);
-					addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);
-				}
-			})
-			.then(() => {
-				// Delete image
-				if (eventImage){
-					fs.unlink(global.appRoot + '/public/events/' + eventImage, (err) => {
-					  if (err) {
-						res.send(err);
-						addToLog("deleteEvent", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
-					  }
-					  	// Image removed
-					  	addToLog("deleteEvent", "success", "Event " + req.params.eventID + " deleted");
-					})
-				}
-				res.writeHead(302, {
-					'Location': '/'
-					});
-				res.end();
-			})
-			.catch((err) => { res.send('Sorry! Something went wrong (error deleting): ' + err); addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);});
+          res.end();
+        })
+        .catch((err) => { res.send('Sorry! Something went wrong (error deleting): ' + err); addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);});
+      });
+        // send emails here otherwise they don't exist lol
+        if (sendEmails) {
+          Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
+            attendeeEmails = ids;
+            if (!error){
+              console.log("Sending emails to: " + attendeeEmails);
+              req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', {siteName, domain, eventName: event.name, cache: true, layout: 'email.handlebars'}, function(err, html) {
+                const msg = {
+                  to: attendeeEmails,
+                  from: {
+                    name: siteName,
+                    email: contactEmail,
+                  },
+                  subject: `${siteName}: ${event.name} was deleted`,
+                  html,
+                };
+                sgMail.sendMultiple(msg).catch(e => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+              });
+            }
+            else {
+              console.log("Nothing to send!");
+            }
+          });
+        }
 		}
 		else {
 			// Token doesn't match
@@ -1500,6 +1606,44 @@ router.post('/unattendevent/:eventID', (req, res) => {
 	});
 });
 
+router.get('/oneclickunattendevent/:eventID/:attendeeID', (req, res) => {
+  console.log(req.params.eventID, req.params.attendeeID)
+	Event.update(
+	    { id: req.params.eventID },
+	    { $pull: { attendees: { _id: req.params.attendeeID } } }
+	)
+	.then(response => {
+		console.log(response)
+		addToLog("oneClickUnattend", "success", "Attendee removed via one click unattend " + req.params.eventID);
+		if (sendEmails) {
+      // currently this is never called because we don't have the email address
+			if (req.body.attendeeEmail){
+        req.app.get('hbsInstance').renderView('./views/emails/removeeventattendee.handlebars', {eventName: req.params.eventName, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
+            to: req.body.attendeeEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+						subject: `${siteName}: You have been removed from an event`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
+			}
+		}
+		res.writeHead(302, {
+			'Location': '/' + req.params.eventID
+			});
+		res.end();
+	})
+	.catch((err) => {
+		res.send('Database error, please try again :('); addToLog("removeEventAttendee", "error", "Attempt to remove attendee by admin from event " + req.params.eventID + " failed with error: " + err);
+	});
+});
+
 router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
 	Event.update(
 	    { id: req.params.eventID },
@@ -1554,6 +1698,16 @@ router.post('/post/comment/:eventID', (req, res) => {
 		event.save()
 		.then(() => {
 			addToLog("addEventComment", "success", "Comment added to event " + req.params.eventID);
+      // broadcast an identical message to all followers, will show in their home timeline
+      const guidObject = crypto.randomBytes(16).toString('hex');
+      const jsonObject = {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "id": `https://${domain}/m/${guidObject}`,
+        "name": `Comment on ${event.name}`,
+        "type": "Note",
+        "content": `<p>${req.body.commentAuthor} commented: ${req.body.commentContent}.</p><p><a href="https://${domain}/${req.params.eventID}/">See the full conversation here.</a></p>`,
+      }
+      broadcastMessage(jsonObject, event.followers, req.params.eventID)
 			if (sendEmails) {
 				Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
 				attendeeEmails = ids;
@@ -1607,6 +1761,16 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 			event.save()
 			.then(() => {
 				addToLog("addEventReply", "success", "Reply added to comment " + commentID + " in event " + req.params.eventID);
+        // broadcast an identical message to all followers, will show in their home timeline
+        const guidObject = crypto.randomBytes(16).toString('hex');
+        const jsonObject = {
+          "@context": "https://www.w3.org/ns/activitystreams",
+          "id": `https://${domain}/m/${guidObject}`,
+          "name": `Comment on ${event.name}`,
+          "type": "Note",
+          "content": `<p>${req.body.replyAuthor} commented: ${req.body.replyContent}</p><p><a href="https://${domain}/${req.params.eventID}/">See the full conversation here.</a></p>`,
+        }
+        broadcastMessage(jsonObject, event.followers, req.params.eventID)
 				if (sendEmails) {
 					Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
 						attendeeEmails = ids;
@@ -1718,15 +1882,10 @@ router.post('/activitypub/inbox', (req, res) => {
     const signatureBuf = new Buffer(signature_header.signature, 'base64')
     try {
       const result = verifier.verify(publicKeyBuf, signatureBuf)
+      processInbox(req, res);
     }
     catch(err) {
       return res.status(401).send('Signature could not be verified: ' + err);
-    }
-    if (!result) {
-      return res.status(401).send('Signature could not be verified.');
-    }
-    else {
-      processInbox(req, res);
     }
   });
 });
@@ -1773,6 +1932,11 @@ function processInbox(req, res) {
                 }
                 else {
                   console.log('sent Accept to', req.body.actor);
+                  // ALSO send an ActivityPub Event activity since this person is "interested" in the event, as indicated by the Follow
+                  const jsonEventObject = JSON.parse(event.activityPubEvent);
+                  // send direct message to user
+                  sendDirectMessage(jsonEventObject, newFollower.actorId, event.id);
+
                   // if users can self-RSVP, send a Question to the new follower
                   if (event.usersCanAttend) {
                     const jsonObject = {
@@ -1886,9 +2050,20 @@ function processInbox(req, res) {
                     };
                     event.attendees.push(newAttendee);
                     event.save()
-                    .then(() => {
+                    .then((fullEvent) => {
                       addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
-                      console.log('added attendee', attendeeName)
+                      // get the new attendee with its hidden id from the full event
+                      let fullAttendee = fullEvent.attendees.find(el => el.id === attributedTo);
+                      // send a "click here to remove yourself" link back to the user as a DM
+                      const jsonObject = {
+                        "@context": "https://www.w3.org/ns/activitystreams",
+                        "name": `RSVP to ${event.name}`,
+                        "type": "Note",
+                        "content": `<span class=\"h-card\"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
+                        "tag":[{"type":"Mention","href":newAttendee.id,"name":newAttendee.name}]
+                      }
+                      // send direct message to user
+                      sendDirectMessage(jsonObject, newAttendee.id, event.id);
                       return res.sendStatus(200);
                     })
                     .catch((err) => { addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err); return res.status(500).send('Database error, please try again :('); });
@@ -1933,9 +2108,9 @@ function processInbox(req, res) {
       }
 
       // delete the comment
-      // find the index of the comment
+      // find the index of the comment, it should have an activityJson field because from an AP server you can only delete an AP-originated comment (and of course it needs to be yours)
       let indexOfComment = eventWithComment.comments.findIndex(comment => {
-        return JSON.parse(comment.activityJson).object.id === req.body.object.id;
+        return comment.activityJson && JSON.parse(comment.activityJson).object.id === req.body.object.id;
       });
       eventWithComment.comments.splice(indexOfComment, 1);
 			eventWithComment.save()
@@ -1949,7 +2124,6 @@ function processInbox(req, res) {
   }
 	// if we are CC'ed on a public or unlisted Create/Note, then this is a comment to us we should replicate
   if (req.body && req.body.type === 'Create' && req.body.object && req.body.object.type === 'Note' && req.body.object.to) {
-    console.log('create note!!')
     // figure out what this is in reply to -- it should be addressed specifically to us
     let {attributedTo, inReplyTo, to, cc} = req.body.object;
     // normalize cc into an array
@@ -2005,6 +2179,16 @@ function processInbox(req, res) {
               event.save()
               .then(() => {
                 addToLog("addEventComment", "success", "Comment added to event " + eventID);
+                // broadcast an identical message to all followers, will show in their home timeline
+                const guidObject = crypto.randomBytes(16).toString('hex');
+                const jsonObject = {
+                  "@context": "https://www.w3.org/ns/activitystreams",
+                  "id": `https://${domain}/m/${guidObject}`,
+                  "name": `Comment on ${event.name}`,
+                  "type": "Note",
+                  "content": newComment.content,
+                }
+                broadcastMessage(jsonObject, event.followers, req.params.eventID)
                 console.log('added comment');
                 res.sendStatus(200);
               })

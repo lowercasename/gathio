@@ -134,7 +134,7 @@
 		{{#if eventAttendees}}
 			<ul class="attendeesList">
 				{{#each eventAttendees}}
-					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><a href="{{this.id}}"><span class="attendee-name">{{this.name}}</span></a>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}>{{#if this.email}}<span class="attendee-name">{{this.name}}</span>{{else}}<a href="{{this.id}}"><span class="attendee-name">{{this.name}}</span></a>{{/if}}{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
 				{{/each}}
 			</ul>
 		{{else}}
