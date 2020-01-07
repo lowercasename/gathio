@@ -1,29 +1,8 @@
-<h1>🚨Experimental Fediverse Event Software🚨</h1>
+<h1>{{siteName}}</h1>
+
 <p class="lead">
-  This is experimental software from <a href="https://tinysubversions.com">Darius Kazemi</a>.
+  <strong>gath<span class="text-muted">io</span></strong> is a quick and easy way to make and share events which respects your privacy.
 </p>
-
-<hr>
-
-<p>The Fediverse needs an event organizing system, so I've taken the incredibly lovely open source event organizing software <strong><a href="https://gath.io">gath.io</a></strong> and added my <a href="https://github.com/dariusk/express-activitypub">lightweight ActivityPub server</a> to the mix.</p>
-
-<p>I fully expect this to break, and I would love early testers. I'm especially interested to know how this interacts with people who aren't on Mastodon.</p>
-
-<h2>Directions</h2>
-
-<p>Hit the green New Event button and put in your event details. Your event will have a nice looking home page and it will also have an ActivityPub-compatible account and profile. It will give you the account handle for the event, which will look something like <strong>@aB3_2HI@{{domain}}</strong> and can be shared with people on the Fediverse who want to follow your event.</p>
-
-<p>When a person follows your event, they'll follow a feed that updates whenever you update event details. After a person follows, this software will DM the person a poll (aka an ActivityPub "Question") where, at least in Mastodon, they can vote Yes/No/Maybe. If they vote Yes, then they will be registered as an attendee on your page. No and Maybe don't do anything yet.</p>
-
-<p>Also when you update your event (changing any of the fields), you send a DM notification to every user who is registered as attending.</p>
-
-<h2>Further info</h2>
-
-<p>I'll publish the source code soon, but it's in crummy and undocumented shape right now and I'd rather see it perform "in the wild" before I do an official release.</p>
-
-<p>If you'd like to chat with me about this software, I can be reached at <a href="https://friend.camp/@darius">@darius@friend.camp</a>.</p>
-
-<p>What follows is the documentation from <strong>gath.io</strong>.</p>
 
 <hr>
 
