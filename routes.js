@@ -196,6 +196,7 @@ router.get('/new/event/public', (req, res) => {
 	});
 })
 
+// return the JSON for the featured/pinned post for this event
 router.get('/:eventID/featured', (req, res) => {
   const {eventID} = req.params;
   const guidObject = crypto.randomBytes(16).toString('hex');
@@ -210,6 +211,7 @@ router.get('/:eventID/featured', (req, res) => {
   res.json(featured);
 });
 
+// return the JSON for a given activitypub message
 router.get('/:eventID/m/:hash', (req, res) => {
   const {hash, eventID} = req.params;
   const id = `https://${domain}/${eventID}/m/${hash}`;
@@ -241,6 +243,7 @@ router.get('/:eventID/m/:hash', (req, res) => {
   });
 });
 
+// return the webfinger record required for the initial activitypub handshake
 router.get('/.well-known/webfinger', (req, res) => {
   let resource = req.query.resource;
   if (!resource || !resource.includes('acct:')) {
@@ -1290,6 +1293,8 @@ router.post('/unattendevent/:eventID', (req, res) => {
 	});
 });
 
+// this is a one-click unattend that requires a secret URL that only the person who RSVPed over
+// activitypub knows
 router.get('/oneclickunattendevent/:eventID/:attendeeID', (req, res) => {
   // Mastodon will "click" links that sent to its users, presumably as a prefetch?
   // Anyway, this ignores the automated clicks that are done without the user's knowledge
