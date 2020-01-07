@@ -175,11 +175,9 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
               event.save()
               .then(() => {
                 addToLog("addActivityPubMessage", "success", "ActivityPubMessage added to event " + eventID);
-                console.log('successful ActivityPubMessage add');
                 callback(null, message.id, 200);
               })
               .catch((err) => { addToLog("addActivityPubMessage", "error", "Attempt to add ActivityPubMessage to event " + eventID + " failed with error: " + err);
-                console.log('error', err)
                 callback(err, null, 500);
               });
             })
@@ -195,26 +193,22 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
 // this function sends something to the timeline of every follower in the followers array
 // it's also an unlisted public message, meaning non-followers can see the message if they look at
 // the profile but it doesn't spam federated timelines
-function broadcastCreateMessage(apObject, followers, eventID, callback) {
-  callback = callback || function() {};
+function broadcastCreateMessage(apObject, followers, eventID) {
   let guidCreate = crypto.randomBytes(16).toString('hex');
-  console.log('broadcasting');
-  // iterate over followers
-  for (const follower of followers) {
-    let actorId = follower.actorId;
-    let myURL = new URL(actorId);
-    let targetDomain = myURL.hostname;
-    // get the inbox
-    Event.findOne({
-      id: eventID,
-      }, function(err, event) {
-      console.log('found the event for broadcast')
-      if (event) {
-        const follower = event.followers.find(el => el.actorId === actorId);
-        if (follower) {
+  Event.findOne({
+    id: eventID,
+    }, function(err, event) {
+    if (event) {
+      // iterate over followers
+      for (const follower of followers) {
+        let actorId = follower.actorId;
+        let myURL = new URL(actorId);
+        let targetDomain = myURL.hostname;
+        // get the inbox
+        const followerFound = event.followers.find(el => el.actorId === actorId);
+        if (followerFound) {
           const actorJson = JSON.parse(follower.actorJson);
           const inbox = actorJson.inbox;
-          console.log('found the inbox for', actorId)
           const createMessage = {
             '@context': 'https://www.w3.org/ns/activitystreams',
             'id': `https://${domain}/${eventID}/m/${guidCreate}`,
@@ -234,35 +228,32 @@ function broadcastCreateMessage(apObject, followers, eventID, callback) {
           });
         }
         else {
-          callback(`No follower found with the id ${actorId}`, null, 404);
+          console.log(`No follower found with the id ${actorId}`);
         }
-      }
-      else {
-        callback(`No event found with the id ${eventID}`, null, 404);
-      }
-    });
-  } // end followers
+      } // end followers
+    } // end if event
+    else {
+      console.log(`No event found with the id ${eventID}`);
+    }
+  });
 }
 
 
 // sends an Announce for the apObject
-function broadcastAnnounceMessage(apObject, followers, eventID, callback) {
-  callback = callback || function() {};
+function broadcastAnnounceMessage(apObject, followers, eventID) {
   let guidUpdate = crypto.randomBytes(16).toString('hex');
-  console.log('broadcasting announce');
-  // iterate over followers
-  for (const follower of followers) {
-    let actorId = follower.actorId;
-    let myURL = new URL(actorId);
-    let targetDomain = myURL.hostname;
-    // get the inbox
-    Event.findOne({
-      id: eventID,
-      }, function(err, event) {
-      console.log('found the event for broadcast')
-      if (event) {
-        const follower = event.followers.find(el => el.actorId === actorId);
-        if (follower) {
+  Event.findOne({
+    id: eventID,
+    }, function(err, event) {
+    if (event) {
+      // iterate over followers
+      for (const follower of followers) {
+        let actorId = follower.actorId;
+        let myURL = new URL(actorId);
+        let targetDomain = myURL.hostname;
+        // get the inbox
+        const followerFound = event.followers.find(el => el.actorId === actorId);
+        if (followerFound) {
           const actorJson = JSON.parse(follower.actorJson);
           const inbox = actorJson.inbox;
           const announceMessage = {
@@ -276,7 +267,7 @@ function broadcastAnnounceMessage(apObject, followers, eventID, callback) {
           };
           signAndSend(announceMessage, eventID, targetDomain, inbox, function(err, resp, status) {
             if (err) {
-              console.log(`Didn't sent to ${actorId}, status ${status} with error ${err}`);
+              console.log(`Didn't send to ${actorId}, status ${status} with error ${err}`);
             }
             else {
               console.log('sent to', actorId);
@@ -285,35 +276,30 @@ function broadcastAnnounceMessage(apObject, followers, eventID, callback) {
         }
         else {
           console.log(`No follower found with the id ${actorId}`);
-          callback(`No follower found with the id ${actorId}`, null, 404);
         }
-      }
-      else {
-        console.log(`No event found with the id ${eventID}`);
-        callback(`No event found with the id ${eventID}`, null, 404);
-      }
-    });
-  } // end followers
+      } // end followers
+    } // end if event
+    else {
+      console.log(`No event found with the id ${eventID}`);
+    }
+  });
 }
 
 // sends an Update for the apObject
-function broadcastUpdateMessage(apObject, followers, eventID, callback) {
-  callback = callback || function() {};
+function broadcastUpdateMessage(apObject, followers, eventID) {
   let guidUpdate = crypto.randomBytes(16).toString('hex');
-  console.log('broadcasting update');
   // iterate over followers
-  for (const follower of followers) {
-    let actorId = follower.actorId;
-    let myURL = new URL(actorId);
-    let targetDomain = myURL.hostname;
-    // get the inbox
-    Event.findOne({
-      id: eventID,
-      }, function(err, event) {
-      console.log('found the event for broadcast')
-      if (event) {
-        const follower = event.followers.find(el => el.actorId === actorId);
-        if (follower) {
+  Event.findOne({
+    id: eventID,
+    }, function(err, event) {
+    if (event) {
+      for (const follower of followers) {
+        let actorId = follower.actorId;
+        let myURL = new URL(actorId);
+        let targetDomain = myURL.hostname;
+        // get the inbox
+        const followerFound = event.followers.find(el => el.actorId === actorId);
+        if (followerFound) {
           const actorJson = JSON.parse(follower.actorJson);
           const inbox = actorJson.inbox;
           const createMessage = {
@@ -333,14 +319,14 @@ function broadcastUpdateMessage(apObject, followers, eventID, callback) {
           });
         }
         else {
-          callback(`No follower found with the id ${actorId}`, null, 404);
+          console.log(`No follower found with the id ${actorId}`);
         }
-      }
-      else {
-        callback(`No event found with the id ${eventID}`, null, 404);
-      }
-    });
-  } // end followers
+      } // end followers
+    }
+    else {
+      console.log(`No event found with the id ${eventID}`);
+    }
+  });
 }
 
 function broadcastDeleteMessage(apObject, followers, eventID, callback) {
@@ -394,7 +380,7 @@ function broadcastDeleteMessage(apObject, followers, eventID, callback) {
           console.log(`No event found with the id ${eventID}`, null, 404);
           reject(`No event found with the id ${eventID}`, null, 404);
         }
-      });
+      }); // end event
     }));
   } // end followers
 
