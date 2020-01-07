@@ -132,24 +132,6 @@ const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
 	});
 });
 
-
-// ACTIVITYPUB HELPER FUNCTIONS
-function createWebfinger(eventID, domain) {
-  return {
-    'subject': `acct:${eventID}@${domain}`,
-
-    'links': [
-      {
-        'rel': 'self',
-        'type': 'application/activity+json',
-        'href': `https://${domain}/${eventID}`
-      }
-    ]
-  };
-}
-
-
-
 // FRONTEND ROUTES
 
 router.get('/', (req, res) => {
@@ -278,7 +260,7 @@ router.get('/.well-known/webfinger', (req, res) => {
         res.render('404', { url: req.url });
       }
       else {
-        res.json(createWebfinger(eventID, domain));
+        res.json(ap.createWebfinger(eventID, domain));
       }
     })
 		.catch((err) => {

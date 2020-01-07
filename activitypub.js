@@ -884,6 +884,20 @@ function processInbox(req, res) {
   }
 }
 
+function createWebfinger(eventID, domain) {
+  return {
+    'subject': `acct:${eventID}@${domain}`,
+
+    'links': [
+      {
+        'rel': 'self',
+        'type': 'application/activity+json',
+        'href': `https://${domain}/${eventID}`
+      }
+    ]
+  };
+}
+
 module.exports = {
   processInbox,
   sendAcceptMessage,
@@ -898,4 +912,5 @@ module.exports = {
   createActivityPubEvent,
   updateActivityPubEvent,
   createFeaturedPost,
+  createWebfinger,
 }
