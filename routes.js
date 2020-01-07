@@ -283,7 +283,7 @@ router.get('/:eventID', (req, res) => {
 		.then((event) => {
 			if (event) {
 				const parsedLocation = event.location.replace(/\s+/g, '+');
-        let displayDate;
+				let displayDate;
 				if (moment.tz(event.end, event.timezone).isSame(event.start, 'day')){
 					// Happening during one day
 					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">to</span>] h:mm a [<span class="text-muted">](z)[</span>]');
