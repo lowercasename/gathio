@@ -14,7 +14,7 @@ const router = express.Router();
 
 const Event = mongoose.model('Event');
 const EventGroup = mongoose.model('EventGroup');
-const Log = mongoose.model('Log');
+const addToLog = require('./helpers.js').addToLog;
 
 var moment = require('moment-timezone');
 
@@ -27,47 +27,47 @@ const request = require('request');
 const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
 const siteName = require('./config/domain.js').sitename
-var sanitizeHtml = require('sanitize-html');
+const ap = require('./activitypub.js');
 
 // Extra marked renderer (used to render plaintext event description for page metadata)
 // Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
 // &#63; to ? helper
-htmlEscapeToText = function (text) {
-    return text.replace(/\&\#[0-9]*;|&amp;/g, function (escapeCode) {
-        if (escapeCode.match(/amp/)) {
-            return '&';
-        }
-        return String.fromCharCode(escapeCode.match(/[0-9]+/));
-    });
+function htmlEscapeToText (text) {
+  return text.replace(/\&\#[0-9]*;|&amp;/g, function (escapeCode) {
+    if (escapeCode.match(/amp/)) {
+      return '&';
+    }
+    return String.fromCharCode(escapeCode.match(/[0-9]+/));
+  });
 }
 
-render_plain = function () {
-    var render = new marked.Renderer();
-    // render just the text of a link, strong, em
-    render.link = function (href, title, text) {
-        return text;
-    };
-	render.strong = function(text) {
-		return text;
-	}
-	render.em = function(text) {
-		return text;
-	}
-    // render just the text of a paragraph
-    render.paragraph = function (text) {
-        return htmlEscapeToText(text)+'\r\n';
-    };
-    // render nothing for headings, images, and br
-    render.heading = function (text, level) {
-        return '';
-    };
-    render.image = function (href, title, text) {
-        return '';
-    };
+function render_plain () {
+  var render = new marked.Renderer();
+  // render just the text of a link, strong, em
+  render.link = function (href, title, text) {
+    return text;
+  };
+  render.strong = function(text) {
+    return text;
+  }
+  render.em = function(text) {
+    return text;
+  }
+  // render just the text of a paragraph
+  render.paragraph = function (text) {
+    return htmlEscapeToText(text)+'\r\n';
+  };
+  // render nothing for headings, images, and br
+  render.heading = function (text, level) {
+    return '';
+  };
+  render.image = function (href, title, text) {
+    return '';
+  };
 	render.br = function () {
-		return '';
+    return '';
 	};
-    return render;
+  return render;
 }
 
 const ical = require('ical');
@@ -86,17 +86,6 @@ const fileUpload = require('express-fileupload');
 var Jimp = require('jimp');
 router.use(fileUpload());
 
-// LOGGING
-
-function addToLog(process, status, message) {
-	let logEntry = new Log({
-		status: status,
-		process: process,
-		message: message,
-		timestamp: moment()
-	});
-	logEntry.save().catch(() => { console.log("Error saving log entry!") });
-}
 
 // SCHEDULED DELETION
 
@@ -120,13 +109,16 @@ const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
       // broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
       const guidUpdateObject = crypto.randomBytes(16).toString('hex');
       const jsonUpdateObject = JSON.parse(event.activityPubActor);
+      const jsonEventObject = JSON.parse(event.activityPubEvent);
       // first broadcast AP messages, THEN delete from DB
-      broadcastDeleteMessage(jsonUpdateObject, event.followers, event.id, function(statuses) {
-        Event.remove({"_id": event._id})
-        .then(response => {
-          addToLog("deleteOldEvents", "success", "Old event "+event.id+" deleted");
-        }).catch((err) => {
-          addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
+      ap.broadcastDeleteMessage(jsonUpdateObject, event.followers, event.id, function(statuses) {
+        ap.broadcastDeleteMessage(jsonEventObject, event.followers, event.id, function(statuses) {
+          Event.remove({"_id": event._id})
+          .then(response => {
+            addToLog("deleteOldEvents", "success", "Old event "+event.id+" deleted");
+          }).catch((err) => {
+            addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
+          });
         });
       });
 		})
@@ -151,441 +143,7 @@ function createWebfinger(eventID, domain) {
   };
 }
 
-function createActivityPubEvent(name, startUTC, endUTC, timezone) {
-  const guid = crypto.randomBytes(16).toString('hex');
-  let eventObject = {
-    "@context": "https://www.w3.org/ns/activitystreams",
-    'id': `https://${domain}/${guid}`,
-    "name": name,
-    "type": "Event",
-    "startTime": moment.tz(startUTC, timezone).format(),
-    "endTime": moment.tz(endUTC, timezone).format(),
-  }
-  return JSON.stringify(eventObject);
-}
 
-function updateActivityPubEvent(oldEvent, name, startUTC, endUTC, timezone) {
-  // we want to persist the old ID no matter what happens to the Event itself
-  const id = oldEvent.id;
-  let eventObject = {
-    "@context": "https://www.w3.org/ns/activitystreams",
-    'id': id,
-    "name": name,
-    "type": "Event",
-    "startTime": moment.tz(startUTC, timezone).format(),
-    "endTime": moment.tz(endUTC, timezone).format(),
-  }
-  return JSON.stringify(eventObject);
-}
-
-function createActivityPubActor(eventID, domain, pubkey, description, name, location, imageFilename, startUTC, endUTC, timezone) {
-  let actor = {
-    '@context': [
-      'https://www.w3.org/ns/activitystreams',
-      'https://w3id.org/security/v1'
-    ],
-
-    'id': `https://${domain}/${eventID}`,
-    'type': 'Person',
-    'preferredUsername': `${eventID}`,
-    'inbox': `https://${domain}/activitypub/inbox`,
-    'outbox': `https://${domain}/${eventID}/outbox`,
-    'followers': `https://${domain}/${eventID}/followers`,
-    'summary': `<p>${description}</p>`,
-    'name': name,
-
-    'publicKey': {
-      'id': `https://${domain}/${eventID}#main-key`,
-      'owner': `https://${domain}/${eventID}`,
-      'publicKeyPem': pubkey
-    }
-  };
-  if (location) {
-    actor.summary += `<p>Location: ${location}.</p>`
-  }
-  let displayDate;
-  if (startUTC && timezone) {
-    displayDate = moment.tz(startUTC, timezone).format('D MMMM YYYY h:mm a');
-    actor.summary += `<p>Starting ${displayDate}.</p>`;
-  }
-  if (imageFilename) {
-    actor.icon = {
-      'type': 'Image',
-      'mediaType': 'image/jpg',
-      'url': `https://${domain}/events/${imageFilename}`,
-    };
-  }
-  return JSON.stringify(actor);
-}
-
-function updateActivityPubActor(actor, description, name, location, imageFilename, startUTC, endUTC, timezone) {
-  if (!actor) return;
-  actor.summary = `<p>${description}</p>`;
-  actor.name = name;
-  if (location) {
-    actor.summary += `<p>Location: ${location}.</p>`
-  }
-  let displayDate;
-  if (startUTC && timezone) {
-    displayDate = moment.tz(startUTC, timezone).format('D MMMM YYYY h:mm a');
-    actor.summary += `<p>Starting ${displayDate}.</p>`;
-  }
-  if (imageFilename) {
-    actor.icon = {
-      'type': 'Image',
-      'mediaType': 'image/jpg',
-      'url': `https://${domain}/events/${imageFilename}`,
-    };
-  }
-  return JSON.stringify(actor);
-}
-
-function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
-  callback = callback || function() {};
-  const guid = crypto.randomBytes(16).toString('hex');
-  const actorId = thebody.actor;
-  let message = {
-    '@context': 'https://www.w3.org/ns/activitystreams',
-    'id': `https://${domain}/${guid}`,
-    'type': 'Accept',
-    'actor': `https://${domain}/${eventID}`,
-    'object': thebody,
-  };
-  // get the inbox
-  Event.findOne({
-    id: eventID,
-    }, function(err, event) {
-    if (event) {
-      const follower = event.followers.find(el => el.actorId === actorId);
-      if (follower) {
-        const actorJson = JSON.parse(follower.actorJson);
-        const inbox = actorJson.inbox;
-        signAndSend(message, eventID, targetDomain, inbox, callback);
-      }
-    }
-    else {
-      callback(`Could not find event ${eventID}`, null, 404);
-    }
-  });
-}
-
-// this sends a message "to:" an individual fediverse user
-function sendDirectMessage(apObject, actorId, eventID, callback) {
-  callback = callback || function() {};
-  const guidCreate = crypto.randomBytes(16).toString('hex');
-  const guidObject = crypto.randomBytes(16).toString('hex');
-  let d = new Date();
-
-  apObject.published = d.toISOString();
-  apObject.attributedTo = `https://${domain}/${eventID}`;
-  apObject.to = actorId;
-  apObject.id = `https://${domain}/m/${guidObject}`;
-  apObject.content = unescape(apObject.content)
-
-  let createMessage = {
-    '@context': 'https://www.w3.org/ns/activitystreams',
-    'id': `https://${domain}/m/${guidCreate}`,
-    'type': 'Create',
-    'actor': `https://${domain}/${eventID}`,
-    'to': [actorId],
-    'object': apObject
-  };
-
-  let myURL = new URL(actorId);
-  let targetDomain = myURL.hostname;
-  // get the inbox
-  Event.findOne({
-    id: eventID,
-    }, function(err, event) {
-    if (event) {
-      const follower = event.followers.find(el => el.actorId === actorId);
-      if (follower) {
-        const actorJson = JSON.parse(follower.actorJson);
-        const inbox = actorJson.inbox;
-        signAndSend(createMessage, eventID, targetDomain, inbox, callback);
-      }
-      else {
-        callback(`No follower found with the id ${actorId}`, null, 404);
-      }
-    }
-    else {
-      callback(`No event found with the id ${eventID}`, null, 404);
-    }
-  });
-}
-
-// this function sends something to the timeline of every follower in the followers array
-function broadcastMessage(apObject, followers, eventID, callback) {
-  callback = callback || function() {};
-  let guidCreate = crypto.randomBytes(16).toString('hex');
-  console.log('broadcasting');
-  // iterate over followers
-  for (const follower of followers) {
-    let actorId = follower.actorId;
-    let myURL = new URL(actorId);
-    let targetDomain = myURL.hostname;
-    // get the inbox
-    Event.findOne({
-      id: eventID,
-      }, function(err, event) {
-      console.log('found the event for broadcast')
-      if (event) {
-        const follower = event.followers.find(el => el.actorId === actorId);
-        if (follower) {
-          const actorJson = JSON.parse(follower.actorJson);
-          const inbox = actorJson.inbox;
-          console.log('found the inbox for', actorId)
-          const createMessage = {
-            '@context': 'https://www.w3.org/ns/activitystreams',
-            'id': `https://${domain}/m/${guidCreate}`,
-            'type': 'Create',
-            'actor': `https://${domain}/${eventID}`,
-            'to': [actorId],
-            'object': apObject
-          };
-          signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
-            if (err) {
-              console.log(`Didn't sent to ${actorId}, status ${status} with error ${err}`);
-            }
-            else {
-              console.log('sent to', actorId);
-            }
-          });
-        }
-        else {
-          callback(`No follower found with the id ${actorId}`, null, 404);
-        }
-      }
-      else {
-        callback(`No event found with the id ${eventID}`, null, 404);
-      }
-    });
-  } // end followers
-}
-
-// sends an Announce for the apObject
-function broadcastAnnounceMessage(apObject, followers, eventID, callback) {
-  callback = callback || function() {};
-  let guidUpdate = crypto.randomBytes(16).toString('hex');
-  console.log('broadcasting announce');
-  // iterate over followers
-  for (const follower of followers) {
-    let actorId = follower.actorId;
-    let myURL = new URL(actorId);
-    let targetDomain = myURL.hostname;
-    // get the inbox
-    Event.findOne({
-      id: eventID,
-      }, function(err, event) {
-      console.log('found the event for broadcast')
-      if (event) {
-        const follower = event.followers.find(el => el.actorId === actorId);
-        if (follower) {
-          const actorJson = JSON.parse(follower.actorJson);
-          const inbox = actorJson.inbox;
-          const announceMessage = {
-            '@context': 'https://www.w3.org/ns/activitystreams',
-            'id': `https://${domain}/m/${guidUpdate}`,
-            'cc': 'https://www.w3.org/ns/activitystreams#Public',
-            'type': 'Announce',
-            'actor': `https://${domain}/${eventID}`,
-            'object': apObject,
-            'to': actorId
-          };
-          signAndSend(announceMessage, eventID, targetDomain, inbox, function(err, resp, status) {
-            if (err) {
-              console.log(`Didn't sent to ${actorId}, status ${status} with error ${err}`);
-            }
-            else {
-              console.log('sent to', actorId);
-            }
-          });
-        }
-        else {
-          console.log(`No follower found with the id ${actorId}`);
-          callback(`No follower found with the id ${actorId}`, null, 404);
-        }
-      }
-      else {
-        console.log(`No event found with the id ${eventID}`);
-        callback(`No event found with the id ${eventID}`, null, 404);
-      }
-    });
-  } // end followers
-}
-// sends an Update for the apObject
-function broadcastUpdateMessage(apObject, followers, eventID, callback) {
-  callback = callback || function() {};
-  let guidUpdate = crypto.randomBytes(16).toString('hex');
-  console.log('broadcasting update');
-  // iterate over followers
-  for (const follower of followers) {
-    let actorId = follower.actorId;
-    let myURL = new URL(actorId);
-    let targetDomain = myURL.hostname;
-    // get the inbox
-    Event.findOne({
-      id: eventID,
-      }, function(err, event) {
-      console.log('found the event for broadcast')
-      if (event) {
-        const follower = event.followers.find(el => el.actorId === actorId);
-        if (follower) {
-          const actorJson = JSON.parse(follower.actorJson);
-          const inbox = actorJson.inbox;
-          const createMessage = {
-            '@context': 'https://www.w3.org/ns/activitystreams',
-            'id': `https://${domain}/m/${guidUpdate}`,
-            'type': 'Update',
-            'actor': `https://${domain}/${eventID}`,
-            'object': apObject
-          };
-          signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
-            if (err) {
-              console.log(`Didn't sent to ${actorId}, status ${status} with error ${err}`);
-            }
-            else {
-              console.log('sent to', actorId);
-            }
-          });
-        }
-        else {
-          callback(`No follower found with the id ${actorId}`, null, 404);
-        }
-      }
-      else {
-        callback(`No event found with the id ${eventID}`, null, 404);
-      }
-    });
-  } // end followers
-}
-
-function broadcastDeleteMessage(apObject, followers, eventID, callback) {
-  callback = callback || function() {};
-  // we need to build an array of promises for each message we're sending, run Promise.all(), and then that will resolve when every message has been sent (or failed)
-  // per spec, each promise will execute *as it is built*, which is fine, we just need the guarantee that they are all done
-  let promises = [];
-
-  let guidUpdate = crypto.randomBytes(16).toString('hex');
-  console.log('building promises');
-  // iterate over followers
-  for (const follower of followers) {
-    promises.push(new Promise((resolve, reject) => {
-      let actorId = follower.actorId;
-      let myURL = new URL(actorId);
-      let targetDomain = myURL.hostname;
-      // get the inbox
-      Event.findOne({
-        id: eventID,
-        }, function(err, event) {
-        console.log('found the event for broadcast');
-        if (event) {
-          const follower = event.followers.find(el => el.actorId === actorId);
-          if (follower) {
-            const actorJson = JSON.parse(follower.actorJson);
-            const inbox = actorJson.inbox;
-            const createMessage = {
-              '@context': 'https://www.w3.org/ns/activitystreams',
-              'id': `https://${domain}/m/${guidUpdate}`,
-              'type': 'Delete',
-              'actor': `https://${domain}/${eventID}`,
-              'object': apObject
-            };
-            signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
-              if (err) {
-                console.log(`Didn't send to ${actorId}, status ${status} with error ${err}`);
-                reject(`Didn't send to ${actorId}, status ${status} with error ${err}`);
-              }
-              else {
-                console.log('sent to', actorId);
-                resolve('sent to', actorId);
-              }
-            });
-          }
-          else {
-            console.log(`No follower found with the id ${actorId}`, null, 404);
-            reject(`No follower found with the id ${actorId}`, null, 404);
-          }
-        }
-        else {
-          console.log(`No event found with the id ${eventID}`, null, 404);
-          reject(`No event found with the id ${eventID}`, null, 404);
-        }
-      });
-    }));
-  } // end followers
-
-  Promise.all(promises.map(p => p.catch(e => e))).then(statuses => {
-    console.log('DONE')
-    console.log(statuses)
-    callback(statuses);
-  });
-}
-
-function signAndSend(message, eventID, targetDomain, inbox, callback) {
-  let inboxFragment = inbox.replace('https://'+targetDomain,'');
-  // get the private key
-	Event.findOne({
-		id: eventID
-		})
-		.then((event) => {
-      if (event) { 
-        const privateKey = event.privateKey;
-        const signer = crypto.createSign('sha256');
-        let d = new Date();
-        let stringToSign = `(request-target): post ${inboxFragment}\nhost: ${targetDomain}\ndate: ${d.toUTCString()}`;
-        signer.update(stringToSign);
-        signer.end();
-        const signature = signer.sign(privateKey);
-        const signature_b64 = signature.toString('base64');
-        const header = `keyId="https://${domain}/${eventID}",headers="(request-target) host date",signature="${signature_b64}"`;
-        request({
-          url: inbox,
-          headers: {
-            'Host': targetDomain,
-            'Date': d.toUTCString(),
-            'Signature': header
-          },
-          method: 'POST',
-          json: true,
-          body: message
-        }, function (error, response){
-          if (error) {
-            console.log('Error:', error, response.body);
-            callback(error, null, 500);
-          }
-          else {
-            console.log('Response:', response.statusCode);
-            // Add the message to the database
-            const messageID = message.id;
-            const newMessage = {
-              id: message.id,
-              content: JSON.stringify(message)
-            };
-            Event.findOne({
-              id: eventID,
-              }, function(err,event) {
-              if (!event) return;
-              event.activityPubMessages.push(newMessage);
-              event.save()
-              .then(() => {
-                addToLog("addActivityPubMessage", "success", "ActivityPubMessage added to event " + eventID);
-                console.log('successful ActivityPubMessage add');
-                callback(null, message.id, 200);
-              })
-              .catch((err) => { addToLog("addActivityPubMessage", "error", "Attempt to add ActivityPubMessage to event " + eventID + " failed with error: " + err);
-                console.log('error', err)
-                callback(err, null, 500);
-              });
-            })
-          }
-        });
-      }
-      else {
-        callback(`No record found for ${eventID}.`, null, 404);
-      }
-    });
-}
 
 // FRONTEND ROUTES
 
@@ -614,7 +172,11 @@ router.get('/new', (req, res) => {
 //});
 
 router.get('/new/event', (req, res) => {
-	res.render('newevent');
+	res.render('newevent', {
+    domain: domain,
+    email: contactEmail,
+    siteName: siteName,
+  });
 });
 router.get('/new/event/public', (req, res) => {
 	let isPrivate = false;
@@ -640,12 +202,61 @@ router.get('/new/event/public', (req, res) => {
 		isPublic: isPublic,
 		isOrganisation: isOrganisation,
 		isUnknownType: isUnknownType,
-		eventType: 'public'
+		eventType: 'public',
+    domain: domain,
+    email: contactEmail,
+    siteName: siteName,
 	});
 })
 
+router.get('/:eventID/featured', (req, res) => {
+  const {eventID} = req.params;
+  const guidObject = crypto.randomBytes(16).toString('hex');
+  const featured = {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": `https://${domain}/${eventID}/featured`,
+    "type": "OrderedCollection",
+    "orderedItems": [
+      ap.createFeaturedPost(eventID)
+    ]
+  }
+  res.json(featured);
+});
+
+router.get('/:eventID/m/:hash', (req, res) => {
+  const {hash, eventID} = req.params;
+  const id = `https://${domain}/${eventID}/m/${hash}`;
+  console.log(id);
+
+  Event.findOne({
+    id: eventID
+  })
+  .then((event) => {
+    if (!event) {
+      res.status(404);
+      res.render('404', { url: req.url });
+    }
+    else {
+      const message = event.activityPubMessages.find(el => el.id === id);
+      if (message) {
+        return res.json(JSON.parse(message.content));
+      }
+      else {
+        res.status(404);
+        return res.render('404', { url: req.url });
+      }
+    }
+  })
+  .catch((err) => {
+    addToLog("getActivityPubMessage", "error", "Attempt to get Activity Pub Message for " + id + " failed with error: " + err);
+    console.log(err)
+    res.status(404);
+    res.render('404', { url: req.url });
+    return;
+  });
+});
+
 router.get('/.well-known/webfinger', (req, res) => {
-  console.log(req.query);
   let resource = req.query.resource;
   if (!resource || !resource.includes('acct:')) {
     return res.status(400).send('Bad request. Please make sure "acct:USER@DOMAIN" is what you are sending as the "resource" query parameter.');
@@ -655,7 +266,6 @@ router.get('/.well-known/webfinger', (req, res) => {
     let activityPubAccount = resource.replace('acct:','');
     // "foo"
     let eventID = activityPubAccount.replace(/@.*/,'');
-    console.log(eventID);
     Event.findOne({
       id: eventID
     })
@@ -675,14 +285,6 @@ router.get('/.well-known/webfinger', (req, res) => {
 			res.render('404', { url: req.url });
 			return;
 		});
-    //let db = req.app.get('db');
-    //let result = db.prepare('select webfinger from accounts where name = ?').get(name);
-    //if (result === undefined) {
-    //  return res.status(404).send(`No record found for ${name}.`);
-    //}
-    //else {
-    //  res.json(JSON.parse(result.webfinger));
-    //}
   }
 });
 
@@ -693,7 +295,8 @@ router.get('/:eventID', (req, res) => {
 		.populate('eventGroup')
 		.then((event) => {
 			if (event) {
-				parsedLocation = event.location.replace(/\s+/g, '+');
+				const parsedLocation = event.location.replace(/\s+/g, '+');
+        let displayDate;
 				if (moment.tz(event.end, event.timezone).isSame(event.start, 'day')){
 					// Happening during one day
 					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">to</span>] h:mm a [<span class="text-muted">](z)[</span>]');
@@ -701,10 +304,10 @@ router.get('/:eventID', (req, res) => {
 				else {
 					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a [<span class="text-muted">](z)[</span>]');
 				}
-				eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
-				eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
-				parsedStart = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
-				parsedEnd = moment.tz(event.end, event.timezone).format('YYYYMMDD[T]HHmmss');
+				let eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
+				let eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
+				let parsedStart = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
+				let parsedEnd = moment.tz(event.end, event.timezone).format('YYYYMMDD[T]HHmmss');
 				let eventHasConcluded = false;
 				if (moment.tz(event.end, event.timezone).isBefore(moment.tz(event.timezone))){
 					eventHasConcluded = true;
@@ -713,11 +316,11 @@ router.get('/:eventID', (req, res) => {
 				if (moment.tz(event.start, event.timezone).isBefore(moment.tz(event.timezone))){
 					eventHasBegun = true;
 				}
-				fromNow = moment.tz(event.start, event.timezone).fromNow();
-				parsedDescription = marked(event.description);
-				eventEditToken = event.editToken;
+				let fromNow = moment.tz(event.start, event.timezone).fromNow();
+				let parsedDescription = marked(event.description);
+				let eventEditToken = event.editToken;
 
-				escapedName = event.name.replace(/\s+/g, '+');
+				let escapedName = event.name.replace(/\s+/g, '+');
 
 				let eventHasCoverImage = false;
 				if( event.image ) {
@@ -867,10 +470,10 @@ router.get('/group/:eventGroupID', (req, res) => {
 		})
 		.then(async (eventGroup) => {
 			if (eventGroup) {
-				parsedDescription = marked(eventGroup.description);
-				eventGroupEditToken = eventGroup.editToken;
+				let parsedDescription = marked(eventGroup.description);
+				let eventGroupEditToken = eventGroup.editToken;
 
-				escapedName = eventGroup.name.replace(/\s+/g, '+');
+				let escapedName = eventGroup.name.replace(/\s+/g, '+');
 
 				let eventGroupHasCoverImage = false;
 				if( eventGroup.image ) {
@@ -998,8 +601,8 @@ router.post('/newevent', async (req, res) => {
 		});
 		eventImageFilename = eventID + '.jpg';
 	}
-	startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
-	endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+	let startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+	let endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 	let eventGroup;
 	if (req.body.eventGroupCheckbox) {
 		eventGroup = await EventGroup.findOne({
@@ -1036,8 +639,9 @@ router.post('/newevent', async (req, res) => {
 		usersCanComment: req.body.interactionCheckbox ? true : false,
         maxAttendees: req.body.maxAttendees,
 		firstLoad: true,
-    activityPubActor: createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename, req.body.startUTC, req.body.endUTC, req.body.timezone),
-    activityPubEvent: createActivityPubEvent(req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
+    activityPubActor: ap.createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
+    activityPubEvent: ap.createActivityPubEvent(req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation),
+    activityPubMessages: [ { id: `https://${domain}/${eventID}/m/featuredPost`, content: JSON.stringify(ap.createFeaturedPost(eventID, req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation)) } ],
     publicKey: pair.public,
     privateKey: pair.private
 	});
@@ -1074,10 +678,8 @@ router.post('/importevent', (req, res) => {
 	let eventID = shortid.generate();
 	let editToken = randomstring.generate();
 	if (req.files && Object.keys(req.files).length !== 0) {
-		importediCalObject = ical.parseICS(req.files.icsImportControl.data.toString('utf8'));
-		for (var key in importediCalObject) {
-    		importedEventData = importediCalObject[key];
-		}
+		let importediCalObject = ical.parseICS(req.files.icsImportControl.data.toString('utf8'));
+    let importedEventData = importediCalObject;
 		console.log(importedEventData)
 		let creatorEmail;
 		if (req.body.creatorEmail) {
@@ -1222,12 +824,13 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				});
 				eventImageFilename = eventID + '.jpg';
 			}
-			startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
-			endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+			let startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+			let endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 			
-			var isPartOfEventGroup = false;
+			let isPartOfEventGroup = false;
+      let eventGroup;
 			if (req.body.eventGroupCheckbox) {
-				var eventGroup = await EventGroup.findOne({
+				eventGroup = await EventGroup.findOne({
 					id: req.body.eventGroupID,
 					editToken: req.body.eventGroupEditToken
 				})
@@ -1250,8 +853,8 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				usersCanComment: req.body.interactionCheckbox ? true : false,
                 maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
 				eventGroup: isPartOfEventGroup ? eventGroup._id : null,
-        activityPubActor: updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
-        activityPubEvent: updateActivityPubEvent(JSON.parse(event.activityPubEvent), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
+        activityPubActor: ap.updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
+        activityPubEvent: ap.updateActivityPubEvent(JSON.parse(event.activityPubEvent), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
 			}
       let diffText = '<p>This event was just updated with new information.</p><ul>';
       let displayDate;
@@ -1294,18 +897,19 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
             const guidObject = crypto.randomBytes(16).toString('hex');
             const jsonObject = {
               "@context": "https://www.w3.org/ns/activitystreams",
-              "id": `https://${domain}/m/${guidObject}`,
+              "id": `https://${domain}/${req.params.eventID}/m/${guidObject}`,
               "name": `RSVP to ${event.name}`,
               "type": "Note",
-               "content": `${diffText} See here: <a href="https://${domain}/${req.params.eventID}">https://${domain}/${req.params.eventID}</a>`,
+              'cc': 'https://www.w3.org/ns/activitystreams#Public',
+              "content": `${diffText} See here: <a href="https://${domain}/${req.params.eventID}">https://${domain}/${req.params.eventID}</a>`,
             }
-            broadcastMessage(jsonObject, event.followers, eventID)
+            ap.broadcastCreateMessage(jsonObject, event.followers, eventID)
             // also broadcast an Update profile message to all followers so that at least Mastodon servers will update the local profile information
             const jsonUpdateObject = JSON.parse(event.activityPubActor);
-            broadcastUpdateMessage(jsonUpdateObject, event.followers, eventID)
+            ap.broadcastUpdateMessage(jsonUpdateObject, event.followers, eventID)
             // also broadcast an Update/Event for any calendar apps that are consuming our Events
             const jsonEventObject = JSON.parse(event.activityPubEvent);
-            broadcastUpdateMessage(jsonEventObject, event.followers, eventID)
+            ap.broadcastUpdateMessage(jsonEventObject, event.followers, eventID)
 
             // DM to attendees
             for (const attendee of attendees) {
@@ -1317,13 +921,13 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
                 "tag":[{"type":"Mention","href":attendee.id,"name":attendee.name}]
               }
               // send direct message to user
-              sendDirectMessage(jsonObject, attendee.id, eventID);
+              ap.sendDirectMessage(jsonObject, attendee.id, eventID);
             }
           }
         })
 				if (sendEmails) {
 					Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-						attendeeEmails = ids;
+						let attendeeEmails = ids;
 						if (!error && attendeeEmails !== ""){
 							console.log("Sending emails to: " + attendeeEmails);
               req.app.get('hbsInstance').renderView('./views/emails/editevent.handlebars', {diffText, eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
@@ -1401,32 +1005,6 @@ router.post('/editeventgroup/:eventGroupID/:editToken', (req, res) => {
 			})
 			.then(() => {
 				addToLog("editEventGroup", "success", "Event group " + req.params.eventGroupID + " edited");
-				// if (sendEmails) {
-				// 	Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-				// 		attendeeEmails = ids;
-				// 		if (!error && attendeeEmails != ""){
-				// 			console.log("Sending emails to: " + attendeeEmails);
-				// 			const msg = {
-				// 				to: attendeeEmails,
-				// 				from: {
-				// 					name: 'Gathio',
-				// 					email: contactEmail,
-				// 				},
-				// 				templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
-				// 				dynamic_template_data: {
-				// 					subject: 'gathio: Event edited',
-				// 					actionType: 'edited',
-				// 					eventExists: true,
-				// 					eventID: req.params.eventID
-				// 				}
-				// 			}
-				// 			sgMail.sendMultiple(msg);
-				// 		}
-				// 		else {
-				// 			console.log("Nothing to send!");
-				// 		}
-				// 	})
-				// }
 				res.writeHead(302, {
 					'Location': '/group/' + req.params.eventGroupID  + '?e=' + req.params.editToken
 					});
@@ -1461,7 +1039,7 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
       const guidUpdateObject = crypto.randomBytes(16).toString('hex');
       const jsonUpdateObject = JSON.parse(event.activityPubActor);
       // first broadcast AP messages, THEN delete from DB
-      broadcastDeleteMessage(jsonUpdateObject, event.followers, req.params.eventID, function(statuses) {
+      ap.broadcastDeleteMessage(jsonUpdateObject, event.followers, req.params.eventID, function(statuses) {
         Event.deleteOne({id: req.params.eventID}, function(err, raw) {
           if (err) {
             res.send(err);
@@ -1490,7 +1068,7 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
         // send emails here otherwise they don't exist lol
         if (sendEmails) {
           Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-            attendeeEmails = ids;
+            let attendeeEmails = ids;
             if (!error){
               console.log("Sending emails to: " + attendeeEmails);
               req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', {siteName, domain, eventName: event.name, cache: true, layout: 'email.handlebars'}, function(err, html) {
@@ -1751,18 +1329,20 @@ router.post('/post/comment/:eventID', (req, res) => {
 		.then(() => {
 			addToLog("addEventComment", "success", "Comment added to event " + req.params.eventID);
       // broadcast an identical message to all followers, will show in their home timeline
+      // and in the home timeline of the event
       const guidObject = crypto.randomBytes(16).toString('hex');
       const jsonObject = {
         "@context": "https://www.w3.org/ns/activitystreams",
-        "id": `https://${domain}/m/${guidObject}`,
+        "id": `https://${domain}/${req.params.eventID}/m/${guidObject}`,
         "name": `Comment on ${event.name}`,
         "type": "Note",
+        'cc': 'https://www.w3.org/ns/activitystreams#Public',
         "content": `<p>${req.body.commentAuthor} commented: ${req.body.commentContent}.</p><p><a href="https://${domain}/${req.params.eventID}/">See the full conversation here.</a></p>`,
       }
-      broadcastMessage(jsonObject, event.followers, req.params.eventID)
+      ap.broadcastCreateMessage(jsonObject, event.followers, req.params.eventID)
 			if (sendEmails) {
 				Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-				attendeeEmails = ids;
+				let attendeeEmails = ids;
 					if (!error){
 						console.log("Sending emails to: " + attendeeEmails);
             req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, domain, eventID: req.params.eventID, commentAuthor: req.body.commentAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
@@ -1817,15 +1397,16 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
         const guidObject = crypto.randomBytes(16).toString('hex');
         const jsonObject = {
           "@context": "https://www.w3.org/ns/activitystreams",
-          "id": `https://${domain}/m/${guidObject}`,
+          "id": `https://${domain}/${req.params.eventID}/m/${guidObject}`,
           "name": `Comment on ${event.name}`,
           "type": "Note",
+          'cc': 'https://www.w3.org/ns/activitystreams#Public',
           "content": `<p>${req.body.replyAuthor} commented: ${req.body.replyContent}</p><p><a href="https://${domain}/${req.params.eventID}/">See the full conversation here.</a></p>`,
         }
-        broadcastMessage(jsonObject, event.followers, req.params.eventID)
+        ap.broadcastCreateMessage(jsonObject, event.followers, req.params.eventID)
 				if (sendEmails) {
 					Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-						attendeeEmails = ids;
+						let attendeeEmails = ids;
 						if (!error){
 							console.log("Sending emails to: " + attendeeEmails);
               req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, domain, eventID: req.params.eventID, commentAuthor: req.body.replyAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
@@ -1887,8 +1468,6 @@ router.post('/deletecomment/:eventID/:commentID/:editToken', (req, res) => {
 });
 
 router.post('/activitypub/inbox', (req, res) => {
-  console.log('got an inbox message of type', req.body.type, req.body)
-
   // validate the incoming message
   const signature = req.get('Signature');
   let signature_header = signature.split(',').map(pair => {
@@ -1934,316 +1513,19 @@ router.post('/activitypub/inbox', (req, res) => {
     const signatureBuf = new Buffer(signature_header.signature, 'base64')
     try {
       const result = verifier.verify(publicKeyBuf, signatureBuf)
-      processInbox(req, res);
+      if (result) {
+        // actually process the ActivityPub message now that it's been verified
+        ap.processInbox(req, res);
+      }
+      else {
+        return res.status(401).send('Signature could not be verified.');
+      }
     }
     catch(err) {
       return res.status(401).send('Signature could not be verified: ' + err);
     }
   });
 });
-
-
-function processInbox(req, res) {
-  if (req.body.object) console.log('containing object of type', req.body.object.type)
-	// if a Follow activity hits the inbox
-  if (typeof req.body.object === 'string' && req.body.type === 'Follow') {
-    const myURL = new URL(req.body.actor);
-    let targetDomain = myURL.hostname;
-    let eventID = req.body.object.replace(`https://${domain}/`,'');
-    // Add the user to the DB of accounts that follow the account
-    // get the follower's username
-    request({
-      url: req.body.actor,
-      headers: {
-        'Accept': 'application/activity+json',
-        'Content-Type': 'application/activity+json'
-      }}, function (error, response, body) {
-        body = JSON.parse(body)
-        const name = body.preferredUsername || body.name || attributedTo;
-        const newFollower = {
-          actorId: req.body.actor,
-          followId: req.body.id,
-          name: name,
-          actorJson: JSON.stringify(body)
-        };
-        Event.findOne({
-          id: eventID,
-          }, function(err,event) {
-          // if this account is NOT already in our followers list, add it
-          if (event && !event.followers.map(el => el.actorId).includes(req.body.actor)) {
-            console.log('made it!')
-            event.followers.push(newFollower);
-            event.save()
-            .then(() => {
-              addToLog("addEventFollower", "success", "Follower added to event " + eventID);
-              console.log('successful follower add');
-              // Accept the follow request
-              sendAcceptMessage(req.body, eventID, targetDomain, function(err, resp, status) {
-                if (err) {
-                  console.log(`Didn't send Accept to ${req.body.actor}, status ${status} with error ${err}`);
-                }
-                else {
-                  console.log('sent Accept to', req.body.actor);
-                  // ALSO send an ActivityPub Event activity since this person is "interested" in the event, as indicated by the Follow
-                  const jsonEventObject = JSON.parse(event.activityPubEvent);
-                  // send direct message to user
-                  sendDirectMessage(jsonEventObject, newFollower.actorId, event.id);
-
-                  // if users can self-RSVP, send a Question to the new follower
-                  if (event.usersCanAttend) {
-                    const jsonObject = {
-                      "@context": "https://www.w3.org/ns/activitystreams",
-                      "name": `RSVP to ${event.name}`,
-                      "type": "Question",
-                       "content": `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}? (If you reply "Yes", you'll be listed as an attendee on the event page.)`,
-                       "oneOf": [
-                         {"type":"Note","name": "Yes"},
-                         {"type":"Note","name": "No"},
-                         {"type":"Note","name": "Maybe"}
-                       ],
-                      "endTime":event.start.toISOString(),
-                      "tag":[{"type":"Mention","href":req.body.actor,"name":name}]
-                    }
-                    // send direct message to user
-                    sendDirectMessage(jsonObject, req.body.actor, eventID, function (error, response, statuscode) {
-                      if (error) {
-                        console.log(error);
-                        res.status(statuscode).json(error);
-                      }
-                      else {
-                        res.status(statuscode).json({messageid: response});
-                      }
-                    });
-                  }
-                }
-              });
-            })
-            .catch((err) => { res.status(500).send('Database error, please try again :('); addToLog("addEventFollower", "error", "Attempt to add follower to event " + eventID + " failed with error: " + err); 
-            console.log('ERROR', err);
-            });
-          }
-        })
-      }) //end request
-  }
-	// if an Undo activity with a Follow object hits the inbox
-  if (req.body && req.body.type === 'Undo' && req.body.object && req.body.object.type === 'Follow') {
-    // get the record of all followers for this account
-    const eventID = req.body.object.object.replace(`https://${domain}/`,'');
-    Event.findOne({
-      id: eventID,
-      }, function(err,event) {
-        if (!event) return;
-        // check to see if the Follow object's id matches the id we have on record
-        // is this even someone who follows us
-        const indexOfFollower = event.followers.findIndex(el => el.actorId === req.body.object.actor);
-        if (indexOfFollower !== -1) {
-          // does the id we have match the id we are being given
-          if (event.followers[indexOfFollower].followId === req.body.object.id) {
-            // we have a match and can trust the Undo! remove this person from the followers list
-            event.followers.splice(indexOfFollower, 1);
-            event.save()
-            .then(() => {
-              res.send(200);
-              addToLog("removeEventFollower", "success", "Follower removed from event " + eventID);
-              console.log('successful follower removal')
-            })
-            .catch((err) => { res.send('Database error, please try again :('); addToLog("removeEventFollower", "error", "Attempt to remove follower from event " + eventID + " failed with error: " + err); 
-              console.log('error', err)
-            });
-          }
-        }
-    });
-  }
-	// if a Create activity with a Note object hits the inbox, it might be a vote in a poll
-  if (req.body && req.body.type === 'Create' && req.body.object && req.body.object.type === 'Note' && req.body.object.inReplyTo && req.body.object.to) {
-    console.log('create note inreplyto!!!')
-    // figure out what this is in reply to -- it should be addressed specifically to us
-    let {name, attributedTo, inReplyTo, to} = req.body.object;
-    // if it's an array just grab the first element, since a poll should only broadcast back to the pollster
-    if (Array.isArray(to)) {
-      to = to[0];
-    }
-    const eventID = to.replace(`https://${domain}/`,'');
-    // make sure this person is actually a follower
-    Event.findOne({
-      id: eventID,
-      }, function(err,event) {
-        if (!event) return;
-        // is this even someone who follows us
-        const indexOfFollower = event.followers.findIndex(el => el.actorId === req.body.object.attributedTo);
-        if (indexOfFollower !== -1) {
-          console.log('this person does follow us!')
-          // compare the inReplyTo to its stored message, if it exists and it's going to the right follower then this is a valid reply
-          const message = event.activityPubMessages.find(el => {
-            const content = JSON.parse(el.content);
-            return inReplyTo === (content.object && content.object.id);
-          });
-          if (message) {
-            console.log(message);
-            const content = JSON.parse(message.content);
-            // check if the message we sent out was sent to the actor this incoming message is attributedTo
-            if (content.to[0] === attributedTo) {
-              // it's a match, this is a valid poll response, add RSVP to database
-              // fetch the profile information of the user
-							request({
-								url: attributedTo,
-								headers: {
-									'Accept': 'application/activity+json',
-									'Content-Type': 'application/activity+json'
-								}}, function (error, response, body) {
-                  body = JSON.parse(body)
-                  // if this account is NOT already in our attendees list, add it
-                  if (!event.attendees.map(el => el.id).includes(attributedTo)) {
-                    const attendeeName = body.preferredUsername || body.name || attributedTo;
-                    const newAttendee = {
-                      name: attendeeName,
-                      status: 'attending',
-                      id: attributedTo
-                    };
-                    event.attendees.push(newAttendee);
-                    event.save()
-                    .then((fullEvent) => {
-                      addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
-                      // get the new attendee with its hidden id from the full event
-                      let fullAttendee = fullEvent.attendees.find(el => el.id === attributedTo);
-                      // send a "click here to remove yourself" link back to the user as a DM
-                      const jsonObject = {
-                        "@context": "https://www.w3.org/ns/activitystreams",
-                        "name": `RSVP to ${event.name}`,
-                        "type": "Note",
-                        "content": `<span class=\"h-card\"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
-                        "tag":[{"type":"Mention","href":newAttendee.id,"name":newAttendee.name}]
-                      }
-                      // send direct message to user
-                      sendDirectMessage(jsonObject, newAttendee.id, event.id);
-                      return res.sendStatus(200);
-                    })
-                    .catch((err) => { addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err); return res.status(500).send('Database error, please try again :('); });
-                  }
-                  else {
-                    // it's a duplicate and this person is already rsvped so just say OK
-                    return res.status(200).send("Attendee is already registered.");
-                  }
-							});
-            }
-          }
-        }
-    });
-  }
-  if (req.body && req.body.type === 'Delete') {
-    const deleteObjectId = req.body.object.id;
-    // find all events with comments from the author
-    Event.find({
-      "comments.actorId":req.body.actor
-      }, function(err,events) {
-      if (!events) {
-        res.sendStatus(404);
-        return;
-      }
-
-      // find the event with THIS comment from the author
-      let eventWithComment = events.find(event => {
-        let comments = event.comments;
-        return comments.find(comment => {
-          if (!comment.activityJson) {
-            return false;
-          }
-          return JSON.parse(comment.activityJson).object.id === req.body.object.id;
-        })
-      });
-
-      if (!eventWithComment) {
-        res.sendStatus(404);
-        return;
-      }
-
-      // delete the comment
-      // find the index of the comment, it should have an activityJson field because from an AP server you can only delete an AP-originated comment (and of course it needs to be yours)
-      let indexOfComment = eventWithComment.comments.findIndex(comment => {
-        return comment.activityJson && JSON.parse(comment.activityJson).object.id === req.body.object.id;
-      });
-      eventWithComment.comments.splice(indexOfComment, 1);
-			eventWithComment.save()
-			.then(() => {
-				addToLog("deleteComment", "success", "Comment deleted from event " + eventWithComment.id);
-        console.log('deleted comment!')
-        res.sendStatus(200);
-			})
-			.catch((err) => { res.sendStatus(500); addToLog("deleteComment", "error", "Attempt to delete comment " + req.body.object.id + "from event " + eventWithComment.id + " failed with error: " + err);});
-    });
-  }
-	// if we are CC'ed on a public or unlisted Create/Note, then this is a comment to us we should boost (Announce) to our followers
-  if (req.body && req.body.type === 'Create' && req.body.object && req.body.object.type === 'Note' && req.body.object.to) {
-    // figure out what this is in reply to -- it should be addressed specifically to us
-    let {attributedTo, inReplyTo, to, cc} = req.body.object;
-    // normalize cc into an array
-    if (typeof cc === 'string') {
-      cc = [cc];
-    }
-    // normalize to into an array
-    if (typeof to === 'string') {
-      to = [to];
-    }
-    
-    // if this is a public message (in the to or cc fields)
-    if (to.includes('https://www.w3.org/ns/activitystreams#Public') || (Array.isArray(cc) && cc.includes('https://www.w3.org/ns/activitystreams#Public'))) {
-      // figure out which event(s) of ours it was addressing
-      ourEvents = cc.filter(el => el.includes(`https://${domain}/`))
-                    .map(el => el.replace(`https://${domain}/`,''));
-      // comments should only be on one event. if more than one, ignore (spam, probably) 
-      if (ourEvents.length === 1) {
-        let eventID = ourEvents[0];
-        // add comment
-        let commentID = shortid.generate();
-        // get the actor for the commenter
-        request({
-          url: req.body.actor,
-          headers: {
-            'Accept': 'application/activity+json',
-            'Content-Type': 'application/activity+json'
-          }}, function (error, response, actor) {
-          if (!error) {
-            const parsedActor = JSON.parse(actor);
-            const name = parsedActor.preferredUsername || parsedActor.name || req.body.actor;
-            const newComment = {
-              id: commentID,
-              actorId: req.body.actor,
-              activityId: req.body.object.id,
-              author: name,
-              content: sanitizeHtml(req.body.object.content, {allowedTags: [], allowedAttributes: {}}).replace('@'+eventID,''),
-              timestamp: moment(),
-              activityJson: JSON.stringify(req.body),
-              actorJson: actor
-            };
-
-            Event.findOne({
-              id: eventID,
-              }, function(err,event) {
-              if (!event) {
-                return res.sendStatus(404);
-              }
-              if (!event.usersCanComment) {
-                return res.sendStatus(200);
-              }
-              event.comments.push(newComment);
-              event.save()
-              .then(() => {
-                addToLog("addEventComment", "success", "Comment added to event " + eventID);
-                const guidObject = crypto.randomBytes(16).toString('hex');
-                const jsonObject = req.body.object;
-                jsonObject.attributedTo = newComment.actorId;
-                broadcastAnnounceMessage(jsonObject, event.followers, eventID)
-                console.log('added comment');
-                res.sendStatus(200);
-              })
-              .catch((err) => { res.status(500).send('Database error, please try again :(' + err); addToLog("addEventComment", "error", "Attempt to add comment to event " + eventID + " failed with error: " + err); console.log('error', err)});
-            });
-          }
-        });
-      } // end ourevent
-    } // end public message
-  } // CC'ed
-}
 
 router.use(function(req, res, next){
 	res.status(404);

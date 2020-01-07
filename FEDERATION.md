@@ -12,9 +12,10 @@ To keep things simple, sometimes you will see things formatted like `Create/Note
 
 When the word "broadcast" is used in this document, it means to send an Activity to individual inbox of each of the followers of a given Actor.
 
-This document has three main sections:
+This document has four main sections:
 
 * __Federation philosophy__ lays out the general model of how this is intended to federate
+* __General Actor information__ contains the basics of what to expect from our `Actor` objects
 * __Inbox behavior__ lists every incoming ActivityPub activity that the server recognizes, and tells you what it does in response to that activity, including any other ActivityPub activities it sends back out.
 * __Activities triggered from the web app__ tells you what circumstances on the web application cause the server to emit ActivityPub activities. (For example, when an event is updated via the web application, it lets all the ActivityPub followers know that the event has been updated.)
 
@@ -30,6 +31,42 @@ Also, gathio prides itself on deleting ALL data related to an event 7 days after
 
 The point of federating this is so that people can simply follow an event and get all the updates they care about, and even RSVP to and comment on the event directly from their ActivityPub client. This is all without signing up or anything on gathio.
 
+## General Actor information
+
+Every event has an Actor. The Actor looks like this:
+
+```json
+{
+  "@context":[
+    "https://www.w3.org/ns/activitystreams",
+    "https://w3id.org/security/v1"
+  ],
+  "id": "https://DOMAIN/EVENTID",
+  "type": "Person",
+  "preferredUsername": "EVENTID",
+  "inbox": "https://DOMAIN/activitypub/inbox",
+  "outbox": "https://DOMAIN/EVENTID/outbox",
+  "followers": "https://DOMAIN/EVENTID/followers",
+  "summary": "<p><p>DESCRIPTION</p>\n</p><p>Location: LOCATION.</p><p>Starting DATETIME (human readable).</p>",
+  "name": "EVENTNAME",
+  "featured": "https://DOMAIN/EVENTID/featured",
+  "publicKey":{
+    "id": "https://DOMAIN/EVENTID#main-key",
+    "owner": "https://DOMAIN/EVENTID",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nOURPUBLICKEY\n-----END PUBLIC KEY-----\n"
+  },
+  "icon":{
+    "type": "Image",
+    "mediaType": "image/jpg",
+    "url": "https://DOMAIN/events/EVENTID.jpg"
+  }
+}
+```
+
+The Actor is of type "Person". This is because we choose to interpret the ActivityPub "Person" designation as any individual actor that can be followed and interacted with like a person.
+
+There is always a featured post `OrderedCollection` at the url "https://DOMAIN/EVENTID/featured", and it always contains the full object of a single featured post that can be retrieved at "https://DOMAIN/EVENTID/m/featuredPost". This featured post (a "pinned post" in Mastodon parlance) contains basic instructions for how to follow and interact with the event. Implementations like Mastodon will render this in the timeline, which both lets us give users a small tutorial and also means the timeline doesn't appear "blank" on first follow.
+
 ## Inbox behavior
 
 This section describes how gathio responds to _incoming messages_ to its inbox.
@@ -44,13 +81,13 @@ You can talk to gathio by POSTing to that url as you would any ActivityPub serve
 
 ### Follow
 
-When the server receives a `Follow` Activity, it grabs the `actor` property on the `Follow`, and then makes a GET request to that URI with `'Content-Type': 'application/activity+json'` (we assume that `actor` is a dereferencable uri that returns us the JSON for the `Actor`).
+When the server receives a `Follow` Activity, it grabs the `actor` property on the `Follow`, and then makes a GET request to that URI with `'Content-Type': 'application/activity+json'` (we assume that `actor` is a dereferencable uri that returns us the JSON for the Actor).
 
-Assuming we can find the `Actor ` object, then we emit an `Accept` Activity back to the server, containing the full `Follow` that we just parsed. This lets the other server know that we have fully processed the follow request.
+Assuming we can find the Actor object, then we emit an `Accept` Activity back to the server, containing the full `Follow` that we just parsed. This lets the other server know that we have fully processed the follow request.
 
 After this, we *also* send a `Create` Activity to the actor's inbox, containing an `Event` object with the information for this event. This is, at the moment, future compatibility for servers that consume `Event` objects. This is sent as a "direct message", directly to the inbox with no `cc` field and not addressing the public timeline.
 
-And finally we send the user a `Create` Activity containing a `Question` object. The `Question` is an invitation to RSVP to the event. Mastodon renders this as a poll to the user, which lets them send back to us a "Yes" RSVP directly from their client UI should they so choose. This is also sent as a "direct message".
+And finally we send the user a `Create` Activity containing a `Question` object. The `Question` is an invitation to RSVP to the event. Mastodon renders this as a poll to the user, which lets them send back to us a "Yes" RSVP directly from their client UI should they so choose. This is also sent as a "direct message". Some clients like Friendica, simply ignore `Question` objects, which is fine since the user can use built-in RSVP function of Friendica to RSVP anyway (see below).
 
 ### Unfollow
 
@@ -63,11 +100,17 @@ We currently do _not_ send an `Accept/Undo` in response, as I'm not sure this is
 The plan is to have this support two ways to RSVP:
 
 1. The user answers the `Question` sent out to the prospective attendee in the form of a `Create/Note` in the style of Mastodon polls. This is mostly a hack for implementations like Mastodon that don't have vocabulary built in to RSVP to `Event`s.
-2. (TODO) The user sends a `Accept/Event`, `Reject/Event`, or `TentativeAccept/Event` back to our server. This is for implementations that support `Event` and do things like automatically render incoming events in their UI with an RSVP interface.
+2. The user sends a `Accept/Event` or `Undo/Accept/Event` back to our server. This is for implementations like Friendica that support `Event` and do things like automatically render incoming events in their UI with an RSVP interface. We currently don't accept `Reject/Event` or `TentativeAccept/Event` because gathio has no concept of a "Maybe" or "No" RSVP. It probably should have that in the future, at which case we could meaningfully parse this stuff.
 
-The first method is the only one implemented right now. It works as follows.
+__The `Question` method__
 
-If the inbox gets a `Create/Note`, there is a chance that this is a response to a `Question` that we sent a user. So the first thing we do is check its `inReplyTo` property. If it matches the id of a `Question` we sent this user, and this user is still following us, then we fetch the user's profile info. This is to make sure we have their newest `preferredName` in their Actor object, which we will honor as the name we display on the RSVP. We then add this person to our database as an attendee of the event.
+If the inbox gets a `Create/Note`, there is a chance that this is a response to a `Question` that we sent a user. So the first thing we do is check its `inReplyTo` property. If it matches the id of a `Question` we sent this user, and this user is still following us, then we fetch the user's profile info. This is to make sure we have their newest `preferredUsername` in their `Actor` object (falling back to `name` and then `actor`), which we will honor as the name we display on the RSVP. We then add this person to our database as an attendee of the event.
+
+Next we confirm that the user has RSVPed. We do this by sending them a `Create/Note` via direct message. The note tells them they RSVPed, and gives them a URL they can click on to instantly un-RSVP if they need to.
+
+__The `Accept/Event` method__
+
+If the inbox gets an `Accept/Event`, then it assumes this is an affirmative RSVP from the actor who sent it. We check to see if the `id` of the `Event` matches the `id` of an `Event` that we sent ot this actor. If it does, then it must be a valid, affirmative RSVP. We then get the `preferredUsername` or `name` from the actor object, and add that actor to the database as an attendee. TODO: support either object URI or embedded object here.
 
 Next we confirm that the user has RSVPed. We do this by sending them a `Create/Note` via direct message. The note tells them they RSVPed, and gives them a URL they can click on to instantly un-RSVP if they need to.
 
@@ -102,6 +145,8 @@ And finally we send an `Update/Event` out with the new event details in the `Eve
 ### Delete event
 
 When an event is deleted by its administrator, or the event has been deleted due to it being one week after the event has ended, we send a `Delete/Actor` out to followers.  This lets followers know that the event has been deleted, and their server should remove its profile from their database. (On Mastodon this results in an automatic "unfollow", which is good because we want people's follow counts to go back to normal after an event is over and has been deleted.)
+
+We also send a `Delete/Event` out to followers. For an application like Friendica, this removes the event from the calendar of a follower.
 
 ### Comment on an event
 
