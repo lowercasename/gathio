@@ -8,82 +8,92 @@
 		<h3 id="eventName">{{eventData.name}}</h3>
 	</div>
 	{{#if editingEnabled}}
-	<div class="col-lg-2 ml-2 edit-buttons">
+	<div class="col-lg-3 ml-2 edit-buttons">
 		<div class="btn-group" role="group" aria-label="Event controls">
-			<button type="button" id="editEvent" class="btn btn-success" data-toggle="modal" data-target="#editModal" {{#if eventHasConcluded}}disabled{{/if}}><i class="fas fa-edit"></i></button>
-			<button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i></button>
+			<button type="button" id="editEvent" class="btn btn-success" data-toggle="modal" data-target="#editModal" {{#if eventHasConcluded}}disabled{{/if}}><i class="fas fa-edit"></i> Edit</button>
+			<button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i> Delete</button>
 		</div>
 	</div>
 	{{/if}}
 </div>
-<div class="card mt-4 mb-4">
-  <div class="card-body">
-  	<ul class="fa-ul eventInformation">
-			<li>
-				<span class="fa-li">
-					<i class="fas fa-map-marker-alt"></i>
-				</span>
-				{{eventData.location}}<br />
-				<a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
-					<i class="fas fa-map-marked"></i> Show on Google Maps
-				</a>
-				&nbsp;
-				<a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
-					<i class="fas fa-map-marked"></i> Show on OpenStreetMap
-				</a>
-			</li>
-			<li>
-				<span class="fa-li">
-					<i class="fas fa-fw fa-calendar-day"></i>
-				</span>
-				{{{displayDate}}}
-				<br>
-				<span class="text-muted">
-					{{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
-				</span>
-				<br />
-				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="eventInformationAction btn btn-outline-secondary btn-sm">
+<div class="container my-4 pr-0">
+	<div class="row">
+		<div class="col-lg-9 card p-0">
+			<div class="card-body">
+				<ul class="fa-ul eventInformation">
+					<li>
+						<span class="fa-li">
+							<i class="fas fa-map-marker-alt"></i>
+						</span>
+						{{eventData.location}}
+					</li>
+					<li>
+						<span class="fa-li">
+							<i class="fas fa-fw fa-calendar-day"></i>
+						</span>
+						{{{displayDate}}}
+						<br>
+						<span class="text-muted">
+							{{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
+						</span>
+					</li>
+					{{#if eventHasHost}}
+						<li>
+							<span class="fa-li">
+								<i class="fas fa-fw fa-user-circle"></i>
+							</span>
+							<span class="text-muted">Hosted by</span> {{eventData.hostName}}
+						</li>
+					{{/if}}
+					{{#if eventData.eventGroup}}
+						<li>
+							<span class="fa-li">
+								<i class="fas fa-fw fa-calendar-alt"></i>
+							</span>
+							<span class="text-muted">Part of</span> <a href="/group/{{eventData.eventGroup.id}}">{{eventData.eventGroup.name}}</a>
+						</li>
+					{{/if}}
+					{{#if eventData.url}}
+						<li>
+							<span class="fa-li">
+								<i class="fas fa-fw fa-link"></i>
+							</span>
+							<a href="{{eventData.url}}">
+								{{eventData.url}}
+							</a>
+						</li>
+					{{/if}}
+					<li>
+						<span class="fa-li">
+							<i class="fas fa-fw fa-share-square"></i>
+						</span>
+						<a href="https://gath.io/{{eventData.id}}">gath.io/{{eventData.id}}</a>
+						<button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://gath.io/{{eventData.id}}">
+							<i class="fas fa-copy"></i> Copy
+						</button>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-3" id="eventActions">
+			<aside class="btn-group-vertical d-flex" role="group" aria-label="Event actions">
+				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="btn btn-outline-secondary btn-sm">
 					<i class="far fa-calendar-plus"></i> Add to Google Calendar
 				</a>
-			</li>
-			{{#if eventHasHost}}
-				<li>
-					<span class="fa-li">
-						<i class="fas fa-fw fa-user-circle"></i>
-					</span>
-					<span class="text-muted">Hosted by</span> {{eventData.hostName}}
-				</li>
-			{{/if}}
-			{{#if eventData.eventGroup}}
-				<li>
-					<span class="fa-li">
-						<i class="fas fa-fw fa-calendar-alt"></i>
-					</span>
-					<span class="text-muted">Part of</span> <a href="/group/{{eventData.eventGroup.id}}">{{eventData.eventGroup.name}}</a>
-				</li>
-			{{/if}}
-			{{#if eventData.url}}
-				<li>
-					<span class="fa-li">
-						<i class="fas fa-fw fa-link"></i>
-					</span>
-					<a href="{{eventData.url}}">
-						{{eventData.url}}
-					</a>
-				</li>
-			{{/if}}
-			<li>
-				<span class="fa-li">
-					<i class="fas fa-fw fa-share-square"></i>
-				</span>
-				<a href="https://gath.io/{{eventData.id}}">gath.io/{{eventData.id}}</a>
-				<button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://gath.io/{{eventData.id}}">
-					<i class="fas fa-copy"></i> Copy
+				<button type="button" id="exportICS" class="btn btn-outline-secondary btn-sm" data-event-id="{{eventData.id}}">
+					<i class="fas fa-download"></i> Export as ICS
 				</button>
-			</li>
-  	</ul>
+				<a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
+					<i class="fas fa-map-marked"></i> Show on Google Maps
+				</a>
+				<a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
+					<i class="fas fa-map-marked"></i> Show on OpenStreetMap
+				</a>
+			</aside>
+		</div>
 	</div>
 </div>
+
 {{#if eventHasConcluded}}
 <div class="alert alert-warning mb-4" role="alert">
   This event has concluded. It can no longer be edited, and will be automatically deleted <span class="daysToDeletion"></span>.
@@ -144,21 +154,26 @@
         </button>
       </div>
       <form id="attendEventForm" action="/attendevent/{{eventData.id}}" method="post">
-			<div class="modal-body">
-				<div class="form-group row">
-					<label for="attendeeName" class="col-sm-2 col-form-label">Your name</label>
-					<div class="form-group col-sm-10">
-						<input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-30">
-					</div>
+		<div class="modal-body">
+			<div class="form-group">
+				<label for="attendeeName">Your name</label>
+				<div class="form-group">
+					<input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-30">
 				</div>
-				<div class="form-group row">
-					<label for="attendeeEmail" class="col-sm-2 col-form-label">Your email</label>
-					<div class="form-group col-sm-10">
-						<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email">
-						<small class="form-text">We'll only use it to send you updates to the event.</small>
-					</div>
+			</div>
+			<div class="form-group">
+				<label for="attendeeEmail">Your email (optional)</label>
+				<p class="form-text small">If you provide your email, you will receive updates to the event.</p>
+				<div class="form-group">
+					<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email" data-validation-optional="true">
 				</div>
-      </div>
+			</div>
+			<div class="form-group">
+				<label for="removeAttendancePassword">Deletion password</label>
+				<p class="form-text small">You will need this password if you want to remove yourself from the list of event attendees. Write it down now because it will <strong>not be shown again</strong>.</p>
+				<input type="text" class="form-control" readonly id="removeAttendancePassword" name="removeAttendancePassword">
+			</div>
+		</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         <button type="submit" class="btn btn-primary">Add myself</button>
@@ -179,12 +194,10 @@
       </div>
       <form id="unattendEventForm" action="/unattendevent/{{eventData.id}}" method="post">
 			<div class="modal-body">
-				<div class="form-group row">
-					<label for="attendeeEmail" class="col-sm-2 col-form-label">Your email</label>
-					<div class="form-group col-sm-10">
-						<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="name@domain.com" data-validation="email" data-validation-optional="true">
-						<small class="form-text">Enter the email you used when signing up for this event.</small>
-					</div>
+				<div class="form-group">
+					<label for="removeAttendancePassword" class="form-label">Your deletion password</label>
+					<p class="form-text small">Lost your password? Get in touch with the event organiser.</p>
+					<input type="text" class="form-control" id="removeAttendancePassword" name="removeAttendancePassword">
 				</div>
       </div>
       <div class="modal-footer">
@@ -327,6 +340,7 @@
 
 {{#unless eventHasConcluded}}
 <script type="text/javascript" src="/js/generate-timezones.js"></script>
+<script src='/js/niceware.js'></script>
 {{/unless}}
 <script>
 	$.validate({
@@ -362,7 +376,6 @@
 		dateTimeSeparator: ', '
 	});
 	$("#timezone").val('{{eventData.timezone}}').trigger('change');
-	console.log('{{eventData.timezone}}')
 	{{/unless}}
 	{{/if}}
 	$(".commentTimestamp").html(function(){
@@ -374,6 +387,29 @@
 		$(this).closest(".comment").find(".replyContainer").slideToggle();
 	})
 	$(document).ready(function() {
+
+		// From https://davidwalsh.name/javascript-download
+		function downloadFile(data, fileName, type="text/plain") {
+			// Create an invisible A element
+			const a = document.createElement("a");
+			a.style.display = "none";
+			document.body.appendChild(a);
+
+			// Set the HREF to a Blob representation of the data to be downloaded
+			a.href = window.URL.createObjectURL(
+				new Blob([data], { type })
+			);
+
+			// Use download attribute to set set desired file name
+			a.setAttribute("download", fileName);
+
+			// Trigger the download by simulating click
+			a.click();
+
+			// Cleanup
+			window.URL.revokeObjectURL(a.href);
+			document.body.removeChild(a);
+		}
 
 		$.uploadPreview({
 			input_field: "#image-upload",
@@ -394,6 +430,12 @@
 		{{/if}}
 		new ClipboardJS('#copyEventLink');
 		autosize($('textarea'));
+		$("#exportICS").click(function(){
+			let eventID = $(this).attr('data-event-id');
+			$.get('/exportevent/' + eventID, function(response) {
+				downloadFile(response, eventID + '.ics');
+			})
+		})
 		$("#copyEventLink").click(function(){
 			$(this).html('<i class="fas fa-copy"></i> Copied!');
 			setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
@@ -435,6 +477,11 @@
                 $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
             }
         });
+		$('#attendModal').on('show.bs.modal', function (event) {
+			var modal = $(this);
+			const passphrase = window.niceware.generatePassphrase(6).join('-');
+			modal.find('#removeAttendancePassword').val(passphrase);
+		});
 	});
 
 	</script>

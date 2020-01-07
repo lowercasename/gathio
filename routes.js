@@ -20,6 +20,10 @@ var moment = require('moment-timezone');
 
 const marked = require('marked');
 
+const domain = require('./config/domain.js').domain;
+const contactEmail = require('./config/domain.js').email;
+const siteName = require('./config/domain.js').sitename
+
 // Extra marked renderer (used to render plaintext event description for page metadata)
 // Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
 // &#63; to ? helper
@@ -62,6 +66,11 @@ render_plain = function () {
 }
 
 const ical = require('ical');
+const icalGenerator = require('ical-generator');
+const cal = icalGenerator({
+	domain: 'gath.io',
+	name: 'Gathio'
+});
 
 const sgMail = require('@sendgrid/mail');
 
@@ -245,13 +254,23 @@ router.get('/:eventID', (req, res) => {
 						}
 					}
 				}
-				let eventAttendees = event.attendees.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
-                let spotsRemaining, noMoreSpots;
-                if (event.maxAttendees) {
-                    spotsRemaining = event.maxAttendees - eventAttendees.length;
-                    if (spotsRemaining <= 0) {
-                        noMoreSpots = true;
-                    }
+				let eventAttendees = event.attendees.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0))
+        .map(el => {
+          if (!el.id) {
+            el.id = el._id;
+          }
+          return el;
+        })
+        .filter((obj, pos, arr) => {
+            return arr.map(mapObj => mapObj.id).indexOf(obj.id) === pos;
+        });
+
+        let spotsRemaining, noMoreSpots;
+        if (event.maxAttendees) {
+          spotsRemaining = event.maxAttendees - eventAttendees.length;
+          if (spotsRemaining <= 0) {
+            noMoreSpots = true;
+          }
 				}
 				let metadata = {
 					title: event.name,
@@ -408,6 +427,42 @@ router.get('/group/:eventGroupID', (req, res) => {
 		});
 })
 
+router.get('/exportevent/:eventID', (req, res) => {
+	Event.findOne({
+		id: req.params.eventID
+		})
+		.populate('eventGroup')
+		.then((event) => {
+			if (event) {
+				const icalEvent = cal.createEvent({
+					start: moment.tz(event.start, event.timezone),
+					end: moment.tz(event.start, event.timezone),
+					timezone: event.timezone,
+					timestamp: moment(),
+					summary: event.name,
+					description: event.description,
+					organizer: {
+						name: event.hostName ? event.hostName : "Anonymous",
+						email: event.creatorEmail
+					},
+					location: event.location,
+					url: 'https://gath.io/' + event.id
+				});
+
+				let string = cal.toString();
+				console.log(string)
+				res.send(string);
+			}
+		})
+		.catch((err) => {
+			addToLog("exportEvent", "error", "Attempt to export event " + req.params.eventID + " failed with error: " + err);
+			console.log(err)
+			res.status(404);
+			res.render('404', { url: req.url });
+			return;
+		});
+})
+
 // BACKEND ROUTES
 
 //router.post('/login',
@@ -473,30 +528,28 @@ router.post('/newevent', async (req, res) => {
 			addToLog("createEvent", "success", "Event " + eventID + "created");
 			// Send email with edit link
 			if (sendEmails) {
-				const msg = {
-					to: req.body.creatorEmail,
-					from: {
-						name: 'Gathio',
-						email: 'notifications@gath.io',
-					},
-					templateId: 'd-00330b8278ab463e9f88c16566487d97',
-					dynamic_template_data: {
-						subject: 'gathio: ' + req.body.eventName,
-						eventID: eventID,
-						editToken: editToken
-					},
-				};
-				sgMail.send(msg).catch(e => {
-					console.error(e.toString());
-					res.status(500).end();
-				});
+        req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', {eventID, editToken, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+          const msg = {
+            to: req.body.creatorEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+            subject: `${siteName}: ${req.body.eventName}`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
 			}
 			res.writeHead(302, {
 			'Location': '/' + eventID + '?e=' + editToken
 			});
 			res.end();
 		})
-		.catch((err) => { res.send('Database error, please try again :( - ' + err); addToLog("createEvent", "error", "Attempt to create event failed with error: " + err);});
+		.catch((err) => { res.status(500).send('Database error, please try again :( - ' + err); addToLog("createEvent", "error", "Attempt to create event failed with error: " + err);});
 });
 
 router.post('/importevent', (req, res) => {
@@ -529,7 +582,7 @@ router.post('/importevent', (req, res) => {
 			image: '',
 			creatorEmail: creatorEmail,
 			url: '',
-			hostName: importedEventData.organizer ? importedEventData.organizer.params.CN : "",
+			hostName: importedEventData.organizer ? importedEventData.organizer.params.CN.replace(/["]+/g, '') : "",
 			viewPassword: '',
 			editPassword: '',
 			editToken: editToken,
@@ -543,23 +596,21 @@ router.post('/importevent', (req, res) => {
 				addToLog("createEvent", "success", "Event " + eventID + " created");
 				// Send email with edit link
 				if (sendEmails) {
-					const msg = {
-						to: creatorEmail,
-						from: {
-							name: 'Gathio',
-							email: 'notifications@gath.io',
-						},
-						templateId: 'd-00330b8278ab463e9f88c16566487d97',
-						dynamic_template_data: {
-							subject: 'gathio: ' + req.body.eventName,
-							eventID: eventID,
-							editToken: editToken
-						},
-					};
-					sgMail.send(msg).catch(e => {
-						console.error(e.toString());
-						res.status(500).end();
-					});
+          req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', {eventID, editToken, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+            const msg = {
+              to: req.body.creatorEmail,
+              from: {
+                name: siteName,
+                email: contactEmail,
+              },
+              subject: `${siteName}: ${req.body.eventName}`,
+              html,
+            };
+            sgMail.send(msg).catch(e => {
+              console.error(e.toString());
+              res.status(500).end();
+            });
+          });
 				}
 				res.writeHead(302, {
 				'Location': '/' + eventID + '?e=' + editToken
@@ -605,23 +656,21 @@ router.post('/neweventgroup', (req, res) => {
 			addToLog("createEventGroup", "success", "Event group " + eventGroupID + " created");
 			// Send email with edit link
 			if (sendEmails) {
-				const msg = {
-					to: req.body.creatorEmail,
-					from: {
-						name: 'Gathio',
-						email: 'notifications@gath.io',
-					},
-					templateId: 'd-4c5ddcb34ac44ec5b2313c6da4e405f3',
-					dynamic_template_data: {
-						subject: 'gathio: ' + req.body.eventGroupName,
-						eventGroupID: eventGroupID,
-						editToken: editToken
-					},
-				};
-				sgMail.send(msg).catch(e => {
-					console.error(e.toString());
-					res.status(500).end();
-				});
+        req.app.get('hbsInstance').renderView('./views/emails/createeventgroup.handlebars', {eventGroupID, editToken, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+          const msg = {
+            to: req.body.creatorEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+            subject: `${siteName}: ${req.body.eventGroupName}`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
 			}
 			res.writeHead(302, {
 				'Location': '/group/' + eventGroupID + '?e=' + editToken
@@ -697,21 +746,21 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 						attendeeEmails = ids;
 						if (!error && attendeeEmails != ""){
 							console.log("Sending emails to: " + attendeeEmails);
-							const msg = {
-								to: attendeeEmails,
-								from: {
-									name: 'Gathio',
-									email: 'notifications@gath.io',
-								},
-								templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
-								dynamic_template_data: {
-									subject: 'gathio: Event edited',
-									actionType: 'edited',
-									eventExists: true,
-									eventID: req.params.eventID
-								}
-							}
-							sgMail.sendMultiple(msg);
+              req.app.get('hbsInstance').renderView('./views/emails/editevent.handlebars', {diffText, eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+                const msg = {
+                  to: attendeeEmails,
+                  from: {
+                    name: siteName,
+                    email: contactEmail,
+                  },
+                  subject: `${siteName}: ${event.name} was just edited`,
+                  html,
+                };
+                sgMail.sendMultiple(msg).catch(e => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+              });
 						}
 						else {
 							console.log("Nothing to send!");
@@ -814,15 +863,51 @@ router.post('/editeventgroup/:eventGroupID/:editToken', (req, res) => {
 	.catch((err) => { console.error(err); res.send('Sorry! Something went wrong!'); addToLog("editEventGroup", "error", "Attempt to edit event group " + req.params.eventGroupID + " failed with error: " + err);});
 });
 
-router.post('/deleteevent/:eventID/:editToken', (req, res) => {
+router.post('/deleteimage/:eventID/:editToken', (req, res) => {
 	let submittedEditToken = req.params.editToken;
 	Event.findOne(({
 		id: req.params.eventID,
-		}))
+	}))
+	.then((event) => {
+		if (event.editToken === submittedEditToken) {
+			// Token matches
+			if (event.image){
+				eventImage = event.image;
+			} else {
+				res.status(500).send('This event doesn\'t have a linked image. What are you even doing');
+			}
+			fs.unlink(global.appRoot + '/public/events/' + eventImage, (err) => {
+				if (err) {
+					res.status(500).send(err);
+					addToLog("deleteEventImage", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
+				}
+				// Image removed
+				addToLog("deleteEventImage", "success", "Image for event " + req.params.eventID + " deleted");
+				event.image = "";
+				event.save()
+				.then(response => {
+					res.status(200).send('Success');
+				})
+				.catch(err => {
+					res.status(500).send(err);
+					addToLog("deleteEventImage", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
+				})
+			});
+		}
+	});
+});
+
+router.post('/deleteevent/:eventID/:editToken', (req, res) => {
+	let submittedEditToken = req.params.editToken;
+	let eventImage;
+	Event.findOne(({
+		id: req.params.eventID,
+	}))
 	.then((event) => {
 		if (event.editToken === submittedEditToken) {
 			// Token matches
 
+      let eventImage;
 			if (event.image){
 				eventImage = event.image;
 			}
@@ -833,21 +918,21 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 					attendeeEmails = ids;
 					if (!error){
 						console.log("Sending emails to: " + attendeeEmails);
-						const msg = {
-							to: attendeeEmails,
-							from: {
-								name: 'Gathio',
-								email: 'notifications@gath.io',
-							},
-							templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
-							dynamic_template_data: {
-								subject: 'gathio: Event "' + event.name + '" deleted',
-								actionType: 'deleted',
-								eventExists: false,
-								eventID: req.params.eventID
-							}
-						}
-						sgMail.sendMultiple(msg);
+            req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', {siteName, domain, eventName: event.name, cache: true, layout: 'email.handlebars'}, function(err, html) {
+              const msg = {
+                to: attendeeEmails,
+                from: {
+                  name: siteName,
+                  email: contactEmail,
+                },
+                subject: `${siteName}: ${event.name} was deleted`,
+                html,
+              };
+              sgMail.sendMultiple(msg).catch(e => {
+                console.error(e.toString());
+                res.status(500).end();
+              });
+            });
 					}
 					else {
 						console.log("Nothing to send!");
@@ -948,7 +1033,8 @@ router.post('/attendevent/:eventID', (req, res) => {
 	const newAttendee = {
 		name: req.body.attendeeName,
 		status: 'attending',
-		email: req.body.attendeeEmail
+		email: req.body.attendeeEmail,
+		removalPassword: req.body.removeAttendancePassword
 	};
 
 	Event.findOne({
@@ -960,22 +1046,23 @@ router.post('/attendevent/:eventID', (req, res) => {
 			addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
 			if (sendEmails) {
 				if (req.body.attendeeEmail){
-					const msg = {
-						to: req.body.attendeeEmail,
-						from: {
-							name: 'Gathio',
-							email: 'notifications@gath.io',
-						},
-						templateId: 'd-977612474bba49c48b58e269f04f927c',
-						dynamic_template_data: {
-							subject: 'gathio: ' + event.name,
-							eventID: req.params.eventID
-						},
-					};
-					sgMail.send(msg);
+          req.app.get('hbsInstance').renderView('./views/emails/addeventattendee.handlebars', {eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+            const msg = {
+              to: req.body.attendeeEmail,
+              from: {
+                name: siteName,
+                email: contactEmail,
+              },
+              subject: `${siteName}: You're RSVPed to ${event.name}`,
+              html,
+            };
+            sgMail.send(msg).catch(e => {
+              console.error(e.toString());
+              res.status(500).end();
+            });
+          });
 				}
 			}
-
 			res.writeHead(302, {
 				'Location': '/' + req.params.eventID
 				});
@@ -988,26 +1075,27 @@ router.post('/attendevent/:eventID', (req, res) => {
 router.post('/unattendevent/:eventID', (req, res) => {
 	Event.update(
 	    { id: req.params.eventID },
-	    { $pull: { attendees: { email: req.body.attendeeEmail } } }
+	    { $pull: { attendees: { removalPassword: req.body.removeAttendancePassword } } }
 	)
 	.then(response => {
 		console.log(response)
-		addToLog("removeEventAttendee", "success", "Attendee removed from event " + req.params.eventID);
+		addToLog("unattendEvent", "success", "Attendee removed self from event " + req.params.eventID);
 		if (sendEmails) {
 			if (req.body.attendeeEmail){
-				const msg = {
-					to: req.body.attendeeEmail,
-					from: {
-						name: 'Gathio',
-						email: 'notifications@gath.io',
-					},
-					templateId: 'd-56c97755d6394c23be212fef934b0f1f',
-					dynamic_template_data: {
-						subject: 'gathio: You have been removed from an event',
-						eventID: req.params.eventID
-					},
-				};
-				sgMail.send(msg);
+        req.app.get('hbsInstance').renderView('./views/emails/unattendevent.handlebars', {eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
+            to: req.body.attendeeEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+						subject: `${siteName}: You have been removed from an event`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
 			}
 		}
 		res.writeHead(302, {
@@ -1029,20 +1117,22 @@ router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
 		console.log(response)
 		addToLog("removeEventAttendee", "success", "Attendee removed by admin from event " + req.params.eventID);
 		if (sendEmails) {
+      // currently this is never called because we don't have the email address
 			if (req.body.attendeeEmail){
-				const msg = {
-					to: req.body.attendeeEmail,
-					from: {
-						name: 'Gathio',
-						email: 'notifications@gath.io',
-					},
-					templateId: 'd-f8ee9e1e2c8a48e3a329d1630d0d371f',
-					dynamic_template_data: {
-						subject: 'gathio: You have been removed from an event',
-						eventID: req.params.eventID
-					},
-				};
-				sgMail.send(msg);
+        req.app.get('hbsInstance').renderView('./views/emails/removeeventattendee.handlebars', {eventName: req.params.eventName, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
+            to: req.body.attendeeEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+						subject: `${siteName}: You have been removed from an event`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
 			}
 		}
 		res.writeHead(302, {
@@ -1076,20 +1166,21 @@ router.post('/post/comment/:eventID', (req, res) => {
 				attendeeEmails = ids;
 					if (!error){
 						console.log("Sending emails to: " + attendeeEmails);
-						const msg = {
-							to: attendeeEmails,
-							from: {
-								name: 'Gathio',
-								email: 'notifications@gath.io',
-							},
-							templateId: 'd-756d078561e047aba307155f02b6686d',
-							dynamic_template_data: {
-								subject: 'gathio: New comment in ' + event.name,
-								commentAuthor: req.body.commentAuthor,
-								eventID: req.params.eventID
-							}
-						}
-						sgMail.sendMultiple(msg);
+            req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, domain, eventID: req.params.eventID, commentAuthor: req.body.commentAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
+              const msg = {
+                to: attendeeEmails,
+                from: {
+                  name: siteName,
+                  email: contactEmail,
+                },
+                subject: `${siteName}: New comment in ${event.name}`,
+                html,
+              };
+              sgMail.sendMultiple(msg).catch(e => {
+                console.error(e.toString());
+                res.status(500).end();
+              });
+            });
 					}
 					else {
 						console.log("Nothing to send!");
@@ -1127,20 +1218,21 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 						attendeeEmails = ids;
 						if (!error){
 							console.log("Sending emails to: " + attendeeEmails);
-							const msg = {
-								to: attendeeEmails,
-								from: {
-									name: 'Gathio',
-									email: 'notifications@gath.io',
-								},
-								templateId: 'd-756d078561e047aba307155f02b6686d',
-								dynamic_template_data: {
-									subject: 'gathio: New comment in ' + event.name,
-									commentAuthor: req.body.commentAuthor,
-									eventID: req.params.eventID
-								}
-							}
-							sgMail.sendMultiple(msg);
+              req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, domain, eventID: req.params.eventID, commentAuthor: req.body.replyAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
+                const msg = {
+                  to: attendeeEmails,
+                  from: {
+                    name: siteName,
+                    email: contactEmail,
+                  },
+                  subject: `${siteName}: New comment in ${event.name}`,
+                  html,
+                };
+                sgMail.sendMultiple(msg).catch(e => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+              });
 						}
 						else {
 							console.log("Nothing to send!");
