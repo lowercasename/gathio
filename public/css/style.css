@@ -269,6 +269,7 @@ body, html {
 	text-overflow: "";
 	overflow: hidden;
 	max-width: 62px;
+  color: #fff;
 }
 
 .remove-attendee {
