@@ -510,8 +510,6 @@ function _handleFollow(req, res) {
                      "content": `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}? (If you reply "Yes", you'll be listed as an attendee on the event page.)`,
                      "oneOf": [
                        {"type":"Note","name": "Yes"},
-                       {"type":"Note","name": "No"},
-                       {"type":"Note","name": "Maybe"}
                      ],
                     "endTime":event.start.toISOString(),
                     "tag":[{"type":"Mention","href":req.body.actor,"name":name}]
@@ -865,7 +863,7 @@ function processInbox(req, res) {
       _handleAcceptEvent(req, res);
     }
     // if an Undo activity containing an Accept containing the id of the Event we sent out hits the inbox, it is an undo RSVP
-    if (req.body && req.body.type === 'Undo' && req.body.object && req.body.object.object && typeof req.body.object.object === 'string' && req.body.object.type !== 'Follow') {
+    if (req.body && req.body.type === 'Undo' && req.body.object && req.body.object.object && typeof req.body.object.object === 'string' && req.body.object.type === 'Accept') {
       _handleUndoAcceptEvent(req, res);
     }
     // if a Create activity with a Note object hits the inbox, and it's a reply, it might be a vote in a poll

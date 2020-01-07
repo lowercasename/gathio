@@ -1309,6 +1309,11 @@ router.post('/unattendevent/:eventID', (req, res) => {
 });
 
 router.get('/oneclickunattendevent/:eventID/:attendeeID', (req, res) => {
+  // Mastodon will "click" links that sent to its users, presumably as a prefetch?
+  // Anyway, this ignores the automated clicks that are done without the user's knowledge
+  if (req.headers['user-agent'] && req.headers['user-agent'].includes('Mastodon')) {
+    return res.sendStatus(200);
+  }
 	Event.update(
 	    { id: req.params.eventID },
 	    { $pull: { attendees: { _id: req.params.attendeeID } } }
