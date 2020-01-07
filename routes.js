@@ -266,12 +266,12 @@ router.get('/.well-known/webfinger', (req, res) => {
         res.json(ap.createWebfinger(eventID, domain));
       }
     })
-		.catch((err) => {
-			addToLog("renderWebfinger", "error", "Attempt to render webfinger for " + req.params.eventID + " failed with error: " + err);
-			res.status(404);
-			res.render('404', { url: req.url });
-			return;
-		});
+    .catch((err) => {
+      addToLog("renderWebfinger", "error", "Attempt to render webfinger for " + req.params.eventID + " failed with error: " + err);
+      res.status(404);
+      res.render('404', { url: req.url });
+      return;
+    });
   }
 });
 
