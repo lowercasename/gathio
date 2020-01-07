@@ -226,7 +226,6 @@ router.get('/:eventID/featured', (req, res) => {
 router.get('/:eventID/m/:hash', (req, res) => {
   const {hash, eventID} = req.params;
   const id = `https://${domain}/${eventID}/m/${hash}`;
-  console.log(id);
 
   Event.findOne({
     id: eventID
@@ -249,7 +248,6 @@ router.get('/:eventID/m/:hash', (req, res) => {
   })
   .catch((err) => {
     addToLog("getActivityPubMessage", "error", "Attempt to get Activity Pub Message for " + id + " failed with error: " + err);
-    console.log(err)
     res.status(404);
     res.render('404', { url: req.url });
     return;
@@ -280,7 +278,6 @@ router.get('/.well-known/webfinger', (req, res) => {
     })
 		.catch((err) => {
 			addToLog("renderWebfinger", "error", "Attempt to render webfinger for " + req.params.eventID + " failed with error: " + err);
-			console.log(err)
 			res.status(404);
 			res.render('404', { url: req.url });
 			return;
@@ -440,9 +437,7 @@ router.get('/:eventID/followers', (req, res) => {
 		})
 		.then((event) => {
 			if (event) {
-        console.log(event.followers);
         const followers = event.followers.map(el => el.actorId);
-        console.log(followers)
         let followersCollection = {
           "type": "OrderedCollection",
           "totalItems": followers.length,
@@ -1237,13 +1232,11 @@ router.post('/unattendevent/:eventID', (req, res) => {
 });
 
 router.get('/oneclickunattendevent/:eventID/:attendeeID', (req, res) => {
-  console.log(req.params.eventID, req.params.attendeeID)
 	Event.update(
 	    { id: req.params.eventID },
 	    { $pull: { attendees: { _id: req.params.attendeeID } } }
 	)
 	.then(response => {
-		console.log(response)
 		addToLog("oneClickUnattend", "success", "Attendee removed via one click unattend " + req.params.eventID);
 		if (sendEmails) {
       // currently this is never called because we don't have the email address

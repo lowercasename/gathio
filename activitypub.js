@@ -54,7 +54,6 @@ function createActivityPubActor(eventID, domain, pubkey, description, name, loca
 
 function createActivityPubEvent(name, startUTC, endUTC, timezone, description, location) {
   const guid = crypto.randomBytes(16).toString('hex');
-  console.log(startUTC);
   let eventObject = {
     "@context": "https://www.w3.org/ns/activitystreams",
     'id': `https://${domain}/${guid}`,
@@ -336,7 +335,6 @@ function broadcastDeleteMessage(apObject, followers, eventID, callback) {
   let promises = [];
 
   let guidUpdate = crypto.randomBytes(16).toString('hex');
-  console.log('building promises');
   // iterate over followers
   for (const follower of followers) {
     promises.push(new Promise((resolve, reject) => {
@@ -347,7 +345,6 @@ function broadcastDeleteMessage(apObject, followers, eventID, callback) {
       Event.findOne({
         id: eventID,
         }, function(err, event) {
-        console.log('found the event for broadcast');
         if (event) {
           const follower = event.followers.find(el => el.actorId === actorId);
           if (follower) {
@@ -385,8 +382,6 @@ function broadcastDeleteMessage(apObject, followers, eventID, callback) {
   } // end followers
 
   Promise.all(promises.map(p => p.catch(e => e))).then(statuses => {
-    console.log('DONE')
-    console.log(statuses)
     callback(statuses);
   });
 }
@@ -490,12 +485,10 @@ function _handleFollow(req, res) {
         }, function(err,event) {
         // if this account is NOT already in our followers list, add it
         if (event && !event.followers.map(el => el.actorId).includes(req.body.actor)) {
-          console.log('made it!')
           event.followers.push(newFollower);
           event.save()
           .then(() => {
             addToLog("addEventFollower", "success", "Follower added to event " + eventID);
-            console.log('successful follower add');
             // Accept the follow request
             sendAcceptMessage(req.body, eventID, targetDomain, function(err, resp, status) {
               if (err) {
@@ -646,24 +639,19 @@ function _handleUndoAcceptEvent(req, res) {
     to = to[0];
   }
   const eventID = to.replace(`https://${domain}/`,'');
-  console.log(eventID)
   Event.findOne({
     id: eventID,
     }, function(err,event) {
     if (!event) return;
     // does the id we got match the id of a thing we sent out
-    console.log('EVENT MESSAGES')
-    console.log(event.activityPubMessages);
     const message = event.activityPubMessages.find(el => el.id === req.body.object.object);
     if (message) {
       // it's a match
-      console.log('match!!!!')
       Event.update(
           { id: eventID },
           { $pull: { attendees: { id: actor } } }
       )
       .then(response => {
-        console.log(response)
         addToLog("oneClickUnattend", "success", "Attendee removed via one click unattend " + req.params.eventID);
       });
     }
@@ -671,7 +659,6 @@ function _handleUndoAcceptEvent(req, res) {
 }
 
 function _handleCreateNote(req, res) {
-  console.log('create note inreplyto!!!')
   // figure out what this is in reply to -- it should be addressed specifically to us
   let {name, attributedTo, inReplyTo, to} = req.body.object;
   // if it's an array just grab the first element, since a poll should only broadcast back to the pollster
@@ -687,14 +674,12 @@ function _handleCreateNote(req, res) {
       // is this even someone who follows us
       const indexOfFollower = event.followers.findIndex(el => el.actorId === req.body.object.attributedTo);
       if (indexOfFollower !== -1) {
-        console.log('this person does follow us!')
         // compare the inReplyTo to its stored message, if it exists and it's going to the right follower then this is a valid reply
         const message = event.activityPubMessages.find(el => {
           const content = JSON.parse(el.content);
           return inReplyTo === (content.object && content.object.id);
         });
         if (message) {
-          console.log(message);
           const content = JSON.parse(message.content);
           // check if the message we sent out was sent to the actor this incoming message is attributedTo
           if (content.to[0] === attributedTo) {
@@ -783,7 +768,6 @@ function _handleDelete(req, res) {
     eventWithComment.save()
     .then(() => {
       addToLog("deleteComment", "success", "Comment deleted from event " + eventWithComment.id);
-      console.log('deleted comment!')
       return res.sendStatus(200);
     })
     .catch((err) => {
@@ -853,11 +837,10 @@ function _handleCreateNoteComment(req, res) {
               const jsonObject = req.body.object;
               jsonObject.attributedTo = newComment.actorId;
               broadcastAnnounceMessage(jsonObject, event.followers, eventID)
-              console.log('added comment');
               return res.sendStatus(200);
             })
             .catch((err) => {
-              addToLog("addEventComment", "error", "Attempt to add comment to event " + eventID + " failed with error: " + err); console.log('error', err)
+              addToLog("addEventComment", "error", "Attempt to add comment to event " + eventID + " failed with error: " + err);
               res.status(500).send('Database error, please try again :(' + err);
             });
           });
@@ -868,10 +851,7 @@ function _handleCreateNoteComment(req, res) {
 }
 
 function processInbox(req, res) {
-  console.log('PROCESS INBOX')
-  console.log(req.body, req.body.type);
   try {
-    if (req.body.object) console.log('containing object of type', req.body.object.type);
     // if a Follow activity hits the inbox
     if (typeof req.body.object === 'string' && req.body.type === 'Follow') {
       _handleFollow(req, res);
