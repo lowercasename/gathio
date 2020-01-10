@@ -22,8 +22,7 @@ const marked = require('marked');
 
 const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
-const siteName = require('./config/domain.js').sitename;
-const siteLogo = require('./config/domain.js').logo_url;
+const siteName = require('./config/domain.js').sitename
 
 // Extra marked renderer (used to render plaintext event description for page metadata)
 // Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
@@ -529,7 +528,7 @@ router.post('/newevent', async (req, res) => {
 			addToLog("createEvent", "success", "Event " + eventID + "created");
 			// Send email with edit link
 			if (sendEmails) {
-        req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', {eventID, editToken, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+        req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', {eventID, editToken, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
           const msg = {
             to: req.body.creatorEmail,
             from: {
@@ -556,10 +555,12 @@ router.post('/newevent', async (req, res) => {
 router.post('/importevent', (req, res) => {
 	let eventID = shortid.generate();
 	let editToken = randomstring.generate();
-	if (req.files && Object.keys(req.files).length !== 0) {
-		let iCalObject = ical.parseICS(req.files.icsImportControl.data.toString('utf8'));
-		let importedEventData = iCalObject[Object.keys(iCalObject)];
-
+	if (req.files && Object.keys(req.files).length != 0) {
+		importediCalObject = ical.parseICS(req.files.icsImportControl.data.toString('utf8'));
+		for (var key in importediCalObject) {
+    		importedEventData = importediCalObject[key];
+		}
+		console.log(importedEventData)
 		let creatorEmail;
 		if (req.body.creatorEmail) {
 			creatorEmail = req.body.creatorEmail
@@ -568,7 +569,7 @@ router.post('/importevent', (req, res) => {
 		} else {
 			res.status(500).send("Please supply an email address on the previous page.");
 		}
-
+		
 		const event = new Event({
 			id: eventID,
 			type: 'public',
@@ -595,24 +596,24 @@ router.post('/importevent', (req, res) => {
 				addToLog("createEvent", "success", "Event " + eventID + " created");
 				// Send email with edit link
 				if (sendEmails) {
-					req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', {eventID, editToken, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
-						const msg = {
-						to: req.body.creatorEmail,
-						from: {
-							name: siteName,
-							email: contactEmail,
-						},
-						subject: `${siteName}: ${importedEventData.summary}`,
-						html,
-						};
-						sgMail.send(msg).catch(e => {
-						console.error(e.toString());
-						res.status(500).end();
-						});
-					});
+          req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', {eventID, editToken, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+            const msg = {
+              to: req.body.creatorEmail,
+              from: {
+                name: siteName,
+                email: contactEmail,
+              },
+              subject: `${siteName}: ${req.body.eventName}`,
+              html,
+            };
+            sgMail.send(msg).catch(e => {
+              console.error(e.toString());
+              res.status(500).end();
+            });
+          });
 				}
 				res.writeHead(302, {
-					'Location': '/' + eventID + '?e=' + editToken
+				'Location': '/' + eventID + '?e=' + editToken
 				});
 				res.end();
 			})
@@ -655,7 +656,7 @@ router.post('/neweventgroup', (req, res) => {
 			addToLog("createEventGroup", "success", "Event group " + eventGroupID + " created");
 			// Send email with edit link
 			if (sendEmails) {
-        req.app.get('hbsInstance').renderView('./views/emails/createeventgroup.handlebars', {eventGroupID, editToken, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+        req.app.get('hbsInstance').renderView('./views/emails/createeventgroup.handlebars', {eventGroupID, editToken, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
           const msg = {
             to: req.body.creatorEmail,
             from: {
@@ -745,7 +746,7 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 						attendeeEmails = ids;
 						if (!error && attendeeEmails != ""){
 							console.log("Sending emails to: " + attendeeEmails);
-              req.app.get('hbsInstance').renderView('./views/emails/editevent.handlebars', {diffText, eventID: req.params.eventID, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+              req.app.get('hbsInstance').renderView('./views/emails/editevent.handlebars', {diffText, eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
                 const msg = {
                   to: attendeeEmails,
                   from: {
@@ -917,7 +918,7 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 					attendeeEmails = ids;
 					if (!error){
 						console.log("Sending emails to: " + attendeeEmails);
-            req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', {siteName, siteLogo, domain, eventName: event.name, cache: true, layout: 'email.handlebars'}, function(err, html) {
+            req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', {siteName, domain, eventName: event.name, cache: true, layout: 'email.handlebars'}, function(err, html) {
               const msg = {
                 to: attendeeEmails,
                 from: {
@@ -1045,7 +1046,7 @@ router.post('/attendevent/:eventID', (req, res) => {
 			addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
 			if (sendEmails) {
 				if (req.body.attendeeEmail){
-          req.app.get('hbsInstance').renderView('./views/emails/addeventattendee.handlebars', {eventID: req.params.eventID, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
+          req.app.get('hbsInstance').renderView('./views/emails/addeventattendee.handlebars', {eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
             const msg = {
               to: req.body.attendeeEmail,
               from: {
@@ -1081,7 +1082,7 @@ router.post('/unattendevent/:eventID', (req, res) => {
 		addToLog("unattendEvent", "success", "Attendee removed self from event " + req.params.eventID);
 		if (sendEmails) {
 			if (req.body.attendeeEmail){
-        req.app.get('hbsInstance').renderView('./views/emails/unattendevent.handlebars', {eventID: req.params.eventID, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
+        req.app.get('hbsInstance').renderView('./views/emails/unattendevent.handlebars', {eventID: req.params.eventID, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
             to: req.body.attendeeEmail,
             from: {
               name: siteName,
@@ -1118,7 +1119,7 @@ router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
 		if (sendEmails) {
       // currently this is never called because we don't have the email address
 			if (req.body.attendeeEmail){
-        req.app.get('hbsInstance').renderView('./views/emails/removeeventattendee.handlebars', {eventName: req.params.eventName, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
+        req.app.get('hbsInstance').renderView('./views/emails/removeeventattendee.handlebars', {eventName: req.params.eventName, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
             to: req.body.attendeeEmail,
             from: {
               name: siteName,
@@ -1165,7 +1166,7 @@ router.post('/post/comment/:eventID', (req, res) => {
 				attendeeEmails = ids;
 					if (!error){
 						console.log("Sending emails to: " + attendeeEmails);
-            req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, siteLogo, domain, eventID: req.params.eventID, commentAuthor: req.body.commentAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
+            req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, domain, eventID: req.params.eventID, commentAuthor: req.body.commentAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
               const msg = {
                 to: attendeeEmails,
                 from: {
@@ -1217,7 +1218,7 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 						attendeeEmails = ids;
 						if (!error){
 							console.log("Sending emails to: " + attendeeEmails);
-              req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, siteLogo, domain, eventID: req.params.eventID, commentAuthor: req.body.replyAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
+              req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, domain, eventID: req.params.eventID, commentAuthor: req.body.replyAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
                 const msg = {
                   to: attendeeEmails,
                   from: {

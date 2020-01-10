@@ -4,7 +4,6 @@
 
 config/api.js
 config/database.js
-config/domain.js
 public/events/*
 !public/events/.gitkeep
 
