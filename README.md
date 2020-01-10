@@ -1,4 +1,5 @@
 # gathio
+[![Build Status](https://travis-ci.com/palfrey/gathio.svg?branch=master)](https://travis-ci.com/palfrey/gathio)
 
 Self-destructing, shareable, no-registration event pages.
 

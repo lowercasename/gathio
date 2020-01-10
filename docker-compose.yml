@@ -1,0 +1,10 @@
+version: '3'
+services:
+    gathio:
+        build: .
+        links:
+         - mongo
+        ports:
+            - 3000:3000
+    mongo:
+        image: mongo:latest
