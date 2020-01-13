@@ -1092,7 +1092,6 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 				eventImage = event.image;
 			}
 
-<<<<<<< HEAD
       // broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
       const guidUpdateObject = crypto.randomBytes(16).toString('hex');
       const jsonUpdateObject = JSON.parse(event.activityPubActor);
