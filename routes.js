@@ -698,9 +698,11 @@ router.post('/newevent', async (req, res) => {
 router.post('/importevent', (req, res) => {
 	let eventID = shortid.generate();
 	let editToken = randomstring.generate();
-	if (req.files && Object.keys(req.files).length !== 0) {
-		let importediCalObject = ical.parseICS(req.files.icsImportControl.data.toString('utf8'));
-    let importedEventData = importediCalObject;
+	if (req.files && Object.keys(req.files).length != 0) {
+		importediCalObject = ical.parseICS(req.files.icsImportControl.data.toString('utf8'));
+		for (var key in importediCalObject) {
+    		importedEventData = importediCalObject[key];
+		}
 		console.log(importedEventData)
 		let creatorEmail;
 		if (req.body.creatorEmail) {
