@@ -26,7 +26,7 @@ const request = require('request');
 
 const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
-const siteName = require('./config/domain.js').sitename
+const siteName = require('./config/domain.js').sitename;
 const siteLogo = require('./config/domain.js').logo_url;
 const ap = require('./activitypub.js');
 
