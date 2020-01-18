@@ -28,6 +28,7 @@ const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
 const siteName = require('./config/domain.js').sitename;
 const siteLogo = require('./config/domain.js').logo_url;
+const isFederated = require('./config/domain.js').isFederated;
 const ap = require('./activitypub.js');
 
 // Extra marked renderer (used to render plaintext event description for page metadata)
@@ -199,6 +200,7 @@ router.get('/new/event/public', (req, res) => {
 
 // return the JSON for the featured/pinned post for this event
 router.get('/:eventID/featured', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
   const {eventID} = req.params;
   const guidObject = crypto.randomBytes(16).toString('hex');
   const featured = {
@@ -214,6 +216,7 @@ router.get('/:eventID/featured', (req, res) => {
 
 // return the JSON for a given activitypub message
 router.get('/:eventID/m/:hash', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
   const {hash, eventID} = req.params;
   const id = `https://${domain}/${eventID}/m/${hash}`;
 
@@ -246,6 +249,7 @@ router.get('/:eventID/m/:hash', (req, res) => {
 
 // return the webfinger record required for the initial activitypub handshake
 router.get('/.well-known/webfinger', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
   let resource = req.query.resource;
   if (!resource || !resource.includes('acct:')) {
     return res.status(400).send('Bad request. Please make sure "acct:USER@DOMAIN" is what you are sending as the "resource" query parameter.');
@@ -379,6 +383,7 @@ router.get('/:eventID', (req, res) => {
           res.set("X-Robots-Tag", "noindex");
           res.render('event', {
             domain: domain,
+            isFederated: isFederated,
             email: contactEmail,
             title: event.name,
             escapedName: escapedName,
@@ -422,6 +427,7 @@ router.get('/:eventID', (req, res) => {
 })
 
 router.get('/:eventID/followers', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
   const eventID = req.params.eventID;
 	Event.findOne({
 		id: eventID
@@ -661,9 +667,9 @@ router.post('/newevent', async (req, res) => {
 		usersCanComment: req.body.interactionCheckbox ? true : false,
         maxAttendees: req.body.maxAttendees,
 		firstLoad: true,
-    activityPubActor: ap.createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
-    activityPubEvent: ap.createActivityPubEvent(req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation),
-    activityPubMessages: [ { id: `https://${domain}/${eventID}/m/featuredPost`, content: JSON.stringify(ap.createFeaturedPost(eventID, req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation)) } ],
+    activityPubActor: isFederated ? ap.createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone) : null,
+    activityPubEvent: isFederated ? ap.createActivityPubEvent(req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation) : null,
+    activityPubMessages: isFederated ? [ { id: `https://${domain}/${eventID}/m/featuredPost`, content: JSON.stringify(ap.createFeaturedPost(eventID, req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation)) } ] : [],
     publicKey: pair.public,
     privateKey: pair.private
 	});
@@ -875,8 +881,8 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				usersCanComment: req.body.interactionCheckbox ? true : false,
                 maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
 				eventGroup: isPartOfEventGroup ? eventGroup._id : null,
-        activityPubActor: ap.updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
-        activityPubEvent: ap.updateActivityPubEvent(JSON.parse(event.activityPubEvent), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
+        activityPubActor: isFederated ? ap.updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone) : null,
+        activityPubEvent: isFederated ? ap.updateActivityPubEvent(JSON.parse(event.activityPubEvent), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone) : null,
 			}
       let diffText = '<p>This event was just updated with new information.</p><ul>';
       let displayDate;
@@ -1531,6 +1537,7 @@ router.post('/deletecomment/:eventID/:commentID/:editToken', (req, res) => {
 });
 
 router.post('/activitypub/inbox', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
   // validate the incoming message
   const signature = req.get('Signature');
   let signature_header = signature.split(',').map(pair => {

@@ -1,6 +1,7 @@
 const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
-const siteName = require('./config/domain.js').sitename
+const siteName = require('./config/domain.js').sitename;
+const isFederated = require('./config/domain.js').isFederated;
 const request = require('request');
 const addToLog = require('./helpers.js').addToLog;
 const crypto = require('crypto');
@@ -12,6 +13,7 @@ const EventGroup = mongoose.model('EventGroup');
 var sanitizeHtml = require('sanitize-html');
 
 function createActivityPubActor(eventID, domain, pubkey, description, name, location, imageFilename, startUTC, endUTC, timezone) {
+  if (!isFederated) return {};
   let actor = {
     '@context': [
       'https://www.w3.org/ns/activitystreams',
@@ -53,6 +55,7 @@ function createActivityPubActor(eventID, domain, pubkey, description, name, loca
 }
 
 function createActivityPubEvent(name, startUTC, endUTC, timezone, description, location) {
+  if (!isFederated) return {};
   const guid = crypto.randomBytes(16).toString('hex');
   let eventObject = {
     "@context": "https://www.w3.org/ns/activitystreams",
@@ -81,6 +84,7 @@ function createFeaturedPost(eventID, name, startUTC, endUTC, timezone, descripti
 }
 
 function updateActivityPubEvent(oldEvent, name, startUTC, endUTC, timezone, description, location) {
+  if (!isFederated) return;
   // we want to persist the old ID no matter what happens to the Event itself
   const id = oldEvent.id;
   let eventObject = {
@@ -98,6 +102,7 @@ function updateActivityPubEvent(oldEvent, name, startUTC, endUTC, timezone, desc
 
 
 function updateActivityPubActor(actor, description, name, location, imageFilename, startUTC, endUTC, timezone) {
+  if (!isFederated) return;
   if (!actor) return;
   actor.summary = `<p>${description}</p>`;
   actor.name = name;
@@ -120,6 +125,7 @@ function updateActivityPubActor(actor, description, name, location, imageFilenam
 }
 
 function signAndSend(message, eventID, targetDomain, inbox, callback) {
+  if (!isFederated) return;
   let inboxFragment = inbox.replace('https://'+targetDomain,'');
   // get the private key
 	Event.findOne({
@@ -193,6 +199,7 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
 // it's also an unlisted public message, meaning non-followers can see the message if they look at
 // the profile but it doesn't spam federated timelines
 function broadcastCreateMessage(apObject, followers, eventID) {
+  if (!isFederated) return;
   let guidCreate = crypto.randomBytes(16).toString('hex');
   Event.findOne({
     id: eventID,
@@ -240,6 +247,7 @@ function broadcastCreateMessage(apObject, followers, eventID) {
 
 // sends an Announce for the apObject
 function broadcastAnnounceMessage(apObject, followers, eventID) {
+  if (!isFederated) return;
   let guidUpdate = crypto.randomBytes(16).toString('hex');
   Event.findOne({
     id: eventID,
@@ -286,6 +294,7 @@ function broadcastAnnounceMessage(apObject, followers, eventID) {
 
 // sends an Update for the apObject
 function broadcastUpdateMessage(apObject, followers, eventID) {
+  if (!isFederated) return;
   let guidUpdate = crypto.randomBytes(16).toString('hex');
   // iterate over followers
   Event.findOne({
@@ -329,6 +338,7 @@ function broadcastUpdateMessage(apObject, followers, eventID) {
 }
 
 function broadcastDeleteMessage(apObject, followers, eventID, callback) {
+  if (!isFederated) return;
   callback = callback || function() {};
   // we need to build an array of promises for each message we're sending, run Promise.all(), and then that will resolve when every message has been sent (or failed)
   // per spec, each promise will execute *as it is built*, which is fine, we just need the guarantee that they are all done
@@ -388,6 +398,7 @@ function broadcastDeleteMessage(apObject, followers, eventID, callback) {
 
 // this sends a message "to:" an individual fediverse user
 function sendDirectMessage(apObject, actorId, eventID, callback) {
+  if (!isFederated) return;
   callback = callback || function() {};
   const guidCreate = crypto.randomBytes(16).toString('hex');
   const guidObject = crypto.randomBytes(16).toString('hex');
@@ -432,6 +443,7 @@ function sendDirectMessage(apObject, actorId, eventID, callback) {
 }
 
 function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
+  if (!isFederated) return;
   callback = callback || function() {};
   const guid = crypto.randomBytes(16).toString('hex');
   const actorId = thebody.actor;
@@ -849,6 +861,7 @@ function _handleCreateNoteComment(req, res) {
 }
 
 function processInbox(req, res) {
+  if (!isFederated) return res.sendStatus(404);
   try {
     // if a Follow activity hits the inbox
     if (typeof req.body.object === 'string' && req.body.type === 'Follow') {
