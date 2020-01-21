@@ -19,35 +19,28 @@
 		<meta property="og:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
 		<meta property="og:title" content="{{#if metadata.title}}{{metadata.title}} &middot; {{siteName}}{{else}}{{siteName}}{{/if}}">
 		<meta property="og:url" content="{{#if metadata.url}}{{metadata.url}}{{else}}https://{{domain}}/{{/if}}">
-		<meta property="og:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}http://{{domain}}/og-image.jpg{{/if}}">
+		<meta property="og:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}https://{{domain}}/og-image.jpg{{/if}}">
 
 		<meta name="twitter:card" content="summary">
 		<meta name="twitter:title" content="{{#if metadata.title}}{{metadata.title}} &middot; {{siteName}}{{else}}{{siteName}}{{/if}}">
 		<meta name="twitter:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
-		<meta name="twitter:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}http://{{domain}}/og-image.jpg{{/if}}">
+		<meta name="twitter:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}https://{{domain}}/og-image.jpg{{/if}}">
 
 
 		<title>{{#if title}}{{title}} &middot; {{/if}}{{siteName}}</title>
 
 		<!-- FONTS -->
-
-		 <link href="https://fonts.googleapis.com/css?family=Fredoka+One&display=swap" rel="stylesheet">
-		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+		<link rel="stylesheet" href="/css/fontawesome.css">
 
 		<!-- CSS -->
-
 		<link rel="stylesheet" href="/css/bootstrap.min.css">
 		<link href="/css/datepicker.min.css" rel="stylesheet" type="text/css">
 		<link rel="stylesheet" href="/css/select2.min.css">
 		<link rel="stylesheet" href="/css/style.css">
 
 		<!-- JS -->
-
-		<script
-			  src="https://code.jquery.com/jquery-3.4.1.min.js"
-			  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
-			  crossorigin="anonymous"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+		<script src="/js/jquery-3.4.1.min.js"></script>
+		<script src="/js/popper.min.js"></script>
 		<script src="/js/jquery.form-validator.js"></script>
 		<script src="/js/bootstrap.min.js"></script>
 		<script src="/js/datepicker.min.js"></script>
@@ -73,8 +66,8 @@
 					</div>
 					<div id="footerContainer">
 						<small class="text-muted">
-							<a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="http://raphaelkabo.com">Raphael</a> &middot; Need help? <a href="mailto:{{email}}">Email us</a>.<br />
-							If you like gathio, you might like <strong><a href="http://sweet.sh/" style="color:#ed5e5e;">sweet</a></strong>, my utopian social network.
+							<a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="https://raphaelkabo.com">Raphael</a> &middot; Need help? <a href="mailto:{{email}}">Email us</a>.<br />
+							If you like gathio, you might like <strong><a href="https://sweet.sh/" style="color:#ed5e5e;">sweet</a></strong>, my utopian social network.
 						</small>
 					</div>
 				</div>

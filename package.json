@@ -6,7 +6,9 @@
   "scripts": {
     "start": "nodemon ./start.js"
   },
-  "engines": { "node" : ">=10.18.1" },
+  "engines": {
+    "node": ">=10.18.1"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -36,7 +38,7 @@
     "randomstring": "^1.1.5",
     "request": "^2.88.0",
     "sanitize-html": "^1.20.1",
-    "shortid": "^2.2.14"
+    "shortid": "^2.2.15"
   },
   "devDependencies": {
     "eslint": "^6.1.0",
