@@ -150,11 +150,9 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
           body: message
         }, function (error, response){
           if (error) {
-            console.log('Error:', error, response.body);
             callback(error, null, 500);
           }
           else {
-            console.log('Response:', response.statusCode);
             // Add the message to the database
             const messageID = message.id;
             const newMessage = {
@@ -222,7 +220,7 @@ function broadcastCreateMessage(apObject, followers, eventID) {
           };
           signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
             if (err) {
-              console.log(`Didn't sent to ${actorId}, status ${status} with error ${err}`);
+              console.log(`Didn't send to ${actorId}, status ${status} with error ${err}`);
             }
             else {
               console.log('sent to', actorId);
@@ -315,7 +313,7 @@ function broadcastUpdateMessage(apObject, followers, eventID) {
           };
           signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
             if (err) {
-              console.log(`Didn't sent to ${actorId}, status ${status} with error ${err}`);
+              console.log(`Didn't send to ${actorId}, status ${status} with error ${err}`);
             }
             else {
               console.log('sent to', actorId);
@@ -525,7 +523,7 @@ function _handleFollow(req, res) {
                   // send direct message to user
                   sendDirectMessage(jsonObject, req.body.actor, eventID, function (error, response, statuscode) {
                     if (error) {
-                      console.log(error);
+                      console.log('Error sending direct message:', error);
                       return res.status(statuscode).json(error);
                     }
                     else {
@@ -889,7 +887,7 @@ function processInbox(req, res) {
     } // CC'ed
   }
   catch(e) {
-    console.log('Error:', e)
+    console.log('Error in processing inbox:', e)
   }
 }
 
