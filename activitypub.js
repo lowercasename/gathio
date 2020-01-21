@@ -13,7 +13,6 @@ const EventGroup = mongoose.model('EventGroup');
 var sanitizeHtml = require('sanitize-html');
 
 function createActivityPubActor(eventID, domain, pubkey, description, name, location, imageFilename, startUTC, endUTC, timezone) {
-  if (!isFederated) return {};
   let actor = {
     '@context': [
       'https://www.w3.org/ns/activitystreams',
@@ -55,7 +54,6 @@ function createActivityPubActor(eventID, domain, pubkey, description, name, loca
 }
 
 function createActivityPubEvent(name, startUTC, endUTC, timezone, description, location) {
-  if (!isFederated) return {};
   const guid = crypto.randomBytes(16).toString('hex');
   let eventObject = {
     "@context": "https://www.w3.org/ns/activitystreams",
@@ -84,7 +82,6 @@ function createFeaturedPost(eventID, name, startUTC, endUTC, timezone, descripti
 }
 
 function updateActivityPubEvent(oldEvent, name, startUTC, endUTC, timezone, description, location) {
-  if (!isFederated) return;
   // we want to persist the old ID no matter what happens to the Event itself
   const id = oldEvent.id;
   let eventObject = {
@@ -102,7 +99,6 @@ function updateActivityPubEvent(oldEvent, name, startUTC, endUTC, timezone, desc
 
 
 function updateActivityPubActor(actor, description, name, location, imageFilename, startUTC, endUTC, timezone) {
-  if (!isFederated) return;
   if (!actor) return;
   actor.summary = `<p>${description}</p>`;
   actor.name = name;
