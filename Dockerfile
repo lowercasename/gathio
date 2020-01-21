@@ -1,5 +1,6 @@
 FROM node:13-alpine
 WORKDIR /app
+RUN apk add --no-cache python3 build-base
 ADD package.json package-lock.json /app/
 RUN npm install
 COPY . /app/

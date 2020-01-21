@@ -14,63 +14,73 @@ const router = express.Router();
 
 const Event = mongoose.model('Event');
 const EventGroup = mongoose.model('EventGroup');
-const Log = mongoose.model('Log');
+const addToLog = require('./helpers.js').addToLog;
 
 var moment = require('moment-timezone');
 
 const marked = require('marked');
 
+const generateRSAKeypair = require('generate-rsa-keypair');
+const crypto = require('crypto');
+const request = require('request');
+
 const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
 const siteName = require('./config/domain.js').sitename;
 const siteLogo = require('./config/domain.js').logo_url;
+let isFederated = require('./config/domain.js').isFederated;
+// if the federation config isn't set, things are federated by default
+if (isFederated === undefined) {
+  isFederated = true;
+}
+const ap = require('./activitypub.js');
 
 // Extra marked renderer (used to render plaintext event description for page metadata)
 // Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
 // &#63; to ? helper
-htmlEscapeToText = function (text) {
-    return text.replace(/\&\#[0-9]*;|&amp;/g, function (escapeCode) {
-        if (escapeCode.match(/amp/)) {
-            return '&';
-        }
-        return String.fromCharCode(escapeCode.match(/[0-9]+/));
-    });
+function htmlEscapeToText (text) {
+  return text.replace(/\&\#[0-9]*;|&amp;/g, function (escapeCode) {
+    if (escapeCode.match(/amp/)) {
+      return '&';
+    }
+    return String.fromCharCode(escapeCode.match(/[0-9]+/));
+  });
 }
 
-render_plain = function () {
-    var render = new marked.Renderer();
-    // render just the text of a link, strong, em
-    render.link = function (href, title, text) {
-        return text;
-    };
-	render.strong = function(text) {
-		return text;
-	}
-	render.em = function(text) {
-		return text;
-	}
-    // render just the text of a paragraph
-    render.paragraph = function (text) {
-        return htmlEscapeToText(text)+'\r\n';
-    };
-    // render nothing for headings, images, and br
-    render.heading = function (text, level) {
-        return '';
-    };
-    render.image = function (href, title, text) {
-        return '';
-    };
+function render_plain () {
+  var render = new marked.Renderer();
+  // render just the text of a link, strong, em
+  render.link = function (href, title, text) {
+    return text;
+  };
+  render.strong = function(text) {
+    return text;
+  }
+  render.em = function(text) {
+    return text;
+  }
+  // render just the text of a paragraph
+  render.paragraph = function (text) {
+    return htmlEscapeToText(text)+'\r\n';
+  };
+  // render nothing for headings, images, and br
+  render.heading = function (text, level) {
+    return '';
+  };
+  render.image = function (href, title, text) {
+    return '';
+  };
 	render.br = function () {
-		return '';
+    return '';
 	};
-    return render;
+  return render;
 }
 
 const ical = require('ical');
 const icalGenerator = require('ical-generator');
 const cal = icalGenerator({
-	domain: 'gath.io',
-	name: 'Gathio'
+	domain: domain,
+	name: siteName
 });
 
 const sgMail = require('@sendgrid/mail');
@@ -87,17 +97,6 @@ const fileUpload = require('express-fileupload');
 var Jimp = require('jimp');
 router.use(fileUpload());
 
-// LOGGING
-
-function addToLog(process, status, message) {
-	let logEntry = new Log({
-		status: status,
-		process: process,
-		message: message,
-		timestamp: moment()
-	});
-	logEntry.save().catch(() => { console.log("Error saving log entry!") });
-}
 
 // SCHEDULED DELETION
 
@@ -118,23 +117,35 @@ const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
 				  addToLog("deleteOldEvents", "error", "Image deleted for old event "+event.id);
 				})
 			}
-			Event.remove({"_id": event._id})
-			.then(response => {
-				addToLog("deleteOldEvents", "success", "Old event "+event.id+" deleted");
-			}).catch((err) => {
-				addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
-			});
+      // broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
+      const guidUpdateObject = crypto.randomBytes(16).toString('hex');
+      const jsonUpdateObject = JSON.parse(event.activityPubActor);
+      const jsonEventObject = JSON.parse(event.activityPubEvent);
+      // first broadcast AP messages, THEN delete from DB
+      ap.broadcastDeleteMessage(jsonUpdateObject, event.followers, event.id, function(statuses) {
+        ap.broadcastDeleteMessage(jsonEventObject, event.followers, event.id, function(statuses) {
+          Event.remove({"_id": event._id})
+          .then(response => {
+            addToLog("deleteOldEvents", "success", "Old event "+event.id+" deleted");
+          }).catch((err) => {
+            addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
+          });
+        });
+      });
 		})
 	}).catch((err) => {
 		addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
 	});
 });
 
-
 // FRONTEND ROUTES
 
 router.get('/', (req, res) => {
-  res.render('home');
+  res.render('home', {
+    domain: domain,
+    email: contactEmail,
+    siteName: siteName,
+  });
 });
 
 router.get('/new', (req, res) => {
@@ -154,7 +165,11 @@ router.get('/new', (req, res) => {
 //});
 
 router.get('/new/event', (req, res) => {
-	res.render('newevent');
+	res.render('newevent', {
+    domain: domain,
+    email: contactEmail,
+    siteName: siteName,
+  });
 });
 router.get('/new/event/public', (req, res) => {
 	let isPrivate = false;
@@ -180,9 +195,94 @@ router.get('/new/event/public', (req, res) => {
 		isPublic: isPublic,
 		isOrganisation: isOrganisation,
 		isUnknownType: isUnknownType,
-		eventType: 'public'
+		eventType: 'public',
+    domain: domain,
+    email: contactEmail,
+    siteName: siteName,
 	});
 })
+
+// return the JSON for the featured/pinned post for this event
+router.get('/:eventID/featured', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
+  const {eventID} = req.params;
+  const guidObject = crypto.randomBytes(16).toString('hex');
+  const featured = {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": `https://${domain}/${eventID}/featured`,
+    "type": "OrderedCollection",
+    "orderedItems": [
+      ap.createFeaturedPost(eventID)
+    ]
+  }
+  res.json(featured);
+});
+
+// return the JSON for a given activitypub message
+router.get('/:eventID/m/:hash', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
+  const {hash, eventID} = req.params;
+  const id = `https://${domain}/${eventID}/m/${hash}`;
+
+  Event.findOne({
+    id: eventID
+  })
+  .then((event) => {
+    if (!event) {
+      res.status(404);
+      res.render('404', { url: req.url });
+    }
+    else {
+      const message = event.activityPubMessages.find(el => el.id === id);
+      if (message) {
+        return res.json(JSON.parse(message.content));
+      }
+      else {
+        res.status(404);
+        return res.render('404', { url: req.url });
+      }
+    }
+  })
+  .catch((err) => {
+    addToLog("getActivityPubMessage", "error", "Attempt to get Activity Pub Message for " + id + " failed with error: " + err);
+    res.status(404);
+    res.render('404', { url: req.url });
+    return;
+  });
+});
+
+// return the webfinger record required for the initial activitypub handshake
+router.get('/.well-known/webfinger', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
+  let resource = req.query.resource;
+  if (!resource || !resource.includes('acct:')) {
+    return res.status(400).send('Bad request. Please make sure "acct:USER@DOMAIN" is what you are sending as the "resource" query parameter.');
+  }
+  else {
+    // "foo@domain"
+    let activityPubAccount = resource.replace('acct:','');
+    // "foo"
+    let eventID = activityPubAccount.replace(/@.*/,'');
+    Event.findOne({
+      id: eventID
+    })
+    .then((event) => {
+      if (!event) {
+        res.status(404);
+        res.render('404', { url: req.url });
+      }
+      else {
+        res.json(ap.createWebfinger(eventID, domain));
+      }
+    })
+    .catch((err) => {
+      addToLog("renderWebfinger", "error", "Attempt to render webfinger for " + req.params.eventID + " failed with error: " + err);
+      res.status(404);
+      res.render('404', { url: req.url });
+      return;
+    });
+  }
+});
 
 router.get('/:eventID', (req, res) => {
 	Event.findOne({
@@ -191,7 +291,8 @@ router.get('/:eventID', (req, res) => {
 		.populate('eventGroup')
 		.then((event) => {
 			if (event) {
-				parsedLocation = event.location.replace(/\s+/g, '+');
+				const parsedLocation = event.location.replace(/\s+/g, '+');
+				let displayDate;
 				if (moment.tz(event.end, event.timezone).isSame(event.start, 'day')){
 					// Happening during one day
 					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">to</span>] h:mm a [<span class="text-muted">](z)[</span>]');
@@ -199,10 +300,10 @@ router.get('/:eventID', (req, res) => {
 				else {
 					displayDate = moment.tz(event.start, event.timezone).format('dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a') + moment.tz(event.end, event.timezone).format(' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a [<span class="text-muted">](z)[</span>]');
 				}
-				eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
-				eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
-				parsedStart = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
-				parsedEnd = moment.tz(event.end, event.timezone).format('YYYYMMDD[T]HHmmss');
+				let eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
+				let eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
+				let parsedStart = moment.tz(event.start, event.timezone).format('YYYYMMDD[T]HHmmss');
+				let parsedEnd = moment.tz(event.end, event.timezone).format('YYYYMMDD[T]HHmmss');
 				let eventHasConcluded = false;
 				if (moment.tz(event.end, event.timezone).isBefore(moment.tz(event.timezone))){
 					eventHasConcluded = true;
@@ -211,11 +312,11 @@ router.get('/:eventID', (req, res) => {
 				if (moment.tz(event.start, event.timezone).isBefore(moment.tz(event.timezone))){
 					eventHasBegun = true;
 				}
-				fromNow = moment.tz(event.start, event.timezone).fromNow();
-				parsedDescription = marked(event.description);
-				eventEditToken = event.editToken;
+				let fromNow = moment.tz(event.start, event.timezone).fromNow();
+				let parsedDescription = marked(event.description);
+				let eventEditToken = event.editToken;
 
-				escapedName = event.name.replace(/\s+/g, '+');
+				let escapedName = event.name.replace(/\s+/g, '+');
 
 				let eventHasCoverImage = false;
 				if( event.image ) {
@@ -247,7 +348,7 @@ router.get('/:eventID', (req, res) => {
 						console.log("No edit token set");
 					}
 					else {
-						if (req.query.e == eventEditToken){
+						if (req.query.e === eventEditToken){
 							editingEnabled = true;
 						}
 						else {
@@ -276,34 +377,43 @@ router.get('/:eventID', (req, res) => {
 				let metadata = {
 					title: event.name,
 					description: marked(event.description, { renderer: render_plain()}).split(" ").splice(0,40).join(" ").trim(),
-					image: (eventHasCoverImage ? 'https://gath.io/events/' + event.image : null),
-					url: 'https://gath.io/' + req.params.eventID
+					image: (eventHasCoverImage ? `https://${domain}/events/` + event.image : null),
+					url: `https://${domain}/` + req.params.eventID
 				};
-				res.set("X-Robots-Tag", "noindex");
-				res.render('event', {
-					title: event.name,
-					escapedName: escapedName,
-					eventData: event,
-					eventAttendees: eventAttendees,
-                    spotsRemaining: spotsRemaining,
-                    noMoreSpots: noMoreSpots,
-					eventStartISO: eventStartISO,
-					eventEndISO: eventEndISO,
-					parsedLocation: parsedLocation,
-					parsedStart: parsedStart,
-					parsedEnd: parsedEnd,
-					displayDate: displayDate,
-					fromNow: fromNow,
-					timezone: event.timezone,
-					parsedDescription: parsedDescription,
-					editingEnabled: editingEnabled,
-					eventHasCoverImage: eventHasCoverImage,
-					eventHasHost: eventHasHost,
-					firstLoad: firstLoad,
-					eventHasConcluded: eventHasConcluded,
-					eventHasBegun: eventHasBegun,
-					metadata: metadata,
-				})
+        if (req.headers.accept && (req.headers.accept.includes('application/activity+json') || req.headers.accept.includes('application/json') || req.headers.accept.includes('application/json+ld'))) {
+          res.json(JSON.parse(event.activityPubActor));
+        }
+        else {
+          res.set("X-Robots-Tag", "noindex");
+          res.render('event', {
+            domain: domain,
+            isFederated: isFederated,
+            email: contactEmail,
+            title: event.name,
+            escapedName: escapedName,
+            eventData: event,
+            eventAttendees: eventAttendees,
+                      spotsRemaining: spotsRemaining,
+                      noMoreSpots: noMoreSpots,
+            eventStartISO: eventStartISO,
+            eventEndISO: eventEndISO,
+            parsedLocation: parsedLocation,
+            parsedStart: parsedStart,
+            parsedEnd: parsedEnd,
+            displayDate: displayDate,
+            fromNow: fromNow,
+            timezone: event.timezone,
+            parsedDescription: parsedDescription,
+            editingEnabled: editingEnabled,
+            eventHasCoverImage: eventHasCoverImage,
+            eventHasHost: eventHasHost,
+            firstLoad: firstLoad,
+            eventHasConcluded: eventHasConcluded,
+            eventHasBegun: eventHasBegun,
+            metadata: metadata,
+            siteName: siteName
+          })
+        }
 			}
 			else {
 				res.status(404);
@@ -320,16 +430,46 @@ router.get('/:eventID', (req, res) => {
 		});
 })
 
+router.get('/:eventID/followers', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
+  const eventID = req.params.eventID;
+	Event.findOne({
+		id: eventID
+		})
+		.then((event) => {
+			if (event) {
+        const followers = event.followers.map(el => el.actorId);
+        let followersCollection = {
+          "type": "OrderedCollection",
+          "totalItems": followers.length,
+          "id": `https://${domain}/${eventID}/followers`,
+          "first": {
+            "type": "OrderedCollectionPage",
+            "totalItems": followers.length,
+            "partOf": `https://${domain}/${eventID}/followers`,
+            "orderedItems": followers,
+            "id": `https://${domain}/${eventID}/followers?page=1`
+          },
+          "@context":["https://www.w3.org/ns/activitystreams"]
+        };
+        return res.json(followersCollection);
+      }
+      else {
+        return res.status(400).send('Bad request.');
+      }
+    })
+})
+
 router.get('/group/:eventGroupID', (req, res) => {
 	EventGroup.findOne({
 		id: req.params.eventGroupID
 		})
 		.then(async (eventGroup) => {
 			if (eventGroup) {
-				parsedDescription = marked(eventGroup.description);
-				eventGroupEditToken = eventGroup.editToken;
+				let parsedDescription = marked(eventGroup.description);
+				let eventGroupEditToken = eventGroup.editToken;
 
-				escapedName = eventGroup.name.replace(/\s+/g, '+');
+				let escapedName = eventGroup.name.replace(/\s+/g, '+');
 
 				let eventGroupHasCoverImage = false;
 				if( eventGroup.image ) {
@@ -364,7 +504,7 @@ router.get('/group/:eventGroupID', (req, res) => {
 				})
 
 				let upcomingEventsExist = false;
-				if (events.some(e => e.eventHasConcluded == false)) {
+				if (events.some(e => e.eventHasConcluded === false)) {
 					upcomingEventsExist = true;
 				}
 
@@ -384,7 +524,7 @@ router.get('/group/:eventGroupID', (req, res) => {
 						console.log("No edit token set");
 					}
 					else {
-						if (req.query.e == eventGroupEditToken){
+						if (req.query.e === eventGroupEditToken){
 							editingEnabled = true;
 						}
 						else {
@@ -395,11 +535,12 @@ router.get('/group/:eventGroupID', (req, res) => {
 				let metadata = {
 					title: eventGroup.name,
 					description: marked(eventGroup.description, { renderer: render_plain()}).split(" ").splice(0,40).join(" ").trim(),
-					image: (eventGroupHasCoverImage ? 'https://gath.io/events/' + eventGroup.image : null),
-					url: 'https://gath.io/' + req.params.eventID
+					image: (eventGroupHasCoverImage ? `https://${domain}/events/` + eventGroup.image : null),
+					url: `https://${domain}/` + req.params.eventID
 				};
 				res.set("X-Robots-Tag", "noindex");
 				res.render('eventgroup', {
+          domain: domain,
 					title: eventGroup.name,
 					eventGroupData: eventGroup,
 					escapedName: escapedName,
@@ -475,10 +616,13 @@ router.get('/exportevent/:eventID', (req, res) => {
 
 router.post('/newevent', async (req, res) => {
 	let eventID = shortid.generate();
+  // this is a hack, activitypub does not like "-" in ids so we are essentially going
+  // to have a 63-character alphabet instead of a 64-character one
+  eventID = eventID.replace(/-/g,'_');
 	let editToken = randomstring.generate();
 	let eventImageFilename = "";
 	let isPartOfEventGroup = false;
-	if (req.files && Object.keys(req.files).length != 0) {
+	if (req.files && Object.keys(req.files).length !== 0) {
 		let eventImageBuffer = req.files.imageUpload.data;
 		Jimp.read(eventImageBuffer, (err, img) => {
 			if (err) addToLog("Jimp", "error", "Attempt to edit image failed with error: " + err);
@@ -489,8 +633,8 @@ router.post('/newevent', async (req, res) => {
 		});
 		eventImageFilename = eventID + '.jpg';
 	}
-	startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
-	endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+	let startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+	let endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 	let eventGroup;
 	if (req.body.eventGroupCheckbox) {
 		eventGroup = await EventGroup.findOne({
@@ -501,6 +645,10 @@ router.post('/newevent', async (req, res) => {
 			isPartOfEventGroup = true;
 		}
 	}
+
+  // generate RSA keypair for ActivityPub
+  let pair = generateRSAKeypair();
+
 	const event = new Event({
 		id: eventID,
 		type: req.body.eventType,
@@ -522,7 +670,12 @@ router.post('/newevent', async (req, res) => {
 		showUsersList: req.body.guestlistCheckbox ? true : false,
 		usersCanComment: req.body.interactionCheckbox ? true : false,
         maxAttendees: req.body.maxAttendees,
-		firstLoad: true
+		firstLoad: true,
+    activityPubActor: ap.createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
+    activityPubEvent: ap.createActivityPubEvent(req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation),
+    activityPubMessages: [ { id: `https://${domain}/${eventID}/m/featuredPost`, content: JSON.stringify(ap.createFeaturedPost(eventID, req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation)) } ],
+    publicKey: pair.public,
+    privateKey: pair.private
 	});
 	event.save()
 		.then((event) => {
@@ -576,7 +729,7 @@ router.post('/importevent', (req, res) => {
 			location: importedEventData.location,
 			start: importedEventData.start,
 			end: importedEventData.end,
-			timezone: typeof importedEventData.start.tz != 'undefined' ? importedEventData.start.tz : "Etc/UTC",
+			timezone: typeof importedEventData.start.tz !== 'undefined' ? importedEventData.start.tz : "Etc/UTC",
 			description: importedEventData.description,
 			image: '',
 			creatorEmail: creatorEmail,
@@ -628,7 +781,7 @@ router.post('/neweventgroup', (req, res) => {
 	let eventGroupID = shortid.generate();
 	let editToken = randomstring.generate();
 	let eventGroupImageFilename = "";
-	if (req.files && Object.keys(req.files).length != 0) {
+	if (req.files && Object.keys(req.files).length !== 0) {
 		let eventImageBuffer = req.files.imageUpload.data;
 		Jimp.read(eventImageBuffer, (err, img) => {
 			if (err) addToLog("Jimp", "error", "Attempt to edit image failed with error: " + err);
@@ -692,7 +845,7 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 			// If there is a new image, upload that first
 			let eventID = req.params.eventID;
 			let eventImageFilename = event.image;
-			if (req.files && Object.keys(req.files).length != 0) {
+			if (req.files && Object.keys(req.files).length !== 0) {
 				let eventImageBuffer = req.files.imageUpload.data;
 				Jimp.read(eventImageBuffer, (err, img) => {
 					if (err) throw err;
@@ -703,19 +856,20 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				});
 				eventImageFilename = eventID + '.jpg';
 			}
-			startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
-			endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+			let startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
+			let endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
 			
-			var isPartOfEventGroup = false;
+			let isPartOfEventGroup = false;
+      let eventGroup;
 			if (req.body.eventGroupCheckbox) {
-				var eventGroup = await EventGroup.findOne({
+				eventGroup = await EventGroup.findOne({
 					id: req.body.eventGroupID,
 					editToken: req.body.eventGroupEditToken
 				})
 				if (eventGroup) {
 					isPartOfEventGroup = true;
 				}
-			}			
+			}
 			const updatedEvent = {
 				name: req.body.eventName,
 				location: req.body.eventLocation,
@@ -730,8 +884,34 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				showUsersList: req.body.guestlistCheckbox ? true : false,
 				usersCanComment: req.body.interactionCheckbox ? true : false,
                 maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
-				eventGroup: isPartOfEventGroup ? eventGroup._id : null
+				eventGroup: isPartOfEventGroup ? eventGroup._id : null,
+        activityPubActor: ap.updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
+        activityPubEvent: ap.updateActivityPubEvent(JSON.parse(event.activityPubEvent), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
 			}
+      let diffText = '<p>This event was just updated with new information.</p><ul>';
+      let displayDate;
+      if (event.name !== updatedEvent.name) {
+        diffText += `<li>the event name changed to ${updatedEvent.name}</li>`;
+      }
+      if (event.location !== updatedEvent.location) {
+        diffText += `<li>the location changed to ${updatedEvent.location}</li>`;
+      }
+      if (event.start.toISOString() !== updatedEvent.start.toISOString()) {
+        displayDate = moment.tz(updatedEvent.start, updatedEvent.timezone).format('dddd D MMMM YYYY h:mm a');
+        diffText += `<li>the start time changed to ${displayDate}</li>`;
+      }
+      if (event.end.toISOString() !== updatedEvent.end.toISOString()) {
+        displayDate = moment.tz(updatedEvent.end, updatedEvent.timezone).format('dddd D MMMM YYYY h:mm a');
+        diffText += `<li>the end time changed to ${displayDate}</li>`;
+      }
+      if (event.timezone !== updatedEvent.timezone) {
+        console.log(typeof event.timezone, JSON.stringify(event.timezone), JSON.stringify(updatedEvent.timezone))
+        diffText += `<li>the time zone changed to ${updatedEvent.timezone}</li>`;
+      }
+      if (event.description !== updatedEvent.description) {
+        diffText += `<li>the event description changed</li>`; 
+      }
+      diffText += `</ul>`;
 			Event.findOneAndUpdate({id: req.params.eventID}, updatedEvent, function(err, raw) {
 				if (err) {
 					addToLog("editEvent", "error", "Attempt to edit event " + req.params.eventID + " failed with error: " + err);
@@ -740,10 +920,47 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 			})
 			.then(() => {
 				addToLog("editEvent", "success", "Event " + req.params.eventID + " edited");
+        // send update to ActivityPub subscribers
+        Event.findOne({id: req.params.eventID}, function(err,event) {
+          if (!event) return;
+          let attendees = event.attendees.filter(el => el.id);
+          if (!err) {
+            // broadcast an identical message to all followers, will show in home timeline
+            const guidObject = crypto.randomBytes(16).toString('hex');
+            const jsonObject = {
+              "@context": "https://www.w3.org/ns/activitystreams",
+              "id": `https://${domain}/${req.params.eventID}/m/${guidObject}`,
+              "name": `RSVP to ${event.name}`,
+              "type": "Note",
+              'cc': 'https://www.w3.org/ns/activitystreams#Public',
+              "content": `${diffText} See here: <a href="https://${domain}/${req.params.eventID}">https://${domain}/${req.params.eventID}</a>`,
+            }
+            ap.broadcastCreateMessage(jsonObject, event.followers, eventID)
+            // also broadcast an Update profile message to all followers so that at least Mastodon servers will update the local profile information
+            const jsonUpdateObject = JSON.parse(event.activityPubActor);
+            ap.broadcastUpdateMessage(jsonUpdateObject, event.followers, eventID)
+            // also broadcast an Update/Event for any calendar apps that are consuming our Events
+            const jsonEventObject = JSON.parse(event.activityPubEvent);
+            ap.broadcastUpdateMessage(jsonEventObject, event.followers, eventID)
+
+            // DM to attendees
+            for (const attendee of attendees) {
+                const jsonObject = {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "name": `RSVP to ${event.name}`,
+                "type": "Note",
+                "content": `<span class=\"h-card\"><a href="${attendee.id}" class="u-url mention">@<span>${attendee.name}</span></a></span> ${diffText} See here: <a href="https://${domain}/${req.params.eventID}">https://${domain}/${req.params.eventID}</a>`,
+                "tag":[{"type":"Mention","href":attendee.id,"name":attendee.name}]
+              }
+              // send direct message to user
+              ap.sendDirectMessage(jsonObject, attendee.id, eventID);
+            }
+          }
+        })
 				if (sendEmails) {
 					Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-						attendeeEmails = ids;
-						if (!error && attendeeEmails != ""){
+						let attendeeEmails = ids;
+						if (!error && attendeeEmails !== ""){
 							console.log("Sending emails to: " + attendeeEmails);
               req.app.get('hbsInstance').renderView('./views/emails/editevent.handlebars', {diffText, eventID: req.params.eventID, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars'}, function(err, html) {
                 const msg = {
@@ -794,7 +1011,7 @@ router.post('/editeventgroup/:eventGroupID/:editToken', (req, res) => {
 			// If there is a new image, upload that first
 			let eventGroupID = req.params.eventGroupID;
 			let eventGroupImageFilename = eventGroup.image;
-			if (req.files && Object.keys(req.files).length != 0) {
+			if (req.files && Object.keys(req.files).length !== 0) {
 				let eventImageBuffer = req.files.eventGroupImageUpload.data;
 				Jimp.read(eventImageBuffer, (err, img) => {
 					if (err) throw err;
@@ -820,32 +1037,6 @@ router.post('/editeventgroup/:eventGroupID/:editToken', (req, res) => {
 			})
 			.then(() => {
 				addToLog("editEventGroup", "success", "Event group " + req.params.eventGroupID + " edited");
-				// if (sendEmails) {
-				// 	Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-				// 		attendeeEmails = ids;
-				// 		if (!error && attendeeEmails != ""){
-				// 			console.log("Sending emails to: " + attendeeEmails);
-				// 			const msg = {
-				// 				to: attendeeEmails,
-				// 				from: {
-				// 					name: 'Gathio',
-				// 					email: 'notifications@gath.io',
-				// 				},
-				// 				templateId: 'd-e21f3ca49d82476b94ddd8892c72a162',
-				// 				dynamic_template_data: {
-				// 					subject: 'gathio: Event edited',
-				// 					actionType: 'edited',
-				// 					eventExists: true,
-				// 					eventID: req.params.eventID
-				// 				}
-				// 			}
-				// 			sgMail.sendMultiple(msg);
-				// 		}
-				// 		else {
-				// 			console.log("Nothing to send!");
-				// 		}
-				// 	})
-				// }
 				res.writeHead(302, {
 					'Location': '/group/' + req.params.eventGroupID  + '?e=' + req.params.editToken
 					});
@@ -911,6 +1102,36 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
 				eventImage = event.image;
 			}
 
+      // broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
+      const guidUpdateObject = crypto.randomBytes(16).toString('hex');
+      const jsonUpdateObject = JSON.parse(event.activityPubActor);
+      // first broadcast AP messages, THEN delete from DB
+      ap.broadcastDeleteMessage(jsonUpdateObject, event.followers, req.params.eventID, function(statuses) {
+        Event.deleteOne({id: req.params.eventID}, function(err, raw) {
+          if (err) {
+            res.send(err);
+            addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);
+          }
+        })
+        .then(() => {
+          // Delete image
+          if (eventImage){
+            fs.unlink(global.appRoot + '/public/events/' + eventImage, (err) => {
+              if (err) {
+              res.send(err);
+              addToLog("deleteEvent", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
+              }
+                // Image removed
+                addToLog("deleteEvent", "success", "Event " + req.params.eventID + " deleted");
+            })
+          }
+          res.writeHead(302, {
+            'Location': '/'
+            });
+          res.end();
+        })
+        .catch((err) => { res.send('Sorry! Something went wrong (error deleting): ' + err); addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);});
+      });
 			// Send emails here otherwise they don't exist lol
 			if (sendEmails) {
 				Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
@@ -932,37 +1153,12 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
                 res.status(500).end();
               });
             });
-					}
-					else {
-						console.log("Nothing to send!");
-					}
-				});
-			}
-
-			Event.deleteOne({id: req.params.eventID}, function(err, raw) {
-				if (err) {
-					res.send(err);
-					addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);
-				}
-			})
-			.then(() => {
-				// Delete image
-				if (eventImage){
-					fs.unlink(global.appRoot + '/public/events/' + eventImage, (err) => {
-					  if (err) {
-						res.send(err);
-						addToLog("deleteEvent", "error", "Attempt to delete event image for event " + req.params.eventID + " failed with error: " + err);
-					  }
-					  	// Image removed
-					  	addToLog("deleteEvent", "success", "Event " + req.params.eventID + " deleted");
-					})
-				}
-				res.writeHead(302, {
-					'Location': '/'
-					});
-				res.end();
-			})
-			.catch((err) => { res.send('Sorry! Something went wrong (error deleting): ' + err); addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err);});
+            }
+          else {
+            console.log("Nothing to send!");
+          }
+        });
+      }
 		}
 		else {
 			// Token doesn't match
@@ -1039,6 +1235,7 @@ router.post('/attendevent/:eventID', (req, res) => {
 	Event.findOne({
 		id: req.params.eventID,
 		}, function(err,event) {
+    if (!event) return;
 		event.attendees.push(newAttendee);
 		event.save()
 		.then(() => {
@@ -1107,6 +1304,49 @@ router.post('/unattendevent/:eventID', (req, res) => {
 	});
 });
 
+// this is a one-click unattend that requires a secret URL that only the person who RSVPed over
+// activitypub knows
+router.get('/oneclickunattendevent/:eventID/:attendeeID', (req, res) => {
+  // Mastodon will "click" links that sent to its users, presumably as a prefetch?
+  // Anyway, this ignores the automated clicks that are done without the user's knowledge
+  if (req.headers['user-agent'] && req.headers['user-agent'].includes('Mastodon')) {
+    return res.sendStatus(200);
+  }
+	Event.update(
+	    { id: req.params.eventID },
+	    { $pull: { attendees: { _id: req.params.attendeeID } } }
+	)
+	.then(response => {
+		addToLog("oneClickUnattend", "success", "Attendee removed via one click unattend " + req.params.eventID);
+		if (sendEmails) {
+      // currently this is never called because we don't have the email address
+			if (req.body.attendeeEmail){
+        req.app.get('hbsInstance').renderView('./views/emails/removeeventattendee.handlebars', {eventName: req.params.eventName, siteName, domain, cache: true, layout: 'email.handlebars'}, function(err, html) { const msg = {
+            to: req.body.attendeeEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+						subject: `${siteName}: You have been removed from an event`,
+            html,
+          };
+          sgMail.send(msg).catch(e => {
+            console.error(e.toString());
+            res.status(500).end();
+          });
+        });
+			}
+		}
+		res.writeHead(302, {
+			'Location': '/' + req.params.eventID
+			});
+		res.end();
+	})
+	.catch((err) => {
+		res.send('Database error, please try again :('); addToLog("removeEventAttendee", "error", "Attempt to remove attendee by admin from event " + req.params.eventID + " failed with error: " + err);
+	});
+});
+
 router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
 	Event.update(
 	    { id: req.params.eventID },
@@ -1156,13 +1396,26 @@ router.post('/post/comment/:eventID', (req, res) => {
 	Event.findOne({
 		id: req.params.eventID,
 		}, function(err,event) {
+    if (!event) return;
 		event.comments.push(newComment);
 		event.save()
 		.then(() => {
 			addToLog("addEventComment", "success", "Comment added to event " + req.params.eventID);
+      // broadcast an identical message to all followers, will show in their home timeline
+      // and in the home timeline of the event
+      const guidObject = crypto.randomBytes(16).toString('hex');
+      const jsonObject = {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "id": `https://${domain}/${req.params.eventID}/m/${guidObject}`,
+        "name": `Comment on ${event.name}`,
+        "type": "Note",
+        'cc': 'https://www.w3.org/ns/activitystreams#Public',
+        "content": `<p>${req.body.commentAuthor} commented: ${req.body.commentContent}.</p><p><a href="https://${domain}/${req.params.eventID}/">See the full conversation here.</a></p>`,
+      }
+      ap.broadcastCreateMessage(jsonObject, event.followers, req.params.eventID)
 			if (sendEmails) {
 				Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-				attendeeEmails = ids;
+				let attendeeEmails = ids;
 					if (!error){
 						console.log("Sending emails to: " + attendeeEmails);
             req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, siteLogo, domain, eventID: req.params.eventID, commentAuthor: req.body.commentAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
@@ -1207,14 +1460,26 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
 	Event.findOne({
 		id: req.params.eventID,
 		}, function(err,event) {
+      if (!event) return;
 			var parentComment = event.comments.id(commentID);
 			parentComment.replies.push(newReply);
 			event.save()
 			.then(() => {
 				addToLog("addEventReply", "success", "Reply added to comment " + commentID + " in event " + req.params.eventID);
+        // broadcast an identical message to all followers, will show in their home timeline
+        const guidObject = crypto.randomBytes(16).toString('hex');
+        const jsonObject = {
+          "@context": "https://www.w3.org/ns/activitystreams",
+          "id": `https://${domain}/${req.params.eventID}/m/${guidObject}`,
+          "name": `Comment on ${event.name}`,
+          "type": "Note",
+          'cc': 'https://www.w3.org/ns/activitystreams#Public',
+          "content": `<p>${req.body.replyAuthor} commented: ${req.body.replyContent}</p><p><a href="https://${domain}/${req.params.eventID}/">See the full conversation here.</a></p>`,
+        }
+        ap.broadcastCreateMessage(jsonObject, event.followers, req.params.eventID)
 				if (sendEmails) {
 					Event.findOne({id: req.params.eventID}).distinct('attendees.email', function(error, ids) {
-						attendeeEmails = ids;
+						let attendeeEmails = ids;
 						if (!error){
 							console.log("Sending emails to: " + attendeeEmails);
               req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', {siteName, siteLogo, domain, eventID: req.params.eventID, commentAuthor: req.body.replyAuthor, cache: true, layout: 'email.handlebars'}, function(err, html) {
@@ -1273,6 +1538,67 @@ router.post('/deletecomment/:eventID/:commentID/:editToken', (req, res) => {
 		}
 	})
 	.catch((err) => { res.send('Sorry! Something went wrong: ' + err); addToLog("deleteComment", "error", "Attempt to delete comment " + req.params.commentID + "from event " + req.params.eventID + " failed with error: " + err);});
+});
+
+router.post('/activitypub/inbox', (req, res) => {
+  if (!isFederated) return res.sendStatus(404);
+  // validate the incoming message
+  const signature = req.get('Signature');
+  let signature_header = signature.split(',').map(pair => {
+    return pair.split('=').map(value => {
+      return value.replace(/^"/g, '').replace(/"$/g, '') 
+    });
+  }).reduce((acc, el) => {
+    acc[el[0]] = el[1];
+    return acc;
+  }, {});
+
+  // get the actor
+  // TODO if this is a Delete for an Actor this won't work
+  request({
+    url: signature_header.keyId,
+    headers: {
+      'Accept': 'application/activity+json',
+      'Content-Type': 'application/activity+json'
+    }}, function (error, response, actor) {
+    let publicKey = '';
+
+    try {
+      if (JSON.parse(actor).publicKey) {
+        publicKey = JSON.parse(actor).publicKey.publicKeyPem;
+      }
+    }
+    catch(err) {
+      return res.status(500).send('Actor could not be parsed' + err);
+    }
+
+    let comparison_string = signature_header.headers.split(' ').map(header => {
+      if (header === '(request-target)') {
+        return '(request-target): post /activitypub/inbox';
+      }
+      else {
+        return `${header}: ${req.get(header)}`
+      }
+    }).join('\n');
+
+    const verifier = crypto.createVerify('RSA-SHA256')
+    verifier.update(comparison_string, 'ascii')
+    const publicKeyBuf = new Buffer(publicKey, 'ascii')
+    const signatureBuf = new Buffer(signature_header.signature, 'base64')
+    try {
+      const result = verifier.verify(publicKeyBuf, signatureBuf)
+      if (result) {
+        // actually process the ActivityPub message now that it's been verified
+        ap.processInbox(req, res);
+      }
+      else {
+        return res.status(401).send('Signature could not be verified.');
+      }
+    }
+    catch(err) {
+      return res.status(401).send('Signature could not be verified: ' + err);
+    }
+  });
 });
 
 router.use(function(req, res, next){

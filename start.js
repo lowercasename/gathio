@@ -5,6 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 const databaseCredentials = require('./config/database.js');
+const port = require('./config/domain.js').port;
 
 mongoose.connect(databaseCredentials.url, { useNewUrlParser: true });
 mongoose.set('useCreateIndex', true);
@@ -26,6 +27,6 @@ const app = require('./app');
 
 global.appRoot = path.resolve(__dirname);
 
-const server = app.listen(3000, () => {
+const server = app.listen(port, () => {
   console.log(`Welcome to gathio! The app is now running on http://localhost:${server.address().port}`);
 });
