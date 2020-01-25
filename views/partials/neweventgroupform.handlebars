@@ -11,8 +11,8 @@
   <div class="form-group row">
     <label for="eventGroupDescription" class="col-sm-2 col-form-label">Description</label>
     <div class="form-group col-sm-10">
-			<textarea class="form-control expand" id="eventGroupDescription" name="eventGroupDescription" data-validation="required" placeholder="You can always edit it later."></textarea>
-			<small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting supported.</small>
+      <textarea class="form-control expand" id="eventGroupDescription" name="eventGroupDescription" data-validation="required" placeholder="You can always edit it later."></textarea>
+      <small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting supported.</small>
     </div>
   </div>
   <div class="form-group row">
@@ -24,11 +24,11 @@
   <div class="form-group row">
     <label for="eventGroupImage" class="col-sm-2 col-form-label">Cover image</label>
     <div class="form-group col-sm-10">
-			<div class="image-preview" id="eventGroupImagePreview">
-				<label for="image-upload" id="eventGroupImageLabel">Choose file</label>
-				<input type="file" name="imageUpload" id="eventGroupImageUpload" />
-			</div>
-			<small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
+      <div class="image-preview" id="eventGroupImagePreview">
+        <label for="image-upload" id="eventGroupImageLabel">Choose file</label>
+        <input type="file" name="imageUpload" id="eventGroupImageUpload" />
+      </div>
+      <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
     </div>
   </div>
   <div class="form-group row">
@@ -52,15 +52,15 @@
 </form>
 
 <script>
-	$(document).ready(function() {
-		$.uploadPreview({
-			input_field: "#eventGroupImageUpload",
-			preview_box: "#eventGroupImagePreview",
-			label_field: "#eventGroupImageLabel",
-			label_default: "Choose file",
-			label_selected: "Change file",
-			no_label: false
-		});
-		autosize($('textarea'));
-	});
+  $(document).ready(function() {
+    $.uploadPreview({
+      input_field: "#eventGroupImageUpload",
+      preview_box: "#eventGroupImagePreview",
+      label_field: "#eventGroupImageLabel",
+      label_default: "Choose file",
+      label_selected: "Change file",
+      no_label: false
+    });
+    autosize($('textarea'));
+  });
 </script>

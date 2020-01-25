@@ -1,77 +1,77 @@
 <!DOCTYPE html>
 <html>
 
-	<head>
-		<meta charset="utf-8">
+  <head>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-		<link rel="manifest" href="/site.webmanifest">
-		<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
-		<meta name="msapplication-TileColor" content="#da532c">
-		<meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
 
-		<meta property="og:type" content="website">
-		<meta property="og:image:width" content="260">
-		<meta property="og:image:height" content="260">
-		<meta property="og:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
-		<meta property="og:title" content="{{#if metadata.title}}{{metadata.title}} &middot; {{siteName}}{{else}}{{siteName}}{{/if}}">
-		<meta property="og:url" content="{{#if metadata.url}}{{metadata.url}}{{else}}https://{{domain}}/{{/if}}">
-		<meta property="og:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}https://{{domain}}/og-image.jpg{{/if}}">
+    <meta property="og:type" content="website">
+    <meta property="og:image:width" content="260">
+    <meta property="og:image:height" content="260">
+    <meta property="og:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
+    <meta property="og:title" content="{{#if metadata.title}}{{metadata.title}} &middot; {{siteName}}{{else}}{{siteName}}{{/if}}">
+    <meta property="og:url" content="{{#if metadata.url}}{{metadata.url}}{{else}}https://{{domain}}/{{/if}}">
+    <meta property="og:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}https://{{domain}}/og-image.jpg{{/if}}">
 
-		<meta name="twitter:card" content="summary">
-		<meta name="twitter:title" content="{{#if metadata.title}}{{metadata.title}} &middot; {{siteName}}{{else}}{{siteName}}{{/if}}">
-		<meta name="twitter:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
-		<meta name="twitter:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}https://{{domain}}/og-image.jpg{{/if}}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{#if metadata.title}}{{metadata.title}} &middot; {{siteName}}{{else}}{{siteName}}{{/if}}">
+    <meta name="twitter:description" content="{{#if metadata.description}}{{metadata.description}}{{else}}An easier, quicker, and much less privacy-invading way to make and share events{{/if}}">
+    <meta name="twitter:image" content="{{#if metadata.image}}{{metadata.image}}{{else}}https://{{domain}}/og-image.jpg{{/if}}">
 
 
-		<title>{{#if title}}{{title}} &middot; {{/if}}{{siteName}}</title>
+    <title>{{#if title}}{{title}} &middot; {{/if}}{{siteName}}</title>
 
-		<!-- FONTS -->
-		<link rel="stylesheet" href="/css/fontawesome.css">
+    <!-- FONTS -->
+    <link rel="stylesheet" href="/css/fontawesome.css">
 
-		<!-- CSS -->
-		<link rel="stylesheet" href="/css/bootstrap.min.css">
-		<link href="/css/datepicker.min.css" rel="stylesheet" type="text/css">
-		<link rel="stylesheet" href="/css/select2.min.css">
-		<link rel="stylesheet" href="/css/style.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link href="/css/datepicker.min.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="/css/select2.min.css">
+    <link rel="stylesheet" href="/css/style.css">
 
-		<!-- JS -->
-		<script src="/js/jquery-3.4.1.min.js"></script>
-		<script src="/js/popper.min.js"></script>
-		<script src="/js/jquery.form-validator.js"></script>
-		<script src="/js/bootstrap.min.js"></script>
-		<script src="/js/datepicker.min.js"></script>
-		<script src="/js/moment.js"></script>
-		<script src="/js/jquery.uploadPreview.min.js"></script>
-		<script src="/js/clipboard.min.js"></script>
-		<script src="/js/autosize.min.js"></script>
-		<script src="/js/i18n/datepicker.en.js"></script>
-		<script src="/js/select2.min.js"></script>
-		<script src="/js/moment-timezone.js"></script>
+    <!-- JS -->
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/jquery.form-validator.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/datepicker.min.js"></script>
+    <script src="/js/moment.js"></script>
+    <script src="/js/jquery.uploadPreview.min.js"></script>
+    <script src="/js/clipboard.min.js"></script>
+    <script src="/js/autosize.min.js"></script>
+    <script src="/js/i18n/datepicker.en.js"></script>
+    <script src="/js/select2.min.js"></script>
+    <script src="/js/moment-timezone.js"></script>
 
-	</head>
+  </head>
 
-	<body>
-		<div class="container h-100">
-			<div class="row" id="container">
-				<div class="col-lg-2 col-md-3 col-sm-4" id="sidebar">
-					{{>sidebar}}
-				</div>
-				<div class="col-sm pt-3" id="content">
-					<div id="bodyContainer">
-						{{{body}}}
-					</div>
-					<div id="footerContainer">
-						<small class="text-muted">
-							<a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="https://raphaelkabo.com">Raphael</a> &middot; Need help? <a href="mailto:{{email}}">Email us</a>.<br />
-							If you like gathio, you might like <strong><a href="https://sweet.sh/" style="color:#ed5e5e;">sweet</a></strong>, my utopian social network.
-						</small>
-					</div>
-				</div>
-			</div>
-		</div>
-	</body>
+  <body>
+    <div class="container h-100">
+      <div class="row" id="container">
+        <div class="col-lg-2 col-md-3 col-sm-4" id="sidebar">
+          {{>sidebar}}
+        </div>
+        <div class="col-sm pt-3" id="content">
+          <div id="bodyContainer">
+            {{{body}}}
+          </div>
+          <div id="footerContainer">
+            <small class="text-muted">
+              <a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="https://raphaelkabo.com">Raphael</a> &middot; Need help? <a href="mailto:{{email}}">Email us</a>.<br />
+              If you like gathio, you might like <strong><a href="https://sweet.sh/" style="color:#ed5e5e;">sweet</a></strong>, my utopian social network.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>

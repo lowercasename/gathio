@@ -1,25 +1,25 @@
 const mongoose = require('mongoose');
 
 const LogSchema = new mongoose.Schema({
-	status: {
+  status: {
     type: String,
     trim: true,
-		required: true
+    required: true
   },
-	process: {
+  process: {
     type: String,
     trim: true,
-		required: true
+    required: true
   },
   message: {
     type: String,
     trim: true,
-		required: true
+    required: true
   },
-	timestamp: {
+  timestamp: {
     type: Date,
     trim: true,
-		required: true
+    required: true
   }
 });
 

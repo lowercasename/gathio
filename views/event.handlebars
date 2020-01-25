@@ -1,77 +1,77 @@
 {{#if eventHasCoverImage}}
-	<div id="eventImageContainer" style="background-image: url(/events/{{eventData.image}});"></div>
+  <div id="eventImageContainer" style="background-image: url(/events/{{eventData.image}});"></div>
 {{else}}
-	<div id="genericEventImageContainer" style="background-image: url(/images/seigaiha.png);"></div>
+  <div id="genericEventImageContainer" style="background-image: url(/images/seigaiha.png);"></div>
 {{/if}}
 <div class="row">
-	<div class="col-lg">
-		<h3 id="eventName">{{eventData.name}}</h3>
-	</div>
-	{{#if editingEnabled}}
-	<div class="col-lg-3 ml-2 edit-buttons">
-		<div class="btn-group" role="group" aria-label="Event controls">
-			<button type="button" id="editEvent" class="btn btn-success" data-toggle="modal" data-target="#editModal" {{#if eventHasConcluded}}disabled{{/if}}><i class="fas fa-edit"></i> Edit</button>
-			<button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i> Delete</button>
-		</div>
-	</div>
-	{{/if}}
+  <div class="col-lg">
+    <h3 id="eventName">{{eventData.name}}</h3>
+  </div>
+  {{#if editingEnabled}}
+  <div class="col-lg-3 ml-2 edit-buttons">
+    <div class="btn-group" role="group" aria-label="Event controls">
+      <button type="button" id="editEvent" class="btn btn-success" data-toggle="modal" data-target="#editModal" {{#if eventHasConcluded}}disabled{{/if}}><i class="fas fa-edit"></i> Edit</button>
+      <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i> Delete</button>
+    </div>
+  </div>
+  {{/if}}
 </div>
 <div class="container my-4 pr-0">
-	<div class="row">
-		<div class="col-lg-9 card p-0">
-			<div class="card-body">
-				<ul class="fa-ul eventInformation">
-					<li>
-						<span class="fa-li">
-							<i class="fas fa-map-marker-alt"></i>
-						</span>
-						{{eventData.location}}
-					</li>
-					<li>
-						<span class="fa-li">
-							<i class="fas fa-fw fa-calendar-day"></i>
-						</span>
-						{{{displayDate}}}
-						<br>
-						<span class="text-muted">
-							{{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
-						</span>
-					</li>
-					{{#if eventHasHost}}
-						<li>
-							<span class="fa-li">
-								<i class="fas fa-fw fa-user-circle"></i>
-							</span>
-							<span class="text-muted">Hosted by</span> {{eventData.hostName}}
-						</li>
-					{{/if}}
-					{{#if eventData.eventGroup}}
-						<li>
-							<span class="fa-li">
-								<i class="fas fa-fw fa-calendar-alt"></i>
-							</span>
-							<span class="text-muted">Part of</span> <a href="/group/{{eventData.eventGroup.id}}">{{eventData.eventGroup.name}}</a>
-						</li>
-					{{/if}}
-					{{#if eventData.url}}
-						<li>
-							<span class="fa-li">
-								<i class="fas fa-fw fa-link"></i>
-							</span>
-							<a href="{{eventData.url}}">
-								{{eventData.url}}
-							</a>
-						</li>
-					{{/if}}
-					<li>
-						<span class="fa-li">
-							<i class="fas fa-fw fa-share-square"></i>
-						</span>
-						<a href="https://{{domain}}/{{eventData.id}}">{{domain}}/{{eventData.id}}</a>
-						<button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
-							<i class="fas fa-copy"></i> Copy
-						</button>
-					</li>
+  <div class="row">
+    <div class="col-lg-9 card p-0">
+      <div class="card-body">
+        <ul class="fa-ul eventInformation">
+          <li>
+            <span class="fa-li">
+              <i class="fas fa-map-marker-alt"></i>
+            </span>
+            {{eventData.location}}
+          </li>
+          <li>
+            <span class="fa-li">
+              <i class="fas fa-fw fa-calendar-day"></i>
+            </span>
+            {{{displayDate}}}
+            <br>
+            <span class="text-muted">
+              {{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
+            </span>
+          </li>
+          {{#if eventHasHost}}
+            <li>
+              <span class="fa-li">
+                <i class="fas fa-fw fa-user-circle"></i>
+              </span>
+              <span class="text-muted">Hosted by</span> {{eventData.hostName}}
+            </li>
+          {{/if}}
+          {{#if eventData.eventGroup}}
+            <li>
+              <span class="fa-li">
+                <i class="fas fa-fw fa-calendar-alt"></i>
+              </span>
+              <span class="text-muted">Part of</span> <a href="/group/{{eventData.eventGroup.id}}">{{eventData.eventGroup.name}}</a>
+            </li>
+          {{/if}}
+          {{#if eventData.url}}
+            <li>
+              <span class="fa-li">
+                <i class="fas fa-fw fa-link"></i>
+              </span>
+              <a href="{{eventData.url}}">
+                {{eventData.url}}
+              </a>
+            </li>
+          {{/if}}
+          <li>
+            <span class="fa-li">
+              <i class="fas fa-fw fa-share-square"></i>
+            </span>
+            <a href="https://{{domain}}/{{eventData.id}}">{{domain}}/{{eventData.id}}</a>
+            <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
+              <i class="fas fa-copy"></i> Copy
+            </button>
+          </li>
           {{#if isFederated}}
           <li>
             <span class="fa-li">
@@ -83,26 +83,26 @@
             </button>
           </li>
           {{/if}}
-				</ul>
-			</div>
-		</div>
-		<div class="col-lg-3" id="eventActions">
-			<aside class="btn-group-vertical d-flex" role="group" aria-label="Event actions">
-				<a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="btn btn-outline-secondary btn-sm">
-					<i class="far fa-calendar-plus"></i> Add to Google Calendar
-				</a>
-				<button type="button" id="exportICS" class="btn btn-outline-secondary btn-sm" data-event-id="{{eventData.id}}">
-					<i class="fas fa-download"></i> Export as ICS
-				</button>
-				<a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
-					<i class="fas fa-map-marked"></i> Show on Google Maps
-				</a>
-				<a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
-					<i class="fas fa-map-marked"></i> Show on OpenStreetMap
-				</a>
-			</aside>
-		</div>
-	</div>
+        </ul>
+      </div>
+    </div>
+    <div class="col-lg-3" id="eventActions">
+      <aside class="btn-group-vertical d-flex" role="group" aria-label="Event actions">
+        <a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="btn btn-outline-secondary btn-sm">
+          <i class="far fa-calendar-plus"></i> Add to Google Calendar
+        </a>
+        <button type="button" id="exportICS" class="btn btn-outline-secondary btn-sm" data-event-id="{{eventData.id}}">
+          <i class="fas fa-download"></i> Export as ICS
+        </button>
+        <a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-map-marked"></i> Show on Google Maps
+        </a>
+        <a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-map-marked"></i> Show on OpenStreetMap
+        </a>
+      </aside>
+    </div>
+  </div>
 </div>
 
 {{#if eventHasConcluded}}
@@ -112,47 +112,47 @@
 {{/if}}
 {{#if firstLoad}}
 <div class="alert alert-success alert-dismissible fade show" role="alert">
-	<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
-	Welcome to your event! We've just sent you an email with your secret editing link, which you can also see in the address bar above. Haven't got the email? Check your spam or junk folder. To share your event, use the link you can see just above this message - that way your attendees won't be able to edit or delete your event!
+  Welcome to your event! We've just sent you an email with your secret editing link, which you can also see in the address bar above. Haven't got the email? Check your spam or junk folder. To share your event, use the link you can see just above this message - that way your attendees won't be able to edit or delete your event!
 </div>
 {{/if}}
 <div class="card mb-4" id="eventDescription">
-	<h5 class="card-header">About</h5>
-	<div class="card-body">
-		{{{parsedDescription}}}
-	</div>
+  <h5 class="card-header">About</h5>
+  <div class="card-body">
+    {{{parsedDescription}}}
+  </div>
 </div>
 
 {{#if eventData.usersCanAttend}}
 <div class="card mb-4" id="eventAttendees">
-	<h5 class="card-header">Attendees {{#if eventAttendees}}({{eventAttendees.length}}){{/if}}
-		<div class="btn-group" role="group" aria-label="Attendance controls">
-			{{#unless noMoreSpots}}
-				<button type="button" id="attendEvent" class="btn btn-success" data-toggle="modal" data-target="#attendModal"><i class="fas fa-user-plus"></i> Add me</button>
-			{{/unless}}
-			<button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
-		</div>
-	</h5>
-	<div class="card-body">
-		{{#if eventData.maxAttendees}}
-			{{#if noMoreSpots}}
-				<div class="alert alert-warning text-center">This event is at capacity.</div>
-			{{else}}
-				<div class="alert alert-warning text-center">{{spotsRemaining}} {{plural spotsRemaining "spot(s)"}} remaining - add yourself now!</div>
-			{{/if}}
-		{{/if}}
-		{{#if eventAttendees}}
-			<ul class="attendeesList">
-				{{#each eventAttendees}}
-					<li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}>{{#if this.email}}<span class="attendee-name">{{this.name}}</span>{{else}}<a href="{{this.id}}"><span class="attendee-name">{{this.name}}</span></a>{{/if}}{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
-				{{/each}}
-			</ul>
-		{{else}}
-			<p class="text-center text-muted mb-0">No attendees yet!</p>
-		{{/if}}
-	</div>
+  <h5 class="card-header">Attendees {{#if eventAttendees}}({{eventAttendees.length}}){{/if}}
+    <div class="btn-group" role="group" aria-label="Attendance controls">
+      {{#unless noMoreSpots}}
+        <button type="button" id="attendEvent" class="btn btn-success" data-toggle="modal" data-target="#attendModal"><i class="fas fa-user-plus"></i> Add me</button>
+      {{/unless}}
+      <button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
+    </div>
+  </h5>
+  <div class="card-body">
+    {{#if eventData.maxAttendees}}
+      {{#if noMoreSpots}}
+        <div class="alert alert-warning text-center">This event is at capacity.</div>
+      {{else}}
+        <div class="alert alert-warning text-center">{{spotsRemaining}} {{plural spotsRemaining "spot(s)"}} remaining - add yourself now!</div>
+      {{/if}}
+    {{/if}}
+    {{#if eventAttendees}}
+      <ul class="attendeesList">
+        {{#each eventAttendees}}
+          <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}>{{#if this.email}}<span class="attendee-name">{{this.name}}</span>{{else}}<a href="{{this.id}}"><span class="attendee-name">{{this.name}}</span></a>{{/if}}{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+        {{/each}}
+      </ul>
+    {{else}}
+      <p class="text-center text-muted mb-0">No attendees yet!</p>
+    {{/if}}
+  </div>
 </div>
 
 <div class="modal fade" id="attendModal" tabindex="-1" role="dialog" aria-labelledby="attendModalLabel" aria-hidden="true">
@@ -165,26 +165,26 @@
         </button>
       </div>
       <form id="attendEventForm" action="/attendevent/{{eventData.id}}" method="post">
-		<div class="modal-body">
-			<div class="form-group">
-				<label for="attendeeName">Your name</label>
-				<div class="form-group">
-					<input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-30">
-				</div>
-			</div>
-			<div class="form-group">
-				<label for="attendeeEmail">Your email (optional)</label>
-				<p class="form-text small">If you provide your email, you will receive updates to the event.</p>
-				<div class="form-group">
-					<input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email" data-validation-optional="true">
-				</div>
-			</div>
-			<div class="form-group">
-				<label for="removeAttendancePassword">Deletion password</label>
-				<p class="form-text small">You will need this password if you want to remove yourself from the list of event attendees. Write it down now because it will <strong>not be shown again</strong>.</p>
-				<input type="text" class="form-control" readonly id="removeAttendancePassword" name="removeAttendancePassword">
-			</div>
-		</div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="attendeeName">Your name</label>
+        <div class="form-group">
+          <input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="3-30">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="attendeeEmail">Your email (optional)</label>
+        <p class="form-text small">If you provide your email, you will receive updates to the event.</p>
+        <div class="form-group">
+          <input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email" data-validation-optional="true">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="removeAttendancePassword">Deletion password</label>
+        <p class="form-text small">You will need this password if you want to remove yourself from the list of event attendees. Write it down now because it will <strong>not be shown again</strong>.</p>
+        <input type="text" class="form-control" readonly id="removeAttendancePassword" name="removeAttendancePassword">
+      </div>
+    </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         <button type="submit" class="btn btn-primary">Add myself</button>
@@ -204,12 +204,12 @@
         </button>
       </div>
       <form id="unattendEventForm" action="/unattendevent/{{eventData.id}}" method="post">
-			<div class="modal-body">
-				<div class="form-group">
-					<label for="removeAttendancePassword" class="form-label">Your deletion password</label>
-					<p class="form-text small">Lost your password? Get in touch with the event organiser.</p>
-					<input type="text" class="form-control" id="removeAttendancePassword" name="removeAttendancePassword">
-				</div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="removeAttendancePassword" class="form-label">Your deletion password</label>
+          <p class="form-text small">Lost your password? Get in touch with the event organiser.</p>
+          <input type="text" class="form-control" id="removeAttendancePassword" name="removeAttendancePassword">
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -220,107 +220,107 @@
   </div>
 </div>
 
-	{{#if editingEnabled}}
-	<div class="modal fade" id="removeAttendeeModal" tabindex="-1" role="dialog" aria-labelledby="removeAttendeeModalLabel" aria-hidden="true">
-	  <div class="modal-dialog" role="document">
-	    <div class="modal-content">
-	      <div class="modal-header">
-	        <h5 class="modal-title" id="removeAttendeeModalLabel">Remove attendee from '{{eventData.name}}'</h5>
-	        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-	          <span aria-hidden="true">&times;</span>
-	        </button>
-	      </div>
-		  <form id="removeAttendeeForm" action="/removeattendee/{{eventData.id}}/" method="post">
-			<div class="modal-body">
-				<p>Are you sure you want to remove this attendee from the event? This action cannot be undone.</p>
-	      	</div>
-	      <div class="modal-footer">
-	        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-	        <button type="submit" class="btn btn-danger">Remove attendee</button>
-	      </div>
-	  	  </form>
-	  	</div>
-		</div>
-	</div>
-	{{/if}}
+  {{#if editingEnabled}}
+  <div class="modal fade" id="removeAttendeeModal" tabindex="-1" role="dialog" aria-labelledby="removeAttendeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="removeAttendeeModalLabel">Remove attendee from '{{eventData.name}}'</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      <form id="removeAttendeeForm" action="/removeattendee/{{eventData.id}}/" method="post">
+      <div class="modal-body">
+        <p>Are you sure you want to remove this attendee from the event? This action cannot be undone.</p>
+          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-danger">Remove attendee</button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {{/if}}
 {{/if}}
 
 
 {{#if eventData.usersCanComment}}
 <div class="card mb-4" id="eventComments">
-	<h5 class="card-header">Discussion</h5>
-	<div class="card-body">
-		<form id="commentForm" action="/post/comment/{{eventData.id}}/" method="post">
-			<div class="form-group">
-				<input type="text" class="form-control" id="commentAuthor" name="commentAuthor" placeholder="Your name" data-validation="required length" data-validation-length="3-60">
-			</div>
-			<div class="form-group">
-				<div class="input-group">
-					<textarea class="form-control" id="commentContent" name="commentContent" style="resize: none;" placeholder="What would you like to ask?" data-validation="required length" data-validation-length="3-280"></textarea>
-					<div class="input-group-append">
-						<button type="submit" class="btn btn-primary btn-block h-100" id="postComment">Send <i class="fas fa-chevron-right"></i></button>
-					</div>
-				</div>
-			</div>
-		</form>
-		{{#if eventData.comments}}
-			<hr style="border-style:dashed;">
-			<div class="container commentsList">
-			{{#each eventData.comments}}
-				<div class="comment">
-					<div class="row commentContainer">
-						<div class="col-lg commentText">
+  <h5 class="card-header">Discussion</h5>
+  <div class="card-body">
+    <form id="commentForm" action="/post/comment/{{eventData.id}}/" method="post">
+      <div class="form-group">
+        <input type="text" class="form-control" id="commentAuthor" name="commentAuthor" placeholder="Your name" data-validation="required length" data-validation-length="3-60">
+      </div>
+      <div class="form-group">
+        <div class="input-group">
+          <textarea class="form-control" id="commentContent" name="commentContent" style="resize: none;" placeholder="What would you like to ask?" data-validation="required length" data-validation-length="3-280"></textarea>
+          <div class="input-group-append">
+            <button type="submit" class="btn btn-primary btn-block h-100" id="postComment">Send <i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </form>
+    {{#if eventData.comments}}
+      <hr style="border-style:dashed;">
+      <div class="container commentsList">
+      {{#each eventData.comments}}
+        <div class="comment">
+          <div class="row commentContainer">
+            <div class="col-lg commentText">
               {{#if this.actorId}}
                 <p class="mb-0"><a href="{{this.actorId}}"><strong>{{this.author}}</strong></a> <a href="{{this.activityId}}"><small class="commentTimestamp text-muted">{{this.timestamp}}</small></a></p>
               {{else}}
                 <p class="mb-0"><strong>{{this.author}}</strong> <small class="commentTimestamp text-muted">{{this.timestamp}}</small></p>
               {{/if}}
-							<p>{{this.content}}</p>
-							{{#if this.replies}}
-								<hr>
-								<div class="repliesContainer">
-									{{#each this.replies}}
-										<p class="mb-0"><strong><i class="fas fa-reply text-muted"></i> {{this.author}}</strong> <small class="commentTimestamp text-muted">{{this.timestamp}}</small></p>
-										<p>{{this.content}}</p>
-									{{/each}}
-								</div>
-							{{/if}}
-						</div>
-						<div class="col-lg-3 commentMetadata text-right">
-							<button type="button" class="btn btn-outline-primary btn-sm openReplyBox">
-								<i class="fas fa-comment"></i> Reply
-							</button>
-							{{#if ../editingEnabled}}
-								<form class="d-inline" action="/deletecomment/{{../eventData.id}}/{{this._id}}/{{../eventData.editToken}}" method="post">
-									<button type="submit" class="btn btn-outline-danger btn-sm deleteComment">
-										<i class="fas fa-trash"></i> Delete
-									</button>
-								</form>
-							{{/if}}
-						</div>
-					</div>
-					<div class="row replyContainer">
-						<div class="col-md">
-							<form id="replyForm" action="/post/reply/{{../eventData.id}}/{{this._id}}" method="post">
-								<div class="form-group">
-									<input type="text" class="form-control form-control-sm" id="replyAuthor" name="replyAuthor" placeholder="Your name" data-validation="required length" data-validation-length="3-60">
-								</div>
-								<div class="form-group">
-									<div class="input-group">
-										<textarea class="form-control form-control-sm" id="replyContent" name="replyContent" style="resize: none;" placeholder="What would you like to reply?" data-validation="required length" data-validation-length="3-280"></textarea>
-										<div class="input-group-append">
-											<button type="submit" class="btn btn-primary btn-block h-100 btn-sm" id="postReply">Reply <i class="fas fa-chevron-right"></i></button>
-										</div>
-									</div>
-								</div>
-							</form>
-						</div>
-					</div>
-				</div>
-			{{/each}}
-			</div>
-		{{/if}}
-	</div>
+              <p>{{this.content}}</p>
+              {{#if this.replies}}
+                <hr>
+                <div class="repliesContainer">
+                  {{#each this.replies}}
+                    <p class="mb-0"><strong><i class="fas fa-reply text-muted"></i> {{this.author}}</strong> <small class="commentTimestamp text-muted">{{this.timestamp}}</small></p>
+                    <p>{{this.content}}</p>
+                  {{/each}}
+                </div>
+              {{/if}}
+            </div>
+            <div class="col-lg-3 commentMetadata text-right">
+              <button type="button" class="btn btn-outline-primary btn-sm openReplyBox">
+                <i class="fas fa-comment"></i> Reply
+              </button>
+              {{#if ../editingEnabled}}
+                <form class="d-inline" action="/deletecomment/{{../eventData.id}}/{{this._id}}/{{../eventData.editToken}}" method="post">
+                  <button type="submit" class="btn btn-outline-danger btn-sm deleteComment">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </form>
+              {{/if}}
+            </div>
+          </div>
+          <div class="row replyContainer">
+            <div class="col-md">
+              <form id="replyForm" action="/post/reply/{{../eventData.id}}/{{this._id}}" method="post">
+                <div class="form-group">
+                  <input type="text" class="form-control form-control-sm" id="replyAuthor" name="replyAuthor" placeholder="Your name" data-validation="required length" data-validation-length="3-60">
+                </div>
+                <div class="form-group">
+                  <div class="input-group">
+                    <textarea class="form-control form-control-sm" id="replyContent" name="replyContent" style="resize: none;" placeholder="What would you like to reply?" data-validation="required length" data-validation-length="3-280"></textarea>
+                    <div class="input-group-append">
+                      <button type="submit" class="btn btn-primary btn-block h-100 btn-sm" id="postReply">Reply <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      {{/each}}
+      </div>
+    {{/if}}
+  </div>
 </div>
 {{/if}}
 
@@ -339,8 +339,8 @@
         </button>
       </div>
       <form id="editEventForm" action="/deleteevent/{{eventData.id}}/{{eventData.editToken}}" method="post">
-			<div class="modal-body">
-				<p>Are you sure you want to delete this event? This action cannot be undone.</p>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this event? This action cannot be undone.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -358,150 +358,150 @@
 <script src='/js/niceware.js'></script>
 {{/unless}}
 <script>
-	$.validate({
+  $.validate({
     lang: 'en',
-		errorElementClass: "is-invalid",
-		errorMessageClass: "text-danger",
-		successElementClass: "is-valid"
+    errorElementClass: "is-invalid",
+    errorMessageClass: "text-danger",
+    successElementClass: "is-valid"
   });
-	{{#if editingEnabled}}
+  {{#if editingEnabled}}
 
-	$('#removeAttendeeModal').on('show.bs.modal', function (event) {
-	  var listItem = $(event.relatedTarget).closest('li'); // List element enclosing button
-	  var attendeeName = listItem.data('attendee-name');
-	  var attendeeID = listItem.data('attendee-id');
-	  var modal = $(this);
-	  modal.find('.modal-title').text('Remove ' + attendeeName + ' from {{eventData.name}}')
-	  modal.find('#removeAttendeeForm').attr('action', '/removeattendee/{{eventData.id}}/' + attendeeID);
-	})
-	{{#unless eventHasConcluded}}
-	$('#eventStart').datepicker({
+  $('#removeAttendeeModal').on('show.bs.modal', function (event) {
+    var listItem = $(event.relatedTarget).closest('li'); // List element enclosing button
+    var attendeeName = listItem.data('attendee-name');
+    var attendeeID = listItem.data('attendee-id');
+    var modal = $(this);
+    modal.find('.modal-title').text('Remove ' + attendeeName + ' from {{eventData.name}}')
+    modal.find('#removeAttendeeForm').attr('action', '/removeattendee/{{eventData.id}}/' + attendeeID);
+  })
+  {{#unless eventHasConcluded}}
+  $('#eventStart').datepicker({
     language: 'en',
-		timepicker: true,
-		dateFormat: 'd MM yyyy',
-		dateTimeSeparator: ', ',
-		onSelect: function(formattedDate, rawDate){
-			$('#eventEnd').datepicker().data('datepicker').update('minDate', rawDate).clear();
-		}
-	});
-	$('#eventEnd').datepicker({
+    timepicker: true,
+    dateFormat: 'd MM yyyy',
+    dateTimeSeparator: ', ',
+    onSelect: function(formattedDate, rawDate){
+      $('#eventEnd').datepicker().data('datepicker').update('minDate', rawDate).clear();
+    }
+  });
+  $('#eventEnd').datepicker({
     language: 'en',
-		timepicker: true,
-		dateFormat: 'd MM yyyy',
-		dateTimeSeparator: ', '
-	});
-	$("#timezone").val('{{eventData.timezone}}').trigger('change');
-	{{/unless}}
-	{{/if}}
-	$(".commentTimestamp").html(function(){
-		parsedDate = moment($(this).html()).fromNow();
-		return parsedDate;
-	});
-	$(".openReplyBox").click(function(){
-//		let replyID = $(this).attr("data-id");
-		$(this).closest(".comment").find(".replyContainer").slideToggle();
-	})
-	$(document).ready(function() {
+    timepicker: true,
+    dateFormat: 'd MM yyyy',
+    dateTimeSeparator: ', '
+  });
+  $("#timezone").val('{{eventData.timezone}}').trigger('change');
+  {{/unless}}
+  {{/if}}
+  $(".commentTimestamp").html(function(){
+    parsedDate = moment($(this).html()).fromNow();
+    return parsedDate;
+  });
+  $(".openReplyBox").click(function(){
+//    let replyID = $(this).attr("data-id");
+    $(this).closest(".comment").find(".replyContainer").slideToggle();
+  })
+  $(document).ready(function() {
 
-		// From https://davidwalsh.name/javascript-download
-		function downloadFile(data, fileName, type="text/plain") {
-			// Create an invisible A element
-			const a = document.createElement("a");
-			a.style.display = "none";
-			document.body.appendChild(a);
+    // From https://davidwalsh.name/javascript-download
+    function downloadFile(data, fileName, type="text/plain") {
+      // Create an invisible A element
+      const a = document.createElement("a");
+      a.style.display = "none";
+      document.body.appendChild(a);
 
-			// Set the HREF to a Blob representation of the data to be downloaded
-			a.href = window.URL.createObjectURL(
-				new Blob([data], { type })
-			);
+      // Set the HREF to a Blob representation of the data to be downloaded
+      a.href = window.URL.createObjectURL(
+        new Blob([data], { type })
+      );
 
-			// Use download attribute to set set desired file name
-			a.setAttribute("download", fileName);
+      // Use download attribute to set set desired file name
+      a.setAttribute("download", fileName);
 
-			// Trigger the download by simulating click
-			a.click();
+      // Trigger the download by simulating click
+      a.click();
 
-			// Cleanup
-			window.URL.revokeObjectURL(a.href);
-			document.body.removeChild(a);
-		}
+      // Cleanup
+      window.URL.revokeObjectURL(a.href);
+      document.body.removeChild(a);
+    }
 
-		$.uploadPreview({
-			input_field: "#image-upload",
-			preview_box: "#image-preview",
-			label_field: "#image-label",
-			label_default: "Choose file",
-			label_selected: "Change file",
-			no_label: false
-		});
-		$("#image-preview").css("background-image", "url('/events/{{eventData.image}}')");
-		$("#image-preview").css("background-size", "cover");
-		$("#image-preview").css("background-position", "center center");
-		{{#if editingEnabled}}
-			{{#unless eventHasConcluded}}
-				$('#eventStart').datepicker().data('datepicker').selectDate(moment('{{parsedStart}}', 'YYYYMMDD[T]HHmmss').toDate());
-				$('#eventEnd').datepicker().data('datepicker').selectDate(moment('{{parsedEnd}}', 'YYYYMMDD[T]HHmmss').toDate());
-			{{/unless}}
-		{{/if}}
-		new ClipboardJS('#copyEventLink');
-		autosize($('textarea'));
-		$("#exportICS").click(function(){
-			let eventID = $(this).attr('data-event-id');
-			$.get('/exportevent/' + eventID, function(response) {
-				downloadFile(response, eventID + '.ics');
-			})
-		})
-		$("#copyEventLink").click(function(){
-			$(this).html('<i class="fas fa-copy"></i> Copied!');
-			setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
-		})
-		new ClipboardJS('#copyAPLink');
-		$("#copyAPLink").click(function(){
-			$(this).html('<i class="fas fa-copy"></i> Copied!');
-			setTimeout(function(){ $("#copyAPLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
-		})
-		$(".daysToDeletion").html(moment("{{eventEndISO}}").add(7, 'days').fromNow());
-		if ($("#joinCheckbox").is(':checked')){
-			$("#maxAttendeesCheckboxContainer").css("display","flex");
-		}
-		$("#maxAttendeesCheckbox").on("click", function() {
-            if ($(this).is(':checked')) {
-                $("#maxAttendeesContainer").slideDown('fast').css("display","flex");
-                $("#maxAttendees").attr("data-validation-optional","false");
-            }
-            else {
-                $("#maxAttendeesContainer").slideUp('fast');
-                $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
-            }
-        });
-        $("#joinCheckbox").on("click", function() {
-            if ($(this).is(':checked')) {
-                $("#maxAttendeesCheckboxContainer").slideDown('fast').css("display","flex");
-            }
-            else {
-                $("#maxAttendeesCheckboxContainer").slideUp('fast');
-                $("#maxAttendeesCheckbox").prop("checked",false);
-                $("#maxAttendeesContainer").slideUp('fast');
-                $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
-            }
-        });
-		$("#eventGroupCheckbox").on("click", function() {
-            if ($(this).is(':checked')) {
-                $("#eventGroupData").slideDown('fast');
-                $("#eventGroupID").removeAttr("data-validation-optional").attr("data-validation","required");
-                $("#eventGroupEditToken").removeAttr("data-validation-optional").attr("data-validation","required");
-            }
-            else {
-                $("#eventGroupData").slideUp('fast');
-                $("#eventGroupID").removeAttr("data-validation").attr("data-validation-optional","true").val("");
-                $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
-            }
-        });
-		$('#attendModal').on('show.bs.modal', function (event) {
-			var modal = $(this);
-			const passphrase = window.niceware.generatePassphrase(6).join('-');
-			modal.find('#removeAttendancePassword').val(passphrase);
-		});
-	});
+    $.uploadPreview({
+      input_field: "#image-upload",
+      preview_box: "#image-preview",
+      label_field: "#image-label",
+      label_default: "Choose file",
+      label_selected: "Change file",
+      no_label: false
+    });
+    $("#image-preview").css("background-image", "url('/events/{{eventData.image}}')");
+    $("#image-preview").css("background-size", "cover");
+    $("#image-preview").css("background-position", "center center");
+    {{#if editingEnabled}}
+      {{#unless eventHasConcluded}}
+        $('#eventStart').datepicker().data('datepicker').selectDate(moment('{{parsedStart}}', 'YYYYMMDD[T]HHmmss').toDate());
+        $('#eventEnd').datepicker().data('datepicker').selectDate(moment('{{parsedEnd}}', 'YYYYMMDD[T]HHmmss').toDate());
+      {{/unless}}
+    {{/if}}
+    new ClipboardJS('#copyEventLink');
+    autosize($('textarea'));
+    $("#exportICS").click(function(){
+      let eventID = $(this).attr('data-event-id');
+      $.get('/exportevent/' + eventID, function(response) {
+        downloadFile(response, eventID + '.ics');
+      })
+    })
+    $("#copyEventLink").click(function(){
+      $(this).html('<i class="fas fa-copy"></i> Copied!');
+      setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
+    })
+    new ClipboardJS('#copyAPLink');
+    $("#copyAPLink").click(function(){
+      $(this).html('<i class="fas fa-copy"></i> Copied!');
+      setTimeout(function(){ $("#copyAPLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
+    })
+    $(".daysToDeletion").html(moment("{{eventEndISO}}").add(7, 'days').fromNow());
+    if ($("#joinCheckbox").is(':checked')){
+      $("#maxAttendeesCheckboxContainer").css("display","flex");
+    }
+    $("#maxAttendeesCheckbox").on("click", function() {
+      if ($(this).is(':checked')) {
+        $("#maxAttendeesContainer").slideDown('fast').css("display","flex");
+        $("#maxAttendees").attr("data-validation-optional","false");
+      }
+      else {
+        $("#maxAttendeesContainer").slideUp('fast');
+        $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
+      }
+    });
+    $("#joinCheckbox").on("click", function() {
+      if ($(this).is(':checked')) {
+        $("#maxAttendeesCheckboxContainer").slideDown('fast').css("display","flex");
+      }
+      else {
+        $("#maxAttendeesCheckboxContainer").slideUp('fast');
+        $("#maxAttendeesCheckbox").prop("checked",false);
+        $("#maxAttendeesContainer").slideUp('fast');
+        $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
+      }
+    });
+    $("#eventGroupCheckbox").on("click", function() {
+      if ($(this).is(':checked')) {
+        $("#eventGroupData").slideDown('fast');
+        $("#eventGroupID").removeAttr("data-validation-optional").attr("data-validation","required");
+        $("#eventGroupEditToken").removeAttr("data-validation-optional").attr("data-validation","required");
+      }
+      else {
+        $("#eventGroupData").slideUp('fast');
+        $("#eventGroupID").removeAttr("data-validation").attr("data-validation-optional","true").val("");
+        $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
+      }
+    });
+    $('#attendModal').on('show.bs.modal', function (event) {
+      var modal = $(this);
+      const passphrase = window.niceware.generatePassphrase(6).join('-');
+      modal.find('#removeAttendancePassword').val(passphrase);
+    });
+  });
 
-	</script>
+  </script>
