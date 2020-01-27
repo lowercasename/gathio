@@ -885,8 +885,8 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
 				usersCanComment: req.body.interactionCheckbox ? true : false,
                 maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
 				eventGroup: isPartOfEventGroup ? eventGroup._id : null,
-        activityPubActor: ap.updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
-        activityPubEvent: ap.updateActivityPubEvent(JSON.parse(event.activityPubEvent), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
+        activityPubActor: ap.updateActivityPubActor(JSON.parse(event.activityPubActor || null), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
+        activityPubEvent: ap.updateActivityPubEvent(JSON.parse(event.activityPubEvent || null), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
 			}
       let diffText = '<p>This event was just updated with new information.</p><ul>';
       let displayDate;
