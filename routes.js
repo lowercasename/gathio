@@ -861,33 +861,33 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
       
       let isPartOfEventGroup = false;
       let eventGroup;
-      if (req.body.eventGroupCheckbox) {
-        eventGroup = await EventGroup.findOne({
-          id: req.body.eventGroupID,
-          editToken: req.body.eventGroupEditToken
-        })
-        if (eventGroup) {
-          isPartOfEventGroup = true;
-        }
-      }
-      const updatedEvent = {
-        name: req.body.eventName,
-        location: req.body.eventLocation,
-        start: startUTC,
-        end: endUTC,
-        timezone: req.body.timezone,
-        description: req.body.eventDescription,
-        url: req.body.eventURL,
-        hostName: req.body.hostName,
-        image: eventImageFilename,
-        usersCanAttend: req.body.joinCheckbox ? true : false,
-        showUsersList: req.body.guestlistCheckbox ? true : false,
-        usersCanComment: req.body.interactionCheckbox ? true : false,
-        maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
-        eventGroup: isPartOfEventGroup ? eventGroup._id : null,
-        activityPubActor: ap.updateActivityPubActor(JSON.parse(event.activityPubActor), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
-        activityPubEvent: ap.updateActivityPubEvent(JSON.parse(event.activityPubEvent), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
-      }
+			if (req.body.eventGroupCheckbox) {
+				eventGroup = await EventGroup.findOne({
+					id: req.body.eventGroupID,
+					editToken: req.body.eventGroupEditToken
+				})
+				if (eventGroup) {
+					isPartOfEventGroup = true;
+				}
+			}
+			const updatedEvent = {
+				name: req.body.eventName,
+				location: req.body.eventLocation,
+				start: startUTC,
+				end: endUTC,
+				timezone: req.body.timezone,
+				description: req.body.eventDescription,
+				url: req.body.eventURL,
+				hostName: req.body.hostName,
+				image: eventImageFilename,
+				usersCanAttend: req.body.joinCheckbox ? true : false,
+				showUsersList: req.body.guestlistCheckbox ? true : false,
+				usersCanComment: req.body.interactionCheckbox ? true : false,
+                maxAttendees: req.body.maxAttendeesCheckbox ? req.body.maxAttendees : null,
+				eventGroup: isPartOfEventGroup ? eventGroup._id : null,
+        activityPubActor: ap.updateActivityPubActor(JSON.parse(event.activityPubActor || null), req.body.eventDescription, req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
+        activityPubEvent: ap.updateActivityPubEvent(JSON.parse(event.activityPubEvent || null), req.body.eventName, req.body.startUTC, req.body.endUTC, req.body.timezone),
+			}
       let diffText = '<p>This event was just updated with new information.</p><ul>';
       let displayDate;
       if (event.name !== updatedEvent.name) {
