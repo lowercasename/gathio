@@ -124,10 +124,10 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
   if (!isFederated) return;
   let inboxFragment = inbox.replace('https://'+targetDomain,'');
   // get the private key
-	Event.findOne({
-		id: eventID
-		})
-		.then((event) => {
+  Event.findOne({
+    id: eventID
+    })
+    .then((event) => {
       if (event) { 
         const privateKey = event.privateKey;
         const signer = crypto.createSign('sha256');

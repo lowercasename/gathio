@@ -1,32 +1,32 @@
 <h2>Log in</h2>
 <div class="form-group row">
-	<div class="col-sm-12">
-		{{#if isPublic}}
-			<p class="form-text">Register or log in to your account to be able to show this event on your profile, edit it, and delete it. <strong>Associating an event with an account is optional, but keep in mind that an unassociated event can not be modified in any way and will be automatically deleted 30 days after it concludes.</strong></p>
-		{{else if isPrivate}}
-			<p class="form-text">You must <a href="/register">register</a> or log in to your account to create a private event.</p>
-		{{else if isOrganisation}}
-			<p class="form-text">You must <a href="/register">register</a> or log in to an organisation account to create an organisation event.</p>
-		{{/if}}
-	</div>
+  <div class="col-sm-12">
+    {{#if isPublic}}
+      <p class="form-text">Register or log in to your account to be able to show this event on your profile, edit it, and delete it. <strong>Associating an event with an account is optional, but keep in mind that an unassociated event can not be modified in any way and will be automatically deleted 30 days after it concludes.</strong></p>
+    {{else if isPrivate}}
+      <p class="form-text">You must <a href="/register">register</a> or log in to your account to create a private event.</p>
+    {{else if isOrganisation}}
+      <p class="form-text">You must <a href="/register">register</a> or log in to an organisation account to create an organisation event.</p>
+    {{/if}}
+  </div>
 </div>
 <div class="form-group row">
-	<label for="email" class="col-sm-2 col-form-label">Email address</label>
-	<div class="form-group col-sm-10">
-		<input type="email" class="form-control" id="email" name="email" placeholder="We will never spam you or share your email." value="{{data.email}}" data-validation="{{#unless isPublic}}required{{/unless}} email" {{#if isPublic}}data-validation-optional="true"{{/if}}>
-	</div>
+  <label for="email" class="col-sm-2 col-form-label">Email address</label>
+  <div class="form-group col-sm-10">
+    <input type="email" class="form-control" id="email" name="email" placeholder="We will never spam you or share your email." value="{{data.email}}" data-validation="{{#unless isPublic}}required{{/unless}} email" {{#if isPublic}}data-validation-optional="true"{{/if}}>
+  </div>
 </div>
 <div class="form-group row">
-	<label for="password" class="col-sm-2 col-form-label">Password</label>
-	<div class="form-group col-sm-10">
-		<input type="password" class="form-control" id="password" name="password" placeholder="Don't forget it!" {{#unless isPublic}}data-validation="required"{{/unless}}>
-	</div>
-	<div class="form-group col-sm-10 offset-sm-2">
-		<div class="" id="passwordStrengthBar"></div>
-	</div>
+  <label for="password" class="col-sm-2 col-form-label">Password</label>
+  <div class="form-group col-sm-10">
+    <input type="password" class="form-control" id="password" name="password" placeholder="Don't forget it!" {{#unless isPublic}}data-validation="required"{{/unless}}>
+  </div>
+  <div class="form-group col-sm-10 offset-sm-2">
+    <div class="" id="passwordStrengthBar"></div>
+  </div>
 </div>
 
 
 <p>
-	<a href="/register">Register</a> | <a href="/forgotpassword">Forgot password</a>
+  <a href="/register">Register</a> | <a href="/forgotpassword">Forgot password</a>
 </p>
