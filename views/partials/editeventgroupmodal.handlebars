@@ -8,33 +8,33 @@
         </button>
       </div>
       <form id="editEventForm" action="/editeventgroup/{{eventGroupData.id}}/{{eventGroupData.editToken}}" method="post" enctype="multipart/form-data" autocomplete="off">
-			<div class="modal-body">
-				<div class="form-group">
-					<label for="eventGroupName" >Name</label>
-					<input type="text" class="form-control" id="eventGroupName" name="eventGroupName" placeholder="Make it snappy." value="{{eventGroupData.name}}" data-validation="required length" data-validation-length="3-120">
-				</div>
-				<div class="form-group">
-					<label for="eventGroupDescription" >Description</label>
-					<textarea class="form-control" id="eventGroupDescription" name="eventGroupDescription" data-validation="required">{{eventGroupData.description}}</textarea>
-					<small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting supported.</small>
-				</div>
-				<div class="form-group">
-					<label for="eventGroupURL" >Link</label>
-					<input type="url" class="form-control" id="eventURL" name="eventGroupURL" value="{{eventGroupData.url}}" placeholder="For tickets or a page with more information (optional)." data-validation="url" data-validation-optional="true">
-				</div>
-				<div class="form-group">
-					<label for="hostName" >Host or organisation name</label>
-					<input type="text" class="form-control" id="hostName" name="hostName" placeholder="Will be shown on the event group page (optional)." value="{{eventGroupData.hostName}}" data-validation="length" data-validation-length="3-120" data-validation-optional="true">
-				</div>
-				<div class="form-group">
-					<label>Cover image</label>
-					<div class="image-preview" id="eventGroupImagePreview">
-						<label for="eventGroupImageUpload" id="eventGroupImageLabel">Choose file</label>
-						<input type="file" name="eventGroupImageUpload" id="eventGroupImageUpload" />
-					</div>
-					<small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
-				</div>
-			</div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="eventGroupName" >Name</label>
+          <input type="text" class="form-control" id="eventGroupName" name="eventGroupName" placeholder="Make it snappy." value="{{eventGroupData.name}}" data-validation="required length" data-validation-length="3-120">
+        </div>
+        <div class="form-group">
+          <label for="eventGroupDescription" >Description</label>
+          <textarea class="form-control" id="eventGroupDescription" name="eventGroupDescription" data-validation="required">{{eventGroupData.description}}</textarea>
+          <small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting supported.</small>
+        </div>
+        <div class="form-group">
+          <label for="eventGroupURL" >Link</label>
+          <input type="url" class="form-control" id="eventURL" name="eventGroupURL" value="{{eventGroupData.url}}" placeholder="For tickets or a page with more information (optional)." data-validation="url" data-validation-optional="true">
+        </div>
+        <div class="form-group">
+          <label for="hostName" >Host or organisation name</label>
+          <input type="text" class="form-control" id="hostName" name="hostName" placeholder="Will be shown on the event group page (optional)." value="{{eventGroupData.hostName}}" data-validation="length" data-validation-length="3-120" data-validation-optional="true">
+        </div>
+        <div class="form-group">
+          <label>Cover image</label>
+          <div class="image-preview" id="eventGroupImagePreview">
+            <label for="eventGroupImageUpload" id="eventGroupImageLabel">Choose file</label>
+            <input type="file" name="eventGroupImageUpload" id="eventGroupImageUpload" />
+          </div>
+          <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
+        </div>
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         <button type="submit" class="btn btn-primary">Save changes</button>

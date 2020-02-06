@@ -1,9 +1,9 @@
 {{#if isPublic}}
   <h2>New public event</h2>
   <hr>
-	<div class="alert alert-info mb-4 text-center" role="alert">
-  	<i class="fas fa-exclamation-circle"></i> A public event is visible to anyone who knows the link.
-	</div>
+  <div class="alert alert-info mb-4 text-center" role="alert">
+    <i class="fas fa-exclamation-circle"></i> A public event is visible to anyone who knows the link.
+  </div>
 {{else if isPrivate}}
   <h2>New private event</h2>
   <hr>
@@ -14,22 +14,22 @@
   <p>An organisation event is linked to an existing <strong>organisation</strong>. It can be made public, in which case it is visible to anyone who has the link, or private, in which case it is only visible to those who know the <strong>event password</strong>. </p>
   <hr>
 {{else if isUnknownType}}
-	<h2>New event</h2>
-	<hr>
-	<div class="alert alert-warning" role="alert">
-		Event creation error: unknown event type. Please select an event type from the sidebar.
-	</div>
+  <h2>New event</h2>
+  <hr>
+  <div class="alert alert-warning" role="alert">
+    Event creation error: unknown event type. Please select an event type from the sidebar.
+  </div>
 {{else}}
  <h2>New event</h2>
  <hr>
   <div class="alert alert-warning" role="alert">
-		Event creation error: unknown event type. Please select an event type from the sidebar.
-	</div>
+    Event creation error: unknown event type. Please select an event type from the sidebar.
+  </div>
 {{/if}}
 
 
 {{#each errors}}
-	<div class="alert alert-danger" role="alert">{{this.msg}}</div>
+  <div class="alert alert-danger" role="alert">{{this.msg}}</div>
 {{/each}}
 
 <div class="container mb-4">
@@ -48,11 +48,11 @@
 
 <div id="newEventFormContainer">
   {{#if isPublic}}
-  	{{>neweventform}}
+    {{>neweventform}}
   {{else if isPrivate}}
-  	{{>neweventform}}
+    {{>neweventform}}
   {{else if isOrganisation}}
-  	{{>neweventform}}
+    {{>neweventform}}
   {{else}}
   {{/if}}
 </div>
@@ -65,12 +65,12 @@
   {{>neweventgroupform}}
 </div>
 
-	<script>
+  <script>
   $.validate({
     lang: 'en',
-		errorElementClass: "is-invalid",
-		errorMessageClass: "text-danger",
-		successElementClass: "is-valid"
+    errorElementClass: "is-invalid",
+    errorMessageClass: "text-danger",
+    successElementClass: "is-valid"
   });
   $(document).ready(function(){
     if ($('#icsImportControl')[0].files[0] != null){
@@ -138,4 +138,4 @@
       $(this).next('label').html('<i class="far fa-file-alt"></i> ' + file);
     });
   })
-	</script>
+  </script>
