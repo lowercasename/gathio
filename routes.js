@@ -608,6 +608,19 @@ router.get('/exportevent/:eventID', (req, res) => {
 		});
 })
 
+router.get('/checkevent/:eventPrettyName', (req, res) => {
+	Event.findOne({
+		prettyName: req.params.eventPrettyName
+	})
+	.then(event => {
+		if (event) {
+      res.send(true).status(200);
+    } else {
+      res.send(false).status(404);
+    }
+	})
+})
+
 // BACKEND ROUTES
 
 //router.post('/login',
@@ -653,6 +666,7 @@ router.post('/newevent', async (req, res) => {
 		id: eventID,
 		type: req.body.eventType,
 		name: req.body.eventName,
+		prettyName: req.body.eventPrettyName,
 		location: req.body.eventLocation,
 		start: startUTC,
 		end: endUTC,

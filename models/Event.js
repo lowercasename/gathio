@@ -140,6 +140,10 @@ const EventSchema = new mongoose.Schema({
 		trim: true,
 		required: true
 	},
+	prettyName: {
+		type: String,
+		trim: true
+	},
 	location: {
 		type: String,
 		trim: true,

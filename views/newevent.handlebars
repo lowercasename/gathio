@@ -66,11 +66,38 @@
 </div>
 
 	<script>
+    //$.formUtils.addValidator({
+    //  name : 'nameExists',
+    //  validatorFunction : function(value, $el, config, language, $form) {
+    //    $.get('/checkevent/' + value, function(eventExists) {
+    //      return eventExists ? false : true;
+    //    });
+    //  },
+    //  errorMessage : 'NO HE TAKEN',
+    //  errorMessageKey: ''
+    //});
+    function getData(value) { 
+      return $.ajax({
+        url: '/checkevent/' + value,
+        type: 'GET',
+      });
+    };
+    $.formUtils.addValidator({
+        name : 'even',
+        validatorFunction : function(value, $el, config, language, $form) {
+          getData(value).then(function(res) {
+            return res ? false : true;
+          }
+        },
+        errorMessage : 'You have to answer an even number',
+        errorMessageKey: 'badEvenNumber'
+    });
   $.validate({
     lang: 'en',
 		errorElementClass: "is-invalid",
 		errorMessageClass: "text-danger",
-		successElementClass: "is-valid"
+		successElementClass: "is-valid",
+    validateHiddenInputs: false,
   });
   $(document).ready(function(){
     if ($('#icsImportControl')[0].files[0] != null){

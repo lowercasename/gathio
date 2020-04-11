@@ -8,6 +8,24 @@
     </div>
   </div>
   <div class="form-group row">
+    <div class="col-sm-2">Memorable URL</div>
+    <div class="col-sm-10">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="prettyNameCheckbox" name="prettyNameCheckbox">
+        <label class="form-check-label" for="prettyNameCheckbox">
+          Add a memorable URL for this event
+        </label>
+      </div>
+      <p class="form-text small">Events on {{siteName}} are given a simple, impossible-to-guess URL which looks like <span class="text-info">https://{{domain}}/WZjpdPjC4VgptbEhHsljk</span>. If you add a memorable URL, your event will be easier to share, but also easier for strangers to find.</p>
+      <div class="form-group" id="eventPrettyNameContainer">
+        <input type="text" class="form-control" id="eventPrettyName" name="eventPrettyName" placeholder="my-rad-picnic or awesome_bike_ride" value="{{data.eventPrettyName}}" data-validation="even required length" data-validation-length="3-120">
+        <p class="form-text small">Lowercase letters, numbers, and - (hyphen) only.</p>
+        <p class="form-text">Your memorable URL will be <span class="text-info">https://{{domain}}/<span id="prettyNamePreview"></span></span>.</p>
+        <div class="alert" id="prettyNameStatus"></div>
+      </div>
+    </div>
+  </div>
+  <div class="form-group row">
     <label for="eventLocation" class="col-sm-2 col-form-label">Location</label>
     <div class="form-group col-sm-10">
       <input type="text" class="form-control" id="eventLocation" name="eventLocation" placeholder="Be specific." value="{{data.eventLocation}}" data-validation="required length"  data-validation-length="3-120">
@@ -144,6 +162,20 @@
 <script type="text/javascript" src="/js/generate-timezones.js"></script>
 
 <script>
+  function slugify(string) {
+    const a = 'àáäâãåăæçèéëêǵḧìíïîḿńǹñòóöôœṕŕßśșțùúüûǘẃẍÿź·/_,:;'
+    const b = 'aaaaaaaaceeeeghiiiimnnnoooooprssstuuuuuwxyz------'
+    const p = new RegExp(a.split('').join('|'), 'g')
+
+    return string.toString().toLowerCase()
+        .replace(/\s+/g, '-') // Replace spaces with -
+        .replace(p, c => b.charAt(a.indexOf(c))) // Replace special characters
+        .replace(/&/g, '-and-') // Replace & with 'and'
+        .replace(/[^\w\-]+/g, '') // Remove all non-word characters
+        .replace(/\-\-+/g, '-') // Replace multiple - with single -
+        .replace(/^-+/, '') // Trim - from start of text
+        .replace(/-+$/, '') // Trim - from end of text
+  }
 	$(document).ready(function() {
 		$.uploadPreview({
 			input_field: "#eventImageUpload",
@@ -154,38 +186,65 @@
 			no_label: false
 		});
 		autosize($('textarea'));
-        $("#maxAttendeesCheckbox").on("click", function() {
-            if ($(this).is(':checked')) {
-                $("#maxAttendeesContainer").slideDown('fast').css("display","flex");
-                $("#maxAttendees").attr("data-validation-optional","false");
-            }
-            else {
-                $("#maxAttendeesContainer").slideUp('fast');
-                $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
-            }
-        });
-        $("#joinCheckbox").on("click", function() {
-            if ($(this).is(':checked')) {
-                $("#maxAttendeesCheckboxContainer").slideDown('fast').css("display","flex");
-            }
-            else {
-                $("#maxAttendeesCheckboxContainer").slideUp('fast');
-                $("#maxAttendeesCheckbox").prop("checked",false);
-                $("#maxAttendeesContainer").slideUp('fast');
-                $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
-            }
-        });
-        $("#eventGroupCheckbox").on("click", function() {
-            if ($(this).is(':checked')) {
-                $("#eventGroupData").slideDown('fast');
-                $("#eventGroupID").removeAttr("data-validation-optional").attr("data-validation","required");
-                $("#eventGroupEditToken").removeAttr("data-validation-optional").attr("data-validation","required");
-            }
-            else {
-                $("#eventGroupData").slideUp('fast');
-                $("#eventGroupID").removeAttr("data-validation").attr("data-validation-optional","true").val("");
-                $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
-            }
-        });
+
+
+    $("#maxAttendeesCheckbox").on("click", function() {
+        if ($(this).is(':checked')) {
+            $("#maxAttendeesContainer").slideDown('fast').css("display","flex");
+            $("#maxAttendees").attr("data-validation-optional","false");
+        }
+        else {
+            $("#maxAttendeesContainer").slideUp('fast');
+            $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
+        }
+    });
+    $("#joinCheckbox").on("click", function() {
+        if ($(this).is(':checked')) {
+            $("#maxAttendeesCheckboxContainer").slideDown('fast').css("display","flex");
+        }
+        else {
+            $("#maxAttendeesCheckboxContainer").slideUp('fast');
+            $("#maxAttendeesCheckbox").prop("checked",false);
+            $("#maxAttendeesContainer").slideUp('fast');
+            $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
+        }
+    });
+    $("#eventGroupCheckbox").on("click", function() {
+        if ($(this).is(':checked')) {
+            $("#eventGroupData").slideDown('fast');
+            $("#eventGroupID").removeAttr("data-validation-optional").attr("data-validation","required");
+            $("#eventGroupEditToken").removeAttr("data-validation-optional").attr("data-validation","required");
+        }
+        else {
+            $("#eventGroupData").slideUp('fast');
+            $("#eventGroupID").removeAttr("data-validation").attr("data-validation-optional","true").val("");
+            $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
+        }
+    });
+    $("#prettyNameCheckbox").on("click", function() {
+        if ($(this).is(':checked')) {
+            $("#eventPrettyNameContainer").slideDown('fast');
+            //$("#eventPrettyName").attr("data-validation-optional","false");
+        }
+        else {
+            $("#eventPrettyNameContainer").slideUp('fast');
+            //$("#eventPrettyName").attr("data-validation-optional","true").removeClass('is-valid is-invalid');
+        }
+    });
+    $("#eventName").on('keyup blur', function() {
+      $("#eventPrettyName").val(slugify($(this).val())).change();
+      $("#prettyNamePreview").text(slugify($(this).val()));
+    });
+    $("#eventPrettyName").change(function() {
+      //$.get('/checkevent/' + $(this).val(), function(eventExists) {
+      //  if (eventExists) {
+          //$("#eventPrettyName").addClass('is-invalid');
+      //    $("#prettyNameStatus").addClass('alert-danger').text("This URL is taken!");
+      //  } else {
+          //$("#eventPrettyName").removeClass('is-invalid');
+      //    $("#prettyNameStatus").addClass('alert-success').text("This URL is available!");
+      //  }
+      //})
+    });
 	});
 </script>
