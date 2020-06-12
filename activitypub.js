@@ -7,8 +7,8 @@ const addToLog = require('./helpers.js').addToLog;
 const crypto = require('crypto');
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
 // because ActivityPub doesn't like it in IDs
-const nanoid = require('nanoid/generate');
-const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+const { customAlphabet } = require('nanoid');
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_', 21);
 var moment = require('moment-timezone');
 const mongoose = require('mongoose');
 const Event = mongoose.model('Event');
@@ -805,7 +805,7 @@ function _handleCreateNoteComment(req, res) {
     if (ourEvents.length === 1) {
       let eventID = ourEvents[0];
       // add comment
-      let commentID = nanoid(alphabet, 21);
+      let commentID = nanoid();
       // get the actor for the commenter
       request({
         url: req.body.actor,
