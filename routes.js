@@ -107,7 +107,21 @@ const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
   console.log("Old event deletion running! Deleting all events concluding before ", too_old);
 
   Event.find({ end: { $lte: too_old } }).then((oldEvents) => {
+    console.log("=== OLD EVENTS ===");
     oldEvents.forEach(event => {
+      console.log(event.id);
+    })
+    console.log("=== ===");
+    oldEvents.forEach(event => {
+      const deleteEventFromDB = (id) => {
+        Event.remove({"_id": id})
+        .then(response => {
+          addToLog("deleteOldEvents", "success", "Old event "+id+" deleted");
+        }).catch((err) => {
+          addToLog("deleteOldEvents", "error", "Attempt to delete old event "+id+" failed with error: " + err);
+        });
+      }
+
       if (event.image){
         fs.unlink(global.appRoot + '/public/events/' + event.image, (err) => {
           if (err) {
@@ -117,21 +131,22 @@ const deleteOldEvents = schedule.scheduleJob('59 23 * * *', function(fireDate){
           addToLog("deleteOldEvents", "error", "Image deleted for old event "+event.id);
         })
       }
-      // broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
-      const guidUpdateObject = crypto.randomBytes(16).toString('hex');
-      const jsonUpdateObject = JSON.parse(event.activityPubActor);
-      const jsonEventObject = JSON.parse(event.activityPubEvent);
-      // first broadcast AP messages, THEN delete from DB
-      ap.broadcastDeleteMessage(jsonUpdateObject, event.followers, event.id, function(statuses) {
-        ap.broadcastDeleteMessage(jsonEventObject, event.followers, event.id, function(statuses) {
-          Event.remove({"_id": event._id})
-          .then(response => {
-            addToLog("deleteOldEvents", "success", "Old event "+event.id+" deleted");
-          }).catch((err) => {
-            addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
+      // Check if event has ActivityPub fields
+      if (event.activityPubActor && event.activityPubEvent) {
+        // Broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
+        const guidUpdateObject = crypto.randomBytes(16).toString('hex');
+        const jsonUpdateObject = JSON.parse(event.activityPubActor);
+        const jsonEventObject = JSON.parse(event.activityPubEvent);
+        // first broadcast AP messages, THEN delete from DB
+        ap.broadcastDeleteMessage(jsonUpdateObject, event.followers, event.id, function(statuses) {
+          ap.broadcastDeleteMessage(jsonEventObject, event.followers, event.id, function(statuses) {
+            deleteEventFromDB(event._id);
           });
         });
-      });
+      } else {
+        // No ActivityPub data - simply delete the event
+        deleteEventFromDB(event._id);
+      }
     })
   }).catch((err) => {
     addToLog("deleteOldEvents", "error", "Attempt to delete old event "+event.id+" failed with error: " + err);
