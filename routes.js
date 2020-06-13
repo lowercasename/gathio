@@ -616,6 +616,19 @@ router.get('/exportevent/:eventID', (req, res) => {
       res.render('404', { url: req.url });
       return;
     });
+});
+
+router.get('/checkevent/:eventPrettyName', (req, res) => {
+	Event.findOne({
+		prettyName: req.params.eventPrettyName
+	})
+	.then(event => {
+		if (event) {
+      res.send(true).status(200);
+    } else {
+      res.send(false).status(200); // I think 'Forbidden' is kind of the closest appropriate code?
+    }
+	})
 })
 
 // BACKEND ROUTES
@@ -662,6 +675,7 @@ router.post('/newevent', async (req, res) => {
     id: eventID,
     type: req.body.eventType,
     name: req.body.eventName,
+    prettyName: req.body.eventPrettyName,
     location: req.body.eventLocation,
     start: startUTC,
     end: endUTC,
