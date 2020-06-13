@@ -4,7 +4,10 @@ const express = require('express');
 
 const mongoose = require('mongoose');
 
-const shortid = require('shortid');
+// This alphabet (used to generate all event, group, etc. IDs) is missing '-'
+// because ActivityPub doesn't like it in IDs
+const { customAlphabet } = require('nanoid');
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_', 21);
 
 const randomstring = require("randomstring");
 
@@ -623,12 +626,8 @@ router.get('/exportevent/:eventID', (req, res) => {
 //                                   failureFlash: true })
 //);
 
-
 router.post('/newevent', async (req, res) => {
-  let eventID = shortid.generate();
-  // this is a hack, activitypub does not like "-" in ids so we are essentially going
-  // to have a 63-character alphabet instead of a 64-character one
-  eventID = eventID.replace(/-/g,'_');
+  let eventID = nanoid();
   let editToken = randomstring.generate();
   let eventImageFilename = "";
   let isPartOfEventGroup = false;
@@ -717,7 +716,7 @@ router.post('/newevent', async (req, res) => {
 });
 
 router.post('/importevent', (req, res) => {
-  let eventID = shortid.generate();
+  let eventID = nanoid();
   let editToken = randomstring.generate();
   if (req.files && Object.keys(req.files).length !== 0) {
     let iCalObject = ical.parseICS(req.files.icsImportControl.data.toString('utf8'));
@@ -788,7 +787,7 @@ router.post('/importevent', (req, res) => {
 });
 
 router.post('/neweventgroup', (req, res) => {
-  let eventGroupID = shortid.generate();
+  let eventGroupID = nanoid();
   let editToken = randomstring.generate();
   let eventGroupImageFilename = "";
   if (req.files && Object.keys(req.files).length !== 0) {
@@ -1395,7 +1394,7 @@ router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
 });
 
 router.post('/post/comment/:eventID', (req, res) => {
-  let commentID = shortid.generate();
+  let commentID = nanoid();
   const newComment = {
     id: commentID,
     author: req.body.commentAuthor,
@@ -1459,7 +1458,7 @@ router.post('/post/comment/:eventID', (req, res) => {
 });
 
 router.post('/post/reply/:eventID/:commentID', (req, res) => {
-  let replyID = shortid.generate();
+  let replyID = nanoid();
   let commentID = req.params.commentID;
   const newReply = {
     id: replyID,

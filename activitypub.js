@@ -5,7 +5,10 @@ const isFederated = require('./config/domain.js').isFederated;
 const request = require('request');
 const addToLog = require('./helpers.js').addToLog;
 const crypto = require('crypto');
-const shortid = require('shortid');
+// This alphabet (used to generate all event, group, etc. IDs) is missing '-'
+// because ActivityPub doesn't like it in IDs
+const { customAlphabet } = require('nanoid');
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_', 21);
 var moment = require('moment-timezone');
 const mongoose = require('mongoose');
 const Event = mongoose.model('Event');
@@ -802,7 +805,7 @@ function _handleCreateNoteComment(req, res) {
     if (ourEvents.length === 1) {
       let eventID = ourEvents[0];
       // add comment
-      let commentID = shortid.generate();
+      let commentID = nanoid();
       // get the actor for the commenter
       request({
         url: req.body.actor,
