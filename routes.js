@@ -327,6 +327,7 @@ router.get('/:eventID', (req, res) => {
   Event.findOne({
     id: req.params.eventID
   })
+    .lean() // Required, see: https://stackoverflow.com/questions/59690923/handlebars-access-has-been-denied-to-resolve-the-property-from-because-it-is
     .populate('eventGroup')
     .then((event) => {
       if (event) {
@@ -503,6 +504,7 @@ router.get('/group/:eventGroupID', (req, res) => {
   EventGroup.findOne({
     id: req.params.eventGroupID
   })
+    .lean() // Required, see: https://stackoverflow.com/questions/59690923/handlebars-access-has-been-denied-to-resolve-the-property-from-because-it-is
     .then(async (eventGroup) => {
       if (eventGroup) {
         let parsedDescription = marked(eventGroup.description);
