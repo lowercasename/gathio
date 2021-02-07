@@ -82,10 +82,7 @@ function render_plain() {
 
 const ical = require('ical');
 const icalGenerator = require('ical-generator');
-const cal = icalGenerator({
-  domain: domain,
-  name: siteName
-});
+
 
 const sgMail = require('@sendgrid/mail');
 const nodemailer = require("nodemailer");
@@ -616,8 +613,15 @@ router.get('/exportevent/:eventID', (req, res) => {
   })
     .populate('eventGroup')
     .then((event) => {
+      console.log(event);
       if (event) {
-        const icalEvent = cal.createEvent({
+        // Create a new icalGenerator... generator
+        const cal = icalGenerator({
+          domain: domain,
+          name: siteName
+        });
+        // Add the event to it
+        cal.createEvent({
           start: moment.tz(event.start, event.timezone),
           end: moment.tz(event.start, event.timezone),
           timezone: event.timezone,
@@ -631,9 +635,9 @@ router.get('/exportevent/:eventID', (req, res) => {
           location: event.location,
           url: 'https://gath.io/' + event.id
         });
-
+        // Stringify it!
         let string = cal.toString();
-        console.log(string)
+        console.log(JSON.stringify(string));
         res.send(string);
       }
     })
