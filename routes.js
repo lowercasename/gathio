@@ -613,7 +613,6 @@ router.get('/exportevent/:eventID', (req, res) => {
   })
     .populate('eventGroup')
     .then((event) => {
-      console.log(event);
       if (event) {
         // Create a new icalGenerator... generator
         const cal = icalGenerator({
@@ -637,7 +636,6 @@ router.get('/exportevent/:eventID', (req, res) => {
         });
         // Stringify it!
         let string = cal.toString();
-        console.log(JSON.stringify(string));
         res.send(string);
       }
     })
