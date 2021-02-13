@@ -43,7 +43,7 @@ const Followers = new mongoose.Schema({
     type: String,
     trim: true
   },
-}, {_id: false})
+}, { _id: false })
 
 const ReplySchema = new mongoose.Schema({
   id: {
@@ -139,6 +139,10 @@ const EventSchema = new mongoose.Schema({
     type: String,
     trim: true,
     required: true
+  },
+  prettyName: {
+    type: String,
+    trim: true
   },
   location: {
     type: String,
