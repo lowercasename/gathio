@@ -1,8 +1,4 @@
-<h1>{{siteName}}</h1>
-
-<p class="lead">
-  <strong>gath<span class="text-muted">io</span></strong> is a quick and easy way to make and share events which respects your privacy.
-</p>
+<p class="lead">A quick and easy way to make and share events which respects your privacy.</p>
 
 <hr>
 
@@ -16,9 +12,11 @@
 
 <p>But remember: all our events are visible to anyone who knows the link, so probably don't use <strong>gath<span class="text-muted">io</span></strong> to plot your surprise birthday party or revolution. Or whatever, you do you.</p>
 
+{{#if showKofi}}
 <div class="card border-secondary mt-5 mb-3 mx-auto" style="min-width:300px;max-width:50%;">
   <div class="card-body text-secondary">
     <p>If you find yourself using and enjoying <strong>gath<span class="text-muted">io</span></strong>, consider buying me a coffee. It'll help keep the site running! <i class="far fa-heart"></i></p>
     <script type='text/javascript' src='https://ko-fi.com/widgets/widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support Me on Ko-fi', '#46b798', 'Q5Q2O7T5');kofiwidget2.draw();</script>
   </div>
 </div>
+{{/if}}

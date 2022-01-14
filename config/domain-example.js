@@ -7,5 +7,7 @@ module.exports = {
     'sitename': 'gathio',
     'isFederated': true,
     // If left blank, this defaults to https://yourdomain.com/images/gathio-email-logo.gif. Set a full URL here to change it to your own logo (or just change the file itself)
-    'logo_url': ''
+    'logo_url': '',
+    // Show a Ko-Fi box to donate money to Raphael Kabo (Gathio's creator) on the front page
+    'showKofi': false,
 };
