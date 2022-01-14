@@ -1,31 +1,8 @@
-{{#if isPublic}}
-  <h2>New public event</h2>
-  <hr>
-  <div class="alert alert-info mb-4 text-center" role="alert">
-    <i class="fas fa-exclamation-circle"></i> A public event is visible to anyone who knows the link.
-  </div>
-{{else if isPrivate}}
-  <h2>New private event</h2>
-  <hr>
-  <p>A private event is only visible to those who know the <strong>event password</strong>.</p>
-  <hr>
-{{else if isOrganisation}}
-  <h2>New organisation event</h2>
-  <p>An organisation event is linked to an existing <strong>organisation</strong>. It can be made public, in which case it is visible to anyone who has the link, or private, in which case it is only visible to those who know the <strong>event password</strong>. </p>
-  <hr>
-{{else if isUnknownType}}
-  <h2>New event</h2>
-  <hr>
-  <div class="alert alert-warning" role="alert">
-    Event creation error: unknown event type. Please select an event type from the sidebar.
-  </div>
-{{else}}
- <h2>New event</h2>
- <hr>
-  <div class="alert alert-warning" role="alert">
-    Event creation error: unknown event type. Please select an event type from the sidebar.
-  </div>
-{{/if}}
+<h2>New event</h2>
+<hr>
+<div class="alert alert-info mb-4 text-center" role="alert">
+  <i class="fas fa-exclamation-circle"></i> Events are visible to anyone who knows the link.
+</div>
 
 
 {{#each errors}}
@@ -47,14 +24,7 @@
 </div>
 
 <div id="newEventFormContainer">
-  {{#if isPublic}}
-    {{>neweventform}}
-  {{else if isPrivate}}
-    {{>neweventform}}
-  {{else if isOrganisation}}
-    {{>neweventform}}
-  {{else}}
-  {{/if}}
+  {{>neweventform}}
 </div>
 
 <div id="importEventFormContainer">
