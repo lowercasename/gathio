@@ -33,6 +33,7 @@ const mailService = require('./config/domain.js').mailService;
 const siteName = require('./config/domain.js').sitename;
 const siteLogo = require('./config/domain.js').logo_url;
 let isFederated = require('./config/domain.js').isFederated;
+let showKofi = require('./config/domain.js').showKofi;
 // if the federation config isn't set, things are federated by default
 if (isFederated === undefined) {
   isFederated = true;
@@ -178,27 +179,16 @@ schedule.scheduleJob('59 23 * * *', function (fireDate) {
 
 router.get('/', (req, res) => {
   res.render('home', {
-    domain: domain,
+    domain,
     email: contactEmail,
-    siteName: siteName,
+    siteName,
+    showKofi, 
   });
 });
 
 router.get('/new', (req, res) => {
   res.render('home');
 });
-
-//router.get('/login', (req, res) => {
-//  res.render('admin');
-//})
-
-//router.get('/login', (req, res) => {
-//  res.render('login');
-//});
-//
-//router.get('/register', (req, res) => {
-//  res.render('register');
-//});
 
 router.get('/new/event', (req, res) => {
   res.render('newevent', {
@@ -212,19 +202,6 @@ router.get('/new/event/public', (req, res) => {
   let isPublic = true;
   let isOrganisation = false;
   let isUnknownType = false;
-  //  let eventType = req.params.eventType;
-  //  if (eventType == "private"){
-  //    isPrivate = true;
-  //  }
-  //  else if (eventType == "public"){
-  //    isPublic = true;
-  //  }
-  //  else if (eventType == "organisation"){
-  //    isOrganisation = true;
-  //  }
-  //  else {
-  //    isUnknownType = true;
-  //  }
   res.render('newevent', {
     title: 'New event',
     isPrivate: isPrivate,
@@ -649,12 +626,6 @@ router.get('/exportevent/:eventID', (req, res) => {
 })
 
 // BACKEND ROUTES
-
-//router.post('/login',
-//  passport.authenticate('local', { successRedirect: '/admin',
-//                                   failureRedirect: '/login',
-//                                   failureFlash: true })
-//);
 
 router.post('/newevent', async (req, res) => {
   let eventID = nanoid();
