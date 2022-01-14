@@ -1307,7 +1307,7 @@ router.post('/attendevent/:eventID', (req, res) => {
         addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
         if (sendEmails) {
           if (req.body.attendeeEmail) {
-            req.app.get('hbsInstance').renderView('./views/emails/addeventattendee.handlebars', { eventID: req.params.eventID, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars' }, function (err, html) {
+              req.app.get('hbsInstance').renderView('./views/emails/addeventattendee.handlebars', { eventID: req.params.eventID, siteName, siteLogo, domain, removalPassword: req.body.removeAttendancePassword, cache: true, layout: 'email.handlebars' }, function (err, html) {
               const msg = {
                 to: req.body.attendeeEmail,
                 from: {
