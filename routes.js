@@ -875,6 +875,30 @@ router.post('/neweventgroup', (req, res) => {
     .catch((err) => { res.send('Database error, please try again :( - ' + err); addToLog("createEvent", "error", "Attempt to create event failed with error: " + err); });
 });
 
+router.post('/verifytoken/event/:eventID', (req, res) => {
+  Event.findOne({
+    id: req.params.eventID,
+    editToken: req.body.editToken,
+  })
+    .then(event => {
+      if (event) return res.sendStatus(200);
+      return res.sendStatus(404);
+    })
+});
+
+router.post('/verifytoken/group/:eventGroupID', (req, res) => {
+  console.log(req.body);
+  EventGroup.findOne({
+    id: req.params.eventGroupID,
+    editToken: req.body.editToken,
+  })
+    .then(group => {
+      if (group) return res.sendStatus(200);
+      return res.sendStatus(404);
+    })
+});
+
+
 router.post('/editevent/:eventID/:editToken', (req, res) => {
   console.log(req.body);
   let submittedEditToken = req.params.editToken;
