@@ -691,7 +691,7 @@ router.post('/newevent', async (req, res) => {
     .then((event) => {
       addToLog("createEvent", "success", "Event " + eventID + "created");
       // Send email with edit link
-      if (sendEmails) {
+      if (req.body.creatorEmail && sendEmails) {
         req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', { eventID, editToken, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars' }, function (err, html) {
           const msg = {
             to: req.body.creatorEmail,
@@ -736,11 +736,9 @@ router.post('/importevent', (req, res) => {
 
     let creatorEmail;
     if (req.body.creatorEmail) {
-      creatorEmail = req.body.creatorEmail
+      creatorEmail = req.body.creatorEmail;
     } else if (importedEventData.organizer) {
       creatorEmail = importedEventData.organizer.val.replace("MAILTO:", "");
-    } else {
-      res.status(500).send("Please supply an email address on the previous page.");
     }
 
     const event = new Event({
@@ -768,7 +766,7 @@ router.post('/importevent', (req, res) => {
       .then(() => {
         addToLog("createEvent", "success", "Event " + eventID + " created");
         // Send email with edit link
-        if (sendEmails) {
+        if (creatorEmail && sendEmails) {
           req.app.get('hbsInstance').renderView('./views/emails/createevent.handlebars', { eventID, editToken, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars' }, function (err, html) {
             const msg = {
               to: req.body.creatorEmail,
@@ -839,7 +837,7 @@ router.post('/neweventgroup', (req, res) => {
     .then(() => {
       addToLog("createEventGroup", "success", "Event group " + eventGroupID + " created");
       // Send email with edit link
-      if (sendEmails) {
+      if (req.body.creatorEmail && sendEmails) {
         req.app.get('hbsInstance').renderView('./views/emails/createeventgroup.handlebars', { eventGroupID, editToken, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars' }, function (err, html) {
           const msg = {
             to: req.body.creatorEmail,

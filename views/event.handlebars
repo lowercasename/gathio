@@ -114,7 +114,9 @@
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
-  Welcome to your event! We've just sent you an email with your secret editing link, which you can also see in the address bar above. Haven't got the email? Check your spam or junk folder. To share your event, use the link you can see just above this message - that way your attendees won't be able to edit or delete your event!
+  <p>Welcome to your event!</p>
+  <p>Your secret editing password for this event is: <strong>{{eventData.editToken}}</strong>. It's been saved in your browser storage, and if you supplied your email, it's also been sent to you. If you didn't supply your email, you <strong>must save it somewhere safe</strong>, because it won't be shown again!</p>
+  <p>To share your event, use the link you can see just above this message - that way your attendees won't be able to edit or delete your event!</p>
 </div>
 {{/if}}
 <div class="card mb-4" id="eventDescription">
@@ -507,12 +509,8 @@
     $("#image-preview").css("background-image", "url('/events/{{eventData.image}}')");
     $("#image-preview").css("background-size", "cover");
     $("#image-preview").css("background-position", "center center");
-    {{#if editingEnabled}}
-      {{#unless eventHasConcluded}}
-        $('#eventStart').datepicker().data('datepicker').selectDate(moment('{{parsedStart}}', 'YYYYMMDD[T]HHmmss').toDate());
-        $('#eventEnd').datepicker().data('datepicker').selectDate(moment('{{parsedEnd}}', 'YYYYMMDD[T]HHmmss').toDate());
-      {{/unless}}
-    {{/if}}
+    $('#eventStart').datepicker().data('datepicker').selectDate(moment('{{parsedStart}}', 'YYYYMMDD[T]HHmmss').toDate());
+    $('#eventEnd').datepicker().data('datepicker').selectDate(moment('{{parsedEnd}}', 'YYYYMMDD[T]HHmmss').toDate());
     new ClipboardJS('#copyEventLink');
     autosize($('textarea'));
     $("#exportICS").click(function(){
