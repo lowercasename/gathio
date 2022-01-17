@@ -30,7 +30,7 @@
     "ical-generator": "^1.11.0",
     "jimp": "^0.16.1",
     "jsonwebtoken": "^8.4.0",
-    "marked": "^0.7.0",
+    "marked": "^4.0.10",
     "moment-timezone": "^0.5.31",
     "mongoose": "^5.9.18",
     "multer": "^1.4.1",
