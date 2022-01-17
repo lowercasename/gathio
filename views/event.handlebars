@@ -5,16 +5,15 @@
 {{/if}}
 <div class="row">
   <div class="col-lg">
-    <h3 id="eventName">{{eventData.name}}</h3>
+      <h3 id="eventName" data-event-id="{{eventData.id}}">{{eventData.name}}</h3>
   </div>
-  {{#if editingEnabled}}
   <div class="col-lg-3 ml-2 edit-buttons">
-    <div class="btn-group" role="group" aria-label="Event controls">
-      <button type="button" id="editEvent" class="btn btn-success" data-toggle="modal" data-target="#editModal" {{#if eventHasConcluded}}disabled{{/if}}><i class="fas fa-edit"></i> Edit</button>
-      <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i> Delete</button>
-    </div>
+    {{#if editingEnabled}}
+      <button type="button" id="editEvent" class="btn btn-success" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit event</button>
+    {{else}}
+      <button type="button" id="editEvent" class="btn btn-success" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Edit event</button>
+    {{/if}}
   </div>
-  {{/if}}
 </div>
 <div class="container my-4 pr-0">
   <div class="row">
@@ -324,6 +323,36 @@
 </div>
 {{/if}}
 
+<div class="modal fade" id="editTokenModal" tabindex="-1" role="dialog" aria-labelledby="editTokenModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editTokenModalLabel">Enter editing password</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="verifyTokenForm" action="/verifytoken/event/{{eventData.id}}" method="post">
+      <div class="modal-body">
+        <div class="form-group">
+          <p class="form-text small">Enter the editing password you received by email or were shown when the event was created.</p>
+          <div class="form-group">
+            <input type="text" class="form-control" id="editToken" name="editToken" placeholder="Get it right!" data-validation="required">
+          </div>
+          <div class="form-group">
+              <div class="alert alert-danger" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Edit event</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {{#if editingEnabled}}
 {{#unless eventHasConcluded}}
 {{> editeventmodal }}
@@ -338,7 +367,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="editEventForm" action="/deleteevent/{{eventData.id}}/{{eventData.editToken}}" method="post">
+      <form id="deleteEventForm" action="/deleteevent/{{eventData.id}}" method="post">
       <div class="modal-body">
         <p>Are you sure you want to delete this event? This action cannot be undone.</p>
       </div>
@@ -402,6 +431,47 @@
     $(this).closest(".comment").find(".replyContainer").slideToggle();
   })
   $(document).ready(function() {
+
+    // Save the editing token from the URL, if it is valid
+    const eventID = $('#eventName').attr('data-event-id');
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('e')) {
+      $.ajax({
+        type: "POST",
+        url: `/verifytoken/event/${eventID}`,
+        data: { editToken: urlParams.get('e') },
+        success: function(response, status, xhr) {
+          if (xhr.status === 200) {
+            addStoredToken(eventID, urlParams.get('e'));
+          }
+        },
+        error: function(response, status, xhr) {
+          // The editing token is wrong - remove it
+          removeStoredToken(eventID);
+          window.location = window.location.pathname;
+        }
+      });
+    } else if (getStoredToken(eventID)) {
+      const editToken = getStoredToken(eventID);
+      $.ajax({
+        type: "POST",
+        url: `/verifytoken/event/${eventID}`,
+        data: { editToken },
+        success: function(response, status, xhr) {
+          if (xhr.status === 200) {
+            window.location.search = `?e=${editToken}`;
+          }
+        },
+        error: function(response, status, xhr) {
+          // The editing token is wrong - remove it
+          removeStoredToken(eventID);
+        }
+      });
+    }
+
+    if (urlParams.has('show_edit')) {
+      $('#editModal').modal('show');
+    }
 
     // From https://davidwalsh.name/javascript-download
     function downloadFile(data, fileName, type="text/plain") {
@@ -502,6 +572,30 @@
       const passphrase = window.niceware.generatePassphrase(6).join('-');
       modal.find('#removeAttendancePassword').val(passphrase);
     });
+
+      $('#verifyTokenForm').on('submit', function(e) {
+        e.preventDefault();
+        let form = $(this);
+        $.ajax({
+            type: "POST",
+            url: form.attr('action'),
+            data: form.serialize(),
+            success: function(response, status, xhr) {
+                if (xhr.status === 200) {
+                    // Save the token to localStorage for later
+                    addStoredToken($('#eventName').attr('data-event-id'), new FormData(form[0]).get('editToken'));
+                    window.location.search = `?e=${new FormData(form[0]).get('editToken')}&show_edit=true`;
+                }
+            },
+            error: function(response, status, xhr) {
+               form.find('.alert').text('That editing password is incorrect. Try again.').show();
+            }
+        });
+      });
+
+    $('#deleteEvent').on('click', function() {
+        $('#editModal').modal('hide');
+    })
   });
 
   </script>
