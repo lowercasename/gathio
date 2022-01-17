@@ -251,11 +251,11 @@
   <div class="card-body">
     <form id="commentForm" action="/post/comment/{{eventData.id}}/" method="post">
       <div class="form-group">
-        <input type="text" class="form-control" id="commentAuthor" name="commentAuthor" placeholder="Your name" data-validation="required length" data-validation-length="3-60">
+        <input type="text" class="form-control" id="commentAuthor" name="commentAuthor" placeholder="Your name" data-validation="required length" data-validation-length="1-60">
       </div>
       <div class="form-group">
         <div class="input-group">
-          <textarea class="form-control" id="commentContent" name="commentContent" style="resize: none;" placeholder="What would you like to ask?" data-validation="required length" data-validation-length="3-280"></textarea>
+          <textarea class="form-control" id="commentContent" name="commentContent" style="resize: none;" placeholder="What would you like to ask?" data-validation="required length" data-validation-length="1-280"></textarea>
           <div class="input-group-append">
             <button type="submit" class="btn btn-primary btn-block h-100" id="postComment">Send <i class="fas fa-chevron-right"></i></button>
           </div>
@@ -302,11 +302,11 @@
             <div class="col-md">
               <form id="replyForm" action="/post/reply/{{../eventData.id}}/{{this._id}}" method="post">
                 <div class="form-group">
-                  <input type="text" class="form-control form-control-sm" id="replyAuthor" name="replyAuthor" placeholder="Your name" data-validation="required length" data-validation-length="3-60">
+                  <input type="text" class="form-control form-control-sm" id="replyAuthor" name="replyAuthor" placeholder="Your name" data-validation="required length" data-validation-length="1-60">
                 </div>
                 <div class="form-group">
                   <div class="input-group">
-                    <textarea class="form-control form-control-sm" id="replyContent" name="replyContent" style="resize: none;" placeholder="What would you like to reply?" data-validation="required length" data-validation-length="3-280"></textarea>
+                    <textarea class="form-control form-control-sm" id="replyContent" name="replyContent" style="resize: none;" placeholder="What would you like to reply?" data-validation="required length" data-validation-length="1-280"></textarea>
                     <div class="input-group-append">
                       <button type="submit" class="btn btn-primary btn-block h-100 btn-sm" id="postReply">Reply <i class="fas fa-chevron-right"></i></button>
                     </div>
