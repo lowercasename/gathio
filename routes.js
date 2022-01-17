@@ -327,7 +327,7 @@ router.get('/:eventID', (req, res) => {
           eventHasBegun = true;
         }
         let fromNow = moment.tz(event.start, event.timezone).fromNow();
-        let parsedDescription = marked(event.description);
+        let parsedDescription = marked.parse(event.description);
         let eventEditToken = event.editToken;
 
         let escapedName = event.name.replace(/\s+/g, '+');
@@ -390,7 +390,7 @@ router.get('/:eventID', (req, res) => {
         }
         let metadata = {
           title: event.name,
-          description: marked(event.description, { renderer: render_plain() }).split(" ").splice(0, 40).join(" ").trim(),
+          description: marked.parse(event.description, { renderer: render_plain() }).split(" ").splice(0, 40).join(" ").trim(),
           image: (eventHasCoverImage ? `https://${domain}/events/` + event.image : null),
           url: `https://${domain}/` + req.params.eventID
         };
@@ -481,7 +481,7 @@ router.get('/group/:eventGroupID', (req, res) => {
     .lean() // Required, see: https://stackoverflow.com/questions/59690923/handlebars-access-has-been-denied-to-resolve-the-property-from-because-it-is
     .then(async (eventGroup) => {
       if (eventGroup) {
-        let parsedDescription = marked(eventGroup.description);
+        let parsedDescription = marked.parse(eventGroup.description);
         let eventGroupEditToken = eventGroup.editToken;
 
         let escapedName = eventGroup.name.replace(/\s+/g, '+');
@@ -549,7 +549,7 @@ router.get('/group/:eventGroupID', (req, res) => {
         }
         let metadata = {
           title: eventGroup.name,
-          description: marked(eventGroup.description, { renderer: render_plain() }).split(" ").splice(0, 40).join(" ").trim(),
+          description: marked.parse(eventGroup.description, { renderer: render_plain() }).split(" ").splice(0, 40).join(" ").trim(),
           image: (eventGroupHasCoverImage ? `https://${domain}/events/` + eventGroup.image : null),
           url: `https://${domain}/` + req.params.eventID
         };
@@ -681,7 +681,7 @@ router.post('/newevent', async (req, res) => {
     usersCanComment: req.body.interactionCheckbox ? true : false,
     maxAttendees: req.body.maxAttendees,
     firstLoad: true,
-    activityPubActor: ap.createActivityPubActor(eventID, domain, pair.public, marked(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
+    activityPubActor: ap.createActivityPubActor(eventID, domain, pair.public, marked.parse(req.body.eventDescription), req.body.eventName, req.body.eventLocation, eventImageFilename, startUTC, endUTC, req.body.timezone),
     activityPubEvent: ap.createActivityPubEvent(req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation),
     activityPubMessages: [{ id: `https://${domain}/${eventID}/m/featuredPost`, content: JSON.stringify(ap.createFeaturedPost(eventID, req.body.eventName, startUTC, endUTC, req.body.timezone, req.body.eventDescription, req.body.eventLocation)) }],
     publicKey: pair.public,
