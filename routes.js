@@ -82,8 +82,7 @@ function render_plain() {
 }
 
 const ical = require('ical');
-const icalGenerator = require('ical-generator');
-
+const {exportIcal} = require('./helpers.js');
 
 const sgMail = require('@sendgrid/mail');
 const nodemailer = require("nodemailer");
@@ -548,7 +547,6 @@ router.get('/group/:eventGroupID', (req, res) => {
             }
           }
         }
-        console.log(events);
         let metadata = {
           title: eventGroup.name,
           description: marked.parse(eventGroup.description, { renderer: render_plain() }).split(" ").splice(0, 40).join(" ").trim(),
@@ -586,6 +584,31 @@ router.get('/group/:eventGroupID', (req, res) => {
     });
 })
 
+router.get('/group/:eventGroupID/feed.ics', (req, res) => {
+  EventGroup.findOne({
+    id: req.params.eventGroupID
+  })
+    .lean() // Required, see: https://stackoverflow.com/questions/59690923/handlebars-access-has-been-denied-to-resolve-the-property-from-because-it-is
+    .then(async (eventGroup) => {
+      if (eventGroup) {
+        let events = await Event.find({ eventGroup: eventGroup._id }).lean().sort('start');
+        const string = exportIcal(events);
+        res.writeHead(200, {
+          'Content-Type': 'text/calendar',
+          'Content-Length': string.length,
+        });
+        return res.write(string);
+      }
+    })
+    .catch((err) => {
+      addToLog("eventGroupFeed", "error", "Attempt to display event group feed for " + req.params.eventGroupID + " failed with error: " + err);
+      console.log(err)
+      res.status(404);
+      res.render('404', { url: req.url });
+      return;
+    });
+});
+
 router.get('/exportevent/:eventID', (req, res) => {
   Event.findOne({
     id: req.params.eventID
@@ -593,28 +616,7 @@ router.get('/exportevent/:eventID', (req, res) => {
     .populate('eventGroup')
     .then((event) => {
       if (event) {
-        // Create a new icalGenerator... generator
-        const cal = icalGenerator({
-          domain: domain,
-          name: siteName
-        });
-        // Add the event to it
-        cal.createEvent({
-          start: moment.tz(event.start, event.timezone),
-          end: moment.tz(event.start, event.timezone),
-          timezone: event.timezone,
-          timestamp: moment(),
-          summary: event.name,
-          description: event.description,
-          organizer: {
-            name: event.hostName ? event.hostName : "Anonymous",
-            email: event.creatorEmail
-          },
-          location: event.location,
-          url: 'https://gath.io/' + event.id
-        });
-        // Stringify it!
-        let string = cal.toString();
+        const string = exportIcal([ event ]);
         res.send(string);
       }
     })
@@ -625,7 +627,28 @@ router.get('/exportevent/:eventID', (req, res) => {
       res.render('404', { url: req.url });
       return;
     });
-})
+});
+
+router.get('/exportgroup/:eventGroupID', (req, res) => {
+  EventGroup.findOne({
+    id: req.params.eventGroupID
+  })
+    .lean() // Required, see: https://stackoverflow.com/questions/59690923/handlebars-access-has-been-denied-to-resolve-the-property-from-because-it-is
+    .then(async (eventGroup) => {
+      if (eventGroup) {
+        let events = await Event.find({ eventGroup: eventGroup._id }).lean().sort('start');
+        const string = exportIcal(events);
+        res.send(string);
+      }
+    })
+    .catch((err) => {
+      addToLog("exportEvent", "error", "Attempt to export event group " + req.params.eventGroupID + " failed with error: " + err);
+      console.log(err)
+      res.status(404);
+      res.render('404', { url: req.url });
+      return;
+    });
+});
 
 // BACKEND ROUTES
 

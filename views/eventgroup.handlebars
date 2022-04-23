@@ -23,39 +23,63 @@
   Welcome to your event group! We've just sent you an email with your secret editing link, which you can also see in the address bar above. Haven't got the email? Check your spam or junk folder. To share your event group, use the link you can see just below this message - that way your attendees won't be able to edit or delete your event group!
 </div>
 {{/if}}
-<div class="card mt-4 mb-4">
-  <div class="card-body">
-    <ul class="fa-ul eventInformation">
-      {{#if eventGroupHasHost}}
-        <li>
-          <span class="fa-li">
-            <i class="fas fa-fw fa-user-circle"></i>
-          </span>
-          <span class="text-muted">Hosted by</span> {{eventGroupData.hostName}}
-        </li>
-      {{/if}}
-      {{#if eventGroupData.url}}
-        <li>
-          <span class="fa-li">
-            <i class="fas fa-link"></i>
-          </span>
-          <a href="{{eventGroupData.url}}">
-            {{eventGroupData.url}}
-          </a>
-        </li>
-      {{/if}}
-      <li>
-        <span class="fa-li">
-          <i class="fas fa-share-square"></i>
-        </span>
-        <a href="https://{{domain}}/group/{{eventGroupData.id}}">
-          {{domain}}/group/{{eventGroupData.id}}
-        </a>
-        <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}">
-          <i class="fas fa-copy"></i> Copy
+<div class="container my-4 pr-0">
+  <div class="row">
+    <div class="col-lg-9 card p-0">
+      <div class="card">
+        <div class="card-body">
+          <ul class="fa-ul eventInformation">
+            {{#if eventGroupHasHost}}
+              <li>
+                <span class="fa-li">
+                  <i class="fas fa-fw fa-user-circle"></i>
+                </span>
+                <span class="text-muted">Hosted by</span> {{eventGroupData.hostName}}
+              </li>
+            {{/if}}
+            {{#if eventGroupData.url}}
+              <li>
+                <span class="fa-li">
+                  <i class="fas fa-link"></i>
+                </span>
+                <a href="{{eventGroupData.url}}">
+                  {{eventGroupData.url}}
+                </a>
+              </li>
+            {{/if}}
+            <li>
+              <span class="fa-li">
+                <i class="fas fa-share-square"></i>
+              </span>
+              <a href="https://{{domain}}/group/{{eventGroupData.id}}">{{domain}}/group/{{eventGroupData.id}}</a>
+              <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </li>
+            <li>
+              <span class="fa-li">
+                <i class="fas fa-rss"></i>
+              </span>
+              <a
+                href="/group/{{eventGroupData.id}}/feed.ics">{{domain}}/group/{{eventGroupData.id}}/feed.ics</a>&nbsp;
+              <button type="button" id="copyFeedLink"
+                class="eventInformationAction btn btn-outline-secondary btn-sm"
+                data-clipboard-text="{{domain}}/group/{{eventGroupData.id}}/feed.ics">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div> <!-- /card -->
+    </div>
+    <div class="col-lg-3" id="eventActions">
+      <aside class="btn-group-vertical d-flex" role="group" aria-label="Event actions">
+        <button type="button" id="exportICS" class="btn btn-outline-secondary
+          btn-sm" data-event-id="{{eventGroupData.id}}">
+          <i class="fas fa-download"></i> Export as ICS
         </button>
-      </li>
-    </ul>
+      </aside>
+    </div>
   </div>
 </div>
 
@@ -224,10 +248,21 @@
     $("#eventGroupImagePreview").css("background-size", "cover");
     $("#eventGroupImagePreview").css("background-position", "center center");
     new ClipboardJS('#copyEventLink');
+    new ClipboardJS('#copyFeedLink');
     autosize($('textarea'));
+    $("#exportICS").click(function(){
+      let eventGroupID = $(this).attr('data-event-id');
+      $.get('/exportgroup/' + eventGroupID, function(response) {
+        downloadFile(response, eventGroupID + '.ics');
+      })
+    })
     $("#copyEventLink").click(function(){
       $(this).html('<i class="fas fa-copy"></i> Copied!');
       setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
+    });
+    $("#copyFeedLink").click(function(){
+      $(this).html('<i class="fas fa-copy"></i> Copied!');
+      setTimeout(function(){ $("#copyFeedLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
     });
 
       $('#verifyTokenForm').on('submit', function(e) {
@@ -253,6 +288,29 @@
     $('#deleteEvent').on('click', function() {
         $('#editModal').modal('hide');
     })
+
+    // From https://davidwalsh.name/javascript-download
+    function downloadFile(data, fileName, type="text/plain") {
+      // Create an invisible A element
+      const a = document.createElement("a");
+      a.style.display = "none";
+      document.body.appendChild(a);
+
+      // Set the HREF to a Blob representation of the data to be downloaded
+      a.href = window.URL.createObjectURL(
+        new Blob([data], { type })
+      );
+
+      // Use download attribute to set set desired file name
+      a.setAttribute("download", fileName);
+
+      // Trigger the download by simulating click
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(a.href);
+      document.body.removeChild(a);
+    }
 
   });
 </script>
