@@ -501,9 +501,9 @@ router.get('/group/:eventGroupID', (req, res) => {
           eventGroupHasHost = false;
         }
 
-        let events = await Event.find({ eventGroup: eventGroup._id }).sort('start')
+        let events = await Event.find({ eventGroup: eventGroup._id }).lean().sort('start');
 
-        events.forEach(event => {
+        events.map(event => {
           if (moment.tz(event.end, event.timezone).isSame(event.start, 'day')) {
             // Happening during one day
             event.displayDate = moment.tz(event.start, event.timezone).format('D MMM YYYY');
@@ -516,7 +516,8 @@ router.get('/group/:eventGroupID', (req, res) => {
           } else {
             event.eventHasConcluded = false;
           }
-        })
+          return (({ id, name, displayDate, eventHasConcluded }) => ({ id, name, displayDate, eventHasConcluded }))(event);
+        });
 
         let upcomingEventsExist = false;
         if (events.some(e => e.eventHasConcluded === false)) {
@@ -547,6 +548,7 @@ router.get('/group/:eventGroupID', (req, res) => {
             }
           }
         }
+        console.log(events);
         let metadata = {
           title: eventGroup.name,
           description: marked.parse(eventGroup.description, { renderer: render_plain() }).split(" ").splice(0, 40).join(" ").trim(),
