@@ -21,7 +21,6 @@ function addToLog(process, status, message) {
 function exportIcal(events, calendarName) {
   // Create a new icalGenerator... generator
   const cal = icalGenerator({
-    domain: domain,
     name: calendarName || siteName,
     x: {
       'X-WR-CALNAME': calendarName || siteName,
@@ -44,7 +43,7 @@ function exportIcal(events, calendarName) {
         email: event.creatorEmail || 'anonymous@anonymous.com',
       },
       location: event.location,
-      url: domain + '/' + event.id
+      url: 'https://' + domain + '/' + event.id
     });
   });
   // Stringify it!
