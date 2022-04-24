@@ -18,11 +18,14 @@ function addToLog(process, status, message) {
   logEntry.save().catch(() => { console.log("Error saving log entry!") });
 }
 
-function exportIcal(events) {
+function exportIcal(events, calendarName) {
   // Create a new icalGenerator... generator
   const cal = icalGenerator({
     domain: domain,
-    name: siteName
+    name: calendarName || siteName,
+    x: {
+      'X-WR-CALNAME': calendarName || siteName,
+    },
   });
   if (events instanceof Array === false) {
     events = [ events ];

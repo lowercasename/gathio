@@ -592,12 +592,9 @@ router.get('/group/:eventGroupID/feed.ics', (req, res) => {
     .then(async (eventGroup) => {
       if (eventGroup) {
         let events = await Event.find({ eventGroup: eventGroup._id }).lean().sort('start');
-        const string = exportIcal(events);
-        res.writeHead(200, {
-          'Content-Type': 'text/calendar',
-          'Content-Length': string.length,
-        });
-        return res.write(string);
+        const string = exportIcal(events, eventGroup.name);
+        res.set('Content-Type', 'text/calendar');
+        return res.send(string);
       }
     })
     .catch((err) => {
@@ -910,7 +907,6 @@ router.post('/verifytoken/event/:eventID', (req, res) => {
 });
 
 router.post('/verifytoken/group/:eventGroupID', (req, res) => {
-  console.log(req.body);
   EventGroup.findOne({
     id: req.params.eventGroupID,
     editToken: req.body.editToken,
@@ -923,7 +919,6 @@ router.post('/verifytoken/group/:eventGroupID', (req, res) => {
 
 
 router.post('/editevent/:eventID/:editToken', (req, res) => {
-  console.log(req.body);
   let submittedEditToken = req.params.editToken;
   Event.findOne(({
     id: req.params.eventID,
@@ -995,7 +990,6 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
           diffText += `<li>the end time changed to ${displayDate}</li>`;
         }
         if (event.timezone !== updatedEvent.timezone) {
-          console.log(typeof event.timezone, JSON.stringify(event.timezone), JSON.stringify(updatedEvent.timezone))
           diffText += `<li>the time zone changed to ${updatedEvent.timezone}</li>`;
         }
         if (event.description !== updatedEvent.description) {
