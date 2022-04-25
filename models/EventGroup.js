@@ -1,5 +1,12 @@
 const mongoose = require('mongoose');
 
+const Subscriber = new mongoose.Schema({
+  email: {
+    type: String,
+    trim: true
+  },
+})
+
 const EventGroupSchema = new mongoose.Schema({
   id: {
     type: String,
@@ -43,7 +50,8 @@ const EventGroupSchema = new mongoose.Schema({
     trim: true,
     default: true
   },
-  events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }]
+  events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+  subscribers: [Subscriber],
 });
 
 module.exports = mongoose.model('EventGroup', EventGroupSchema);

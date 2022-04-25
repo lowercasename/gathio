@@ -741,6 +741,46 @@ router.post('/newevent', async (req, res) => {
           }
         });
       }
+      // If the event was added to a group, send an email to any group
+      // subscribers
+      if (event.eventGroup && sendEmails) {
+        EventGroup.findOne({ _id: event.eventGroup._id })
+          .then((eventGroup) => {
+            const subscribers = eventGroup.subscribers.reduce((acc, current) => {
+              if (acc.includes(current.email)) {
+                return acc;
+              }
+              return [ current.email, ...acc ];
+            }, []);
+            subscribers.forEach(emailAddress => {
+              req.app.get('hbsInstance').renderView('./views/emails/eventgroupupdated.handlebars', { siteName, siteLogo, domain, eventID: req.params.eventID, eventGroupName: eventGroup.name, eventName: event.name, eventID: event.id, eventGroupID: eventGroup.id, emailAddress: encodeURIComponent(emailAddress), cache: true, layout: 'email.handlebars' }, function (err, html) {
+                const msg = {
+                  to: emailAddress,
+                  from: {
+                    name: siteName,
+                    email: contactEmail,
+                  },
+                  subject: `${siteName}: New event in ${eventGroup.name}`,
+                  html,
+                };
+                switch (mailService) {
+                  case 'sendgrid':
+                    sgMail.send(msg).catch(e => {
+                      console.error(e.toString());
+                      res.status(500).end();
+                    });
+                    break;
+                  case 'nodemailer':
+                    nodemailerTransporter.sendMail(msg).catch(e => {
+                      console.error(e.toString());
+                      res.status(500).end();
+                    });
+                    break;
+                }
+              });
+            });
+          });
+      }
       res.writeHead(302, {
         'Location': '/' + eventID + '?e=' + editToken
       });
@@ -1530,6 +1570,84 @@ router.post('/removeattendee/:eventID/:attendeeID', (req, res) => {
     })
     .catch((err) => {
       res.send('Database error, please try again :('); addToLog("removeEventAttendee", "error", "Attempt to remove attendee by admin from event " + req.params.eventID + " failed with error: " + err);
+    });
+});
+
+/*
+ * Create an email subscription on an event group.
+ */
+router.post('/subscribe/:eventGroupID', (req, res) => {
+  const subscriber = {
+    email: req.body.emailAddress,
+  };
+  if (!subscriber.email) {
+    return res.sendStatus(500);
+  }
+
+  EventGroup.findOne(({
+    id: req.params.eventGroupID,
+  }))
+    .then((eventGroup) => {
+      if (!eventGroup) {
+        return res.sendStatus(404);
+      }
+      eventGroup.subscribers.push(subscriber);
+      eventGroup.save();
+      if (sendEmails) {
+        req.app.get('hbsInstance').renderView('./views/emails/subscribed.handlebars', { eventGroupName: eventGroup.name, eventGroupID: eventGroup.id, emailAddress: encodeURIComponent(subscriber.email), siteName, siteLogo, domain, cache: true, layout: 'email.handlebars' }, function (err, html) {
+            const msg = {
+              to: subscriber.email,
+              from: {
+                name: siteName,
+                email: contactEmail,
+              },
+              subject: `${siteName}: You have subscribed to an event group`,
+              html,
+            };
+            switch (mailService) {
+              case 'sendgrid':
+                sgMail.send(msg).catch(e => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+                break;
+              case 'nodemailer':
+                nodemailerTransporter.sendMail(msg).catch(e => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+                break;
+            }
+          });
+      }
+      return res.redirect(`/group/${eventGroup.id}`)
+    })
+    .catch((error) => {
+      addToLog("addSubscription", "error", "Attempt to subscribe " + req.body.emailAddress + " to event group " + req.params.eventGroupID + " failed with error: " + error);
+      return res.sendStatus(500);
+    });
+});
+
+/*
+ * Delete an existing email subscription on an event group.
+ */
+router.get('/unsubscribe/:eventGroupID', (req, res) => {
+  const email = req.query.email;
+  console.log(email);
+  if (!email) {
+    return res.sendStatus(500);
+  }
+
+  EventGroup.update(
+    { id: req.params.eventGroupID },
+    { $pull: { subscribers: { email } } }
+  )
+    .then(response => {
+      return res.redirect('/');
+    })
+    .catch((error) => {
+      addToLog("removeSubscription", "error", "Attempt to unsubscribe " + req.query.email + " from event group " + req.params.eventGroupID + " failed with error: " + error);
+      return res.sendStatus(500);
     });
 });
 
