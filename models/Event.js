@@ -15,12 +15,15 @@ const Attendees = new mongoose.Schema({
   },
   removalPassword: {
     type: String,
-    trim: true
+    trim: true,
+    unique: true,
   },
   id: {
     type: String,
-    trim: true
-  }
+    trim: true,
+    unique: true,
+  },
+  created: Date,
 })
 
 const Followers = new mongoose.Schema({

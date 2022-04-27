@@ -131,7 +131,7 @@
   <h5 class="card-header">Attendees {{#if eventAttendees}}({{eventAttendees.length}}){{/if}}
     <div class="btn-group" role="group" aria-label="Attendance controls">
       {{#unless noMoreSpots}}
-        <button type="button" id="attendEvent" class="btn btn-success" data-toggle="modal" data-target="#attendModal"><i class="fas fa-user-plus"></i> Add me</button>
+        <button type="button" id="attendEvent" class="btn btn-success" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> Add me</button>
       {{/unless}}
       <button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
     </div>
@@ -147,7 +147,7 @@
     {{#if eventAttendees}}
       <ul class="attendeesList">
         {{#each eventAttendees}}
-          <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}>{{#if this.email}}<span class="attendee-name">{{this.name}}</span>{{else}}<a href="{{this.id}}"><span class="attendee-name">{{this.name}}</span></a>{{/if}}{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+          <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
         {{/each}}
       </ul>
     {{else}}
@@ -181,9 +181,10 @@
         </div>
       </div>
       <div class="form-group">
-        <label for="removeAttendancePassword">Deletion password</label>
+        <label for="removalPassword">Deletion password</label>
         <p class="form-text small">You will need this password if you want to remove yourself from the list of event attendees. If you provided your email, you'll receive it by email. Otherwise, write it down now because it will <strong>not be shown again</strong>.</p>
-        <input type="text" class="form-control" readonly id="removeAttendancePassword" name="removeAttendancePassword">
+        <input type="text" class="form-control" readonly id="removalPassword"
+        name="removalPassword">
       </div>
     </div>
       <div class="modal-footer">
@@ -207,9 +208,10 @@
       <form id="unattendEventForm" action="/unattendevent/{{eventData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <label for="removeAttendancePassword" class="form-label">Your deletion password</label>
+          <label for="removalPassword" class="form-label">Your deletion password</label>
           <p class="form-text small">Lost your password? Get in touch with the event organiser.</p>
-          <input type="text" class="form-control" id="removeAttendancePassword" name="removeAttendancePassword">
+          <input type="text" class="form-control" id="removalPassword"
+          name="removalPassword">
         </div>
       </div>
       <div class="modal-footer">
@@ -383,10 +385,11 @@
 </div>
 
 {{/if}}
-
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 {{#unless eventHasConcluded}}
+{{#if editingEnabled}}
 <script type="text/javascript" src="/js/generate-timezones.js"></script>
-<script src='/js/niceware.js'></script>
+{{/if}}
 {{/unless}}
 <script>
   $.validate({
@@ -509,8 +512,10 @@
     $("#image-preview").css("background-image", "url('/events/{{eventData.image}}')");
     $("#image-preview").css("background-size", "cover");
     $("#image-preview").css("background-position", "center center");
+    {{#if editingEnabled}}
     $('#eventStart').datepicker().data('datepicker').selectDate(moment('{{parsedStart}}', 'YYYYMMDD[T]HHmmss').toDate());
     $('#eventEnd').datepicker().data('datepicker').selectDate(moment('{{parsedEnd}}', 'YYYYMMDD[T]HHmmss').toDate());
+    {{/if}}
     new ClipboardJS('#copyEventLink');
     autosize($('textarea'));
     $("#exportICS").click(function(){
@@ -565,10 +570,18 @@
         $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
       }
     });
-    $('#attendModal').on('show.bs.modal', function (event) {
-      var modal = $(this);
-      const passphrase = window.niceware.generatePassphrase(6).join('-');
-      modal.find('#removeAttendancePassword').val(passphrase);
+    $('#attendEvent').on('click', function(event) {
+      const modal = $('#attendModal');
+      const eventID = $(this).attr('data-event-id');
+      axios.post('/attendee/provision', {}, { params: { eventID }})
+        .then((response) => {
+          modal.find('#removalPassword').val(response.data.removalPassword);
+          modal.modal(); 
+        })
+        .catch((error) => {
+          console.error(error);
+          return false;
+        });
     });
 
       $('#verifyTokenForm').on('submit', function(e) {

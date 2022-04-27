@@ -26,6 +26,7 @@ const marked = require('marked');
 const generateRSAKeypair = require('generate-rsa-keypair');
 const crypto = require('crypto');
 const request = require('request');
+const niceware = require('niceware');
 
 const domain = require('./config/domain.js').domain;
 const contactEmail = require('./config/domain.js').email;
@@ -172,6 +173,9 @@ schedule.scheduleJob('59 23 * * *', function (fireDate) {
   }).catch((err) => {
     addToLog("deleteOldEvents", "error", "Attempt to delete old event " + event.id + " failed with error: " + err);
   });
+
+  // TODO: While we're here, also remove all provisioned event attendees over a day
+  // old (they're not going to become active)
 });
 
 // FRONTEND ROUTES
@@ -377,7 +381,7 @@ router.get('/:eventID', (req, res) => {
             return el;
           })
           .filter((obj, pos, arr) => {
-            return arr.map(mapObj => mapObj.id).indexOf(obj.id) === pos;
+            return obj.status === 'attending' && arr.map(mapObj => mapObj.id).indexOf(obj.id) === pos;
           });
 
         let spotsRemaining, noMoreSpots;
@@ -1081,10 +1085,11 @@ router.post('/editevent/:eventID/:editToken', (req, res) => {
                 }
               }
             })
+            // Send update to all attendees
             if (sendEmails) {
-              Event.findOne({ id: req.params.eventID }).distinct('attendees.email', function (error, ids) {
-                let attendeeEmails = ids;
-                if (!error && attendeeEmails !== "") {
+              Event.findOne({ id: req.params.eventID }).then((event) => {
+                const attendeeEmails = event.attendees.filter(o => o.status === 'attending' && o.email).map(o => o.email);
+                if (attendeeEmails.length) {
                   console.log("Sending emails to: " + attendeeEmails);
                   req.app.get('hbsInstance').renderView('./views/emails/editevent.handlebars', { diffText, eventID: req.params.eventID, siteName, siteLogo, domain, cache: true, layout: 'email.handlebars' }, function (err, html) {
                     const msg = {
@@ -1269,9 +1274,9 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
         });
         // Send emails here otherwise they don't exist lol
         if (sendEmails) {
-          Event.findOne({ id: req.params.eventID }).distinct('attendees.email', function (error, ids) {
-            attendeeEmails = ids;
-            if (!error) {
+          Event.findOne({ id: req.params.eventID }).then((event) => {
+            const attendeeEmails = event.attendees.filter(o => o.status === 'attending' && o.email).map(o => o.email);
+            if (attendeeEmails.length) {
               console.log("Sending emails to: " + attendeeEmails);
               req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', { siteName, siteLogo, domain, eventName: event.name, cache: true, layout: 'email.handlebars' }, function (err, html) {
                 const msg = {
@@ -1370,64 +1375,95 @@ router.post('/deleteeventgroup/:eventGroupID/:editToken', (req, res) => {
     .catch((err) => { res.send('Sorry! Something went wrong: ' + err); addToLog("deleteEventGroup", "error", "Attempt to delete event group " + req.params.eventGroupID + " failed with error: " + err); });
 });
 
-router.post('/attendevent/:eventID', (req, res) => {
+router.post('/attendee/provision', async (req, res) => {
+  const removalPassword = niceware.generatePassphrase(6).join('-');
   const newAttendee = {
-    name: req.body.attendeeName,
-    status: 'attending',
-    email: req.body.attendeeEmail,
-    removalPassword: req.body.removeAttendancePassword
+    status: 'provisioned',
+    removalPassword,
+    created: Date.now(),
   };
 
-  Event.findOne({
-    id: req.params.eventID,
-  }, function (err, event) {
-    if (!event) return;
-    event.attendees.push(newAttendee);
-    event.save()
-      .then(() => {
-        addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
-        if (sendEmails) {
-          if (req.body.attendeeEmail) {
-              req.app.get('hbsInstance').renderView('./views/emails/addeventattendee.handlebars', { eventID: req.params.eventID, siteName, siteLogo, domain, removalPassword: req.body.removeAttendancePassword, cache: true, layout: 'email.handlebars' }, function (err, html) {
-              const msg = {
-                to: req.body.attendeeEmail,
-                from: {
-                  name: siteName,
-                  email: contactEmail,
-                },
-                subject: `${siteName}: You're RSVPed to ${event.name}`,
-                html,
-              };
-              switch (mailService) {
-                case 'sendgrid':
-                  sgMail.send(msg).catch(e => {
-                    console.error(e.toString());
-                    res.status(500).end();
-                  });
-                  break;
-                case 'nodemailer':
-                  nodemailerTransporter.sendMail(msg).catch(e => {
-                    console.error(e.toString());
-                    res.status(500).end();
-                  });
-                  break;
-              }
-            });
-          }
-        }
-        res.writeHead(302, {
-          'Location': '/' + req.params.eventID
-        });
-        res.end();
-      })
-      .catch((err) => { res.send('Database error, please try again :('); addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err); });
+  const event = await Event.findOne({ id: req.query.eventID }).catch(e => {
+    addToLog("provisionEventAttendee", "error", "Attempt to provision attendee in event " + req.query.eventID + " failed with error: " + e);
+    return res.sendStatus(500);
   });
+
+  if (!event) {
+    return res.sendStatus(404);
+  }
+
+  event.attendees.push(newAttendee);
+  await event.save().catch(e => {
+    console.log(e);
+    addToLog("provisionEventAttendee", "error", "Attempt to provision attendee in event " + req.query.eventID + " failed with error: " + e);
+    return res.sendStatus(500);
+  });
+  addToLog("provisionEventAttendee", "success", "Attendee provisioned in event " + req.query.eventID);
+
+  return res.json({ removalPassword });
+});
+
+router.post('/attendevent/:eventID', async (req, res) => {
+  // Do not allow empty removal passwords
+  if (!req.body.removalPassword) {
+    return res.sendStatus(500);
+  }
+
+  Event.findOneAndUpdate({ id: req.params.eventID, 'attendees.removalPassword': req.body.removalPassword }, { 
+    "$set": {
+      "attendees.$.status": "attending",
+      "attendees.$.name": req.body.attendeeName,
+      "attendees.$.email": req.body.attendeeEmail,
+    }
+  }).then((event) => {
+    addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
+    if (sendEmails) {
+      if (req.body.attendeeEmail) {
+        req.app.get('hbsInstance').renderView('./views/emails/addeventattendee.handlebars', { eventID: req.params.eventID, siteName, siteLogo, domain, removalPassword: req.body.removalPassword, cache: true, layout: 'email.handlebars' }, function (err, html) {
+          const msg = {
+            to: req.body.attendeeEmail,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+            subject: `${siteName}: You're RSVPed to ${event.name}`,
+            html,
+          };
+          switch (mailService) {
+            case 'sendgrid':
+              sgMail.send(msg).catch(e => {
+                console.error(e.toString());
+                res.status(500).end();
+              });
+              break;
+            case 'nodemailer':
+              nodemailerTransporter.sendMail(msg).catch(e => {
+                console.error(e.toString());
+                res.status(500).end();
+              });
+              break;
+          }
+        });
+      }
+    }
+    res.redirect(`/${req.params.eventID}`);
+  })
+    .catch((error) => {
+      res.send('Database error, please try again :(');
+      addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err); 
+    });
 });
 
 router.post('/unattendevent/:eventID', (req, res) => {
+  const removalPassword = req.body.removalPassword;
+  // Don't allow blank removal passwords!
+  if (!removalPassword) {
+    return res.sendStatus(500);
+  }
+
   Event.update(
     { id: req.params.eventID },
-    { $pull: { attendees: { removalPassword: req.body.removeAttendancePassword } } }
+    { $pull: { attendees: { removalPassword } } }
   )
     .then(response => {
       console.log(response)
@@ -1681,9 +1717,9 @@ router.post('/post/comment/:eventID', (req, res) => {
         }
         ap.broadcastCreateMessage(jsonObject, event.followers, req.params.eventID)
         if (sendEmails) {
-          Event.findOne({ id: req.params.eventID }).distinct('attendees.email', function (error, ids) {
-            let attendeeEmails = ids;
-            if (!error) {
+          Event.findOne({ id: req.params.eventID }).then((event) => {
+            const attendeeEmails = event.attendees.filter(o => o.status === 'attending' && o.email).map(o => o.email);
+            if (attendeeEmails.length) {
               console.log("Sending emails to: " + attendeeEmails);
               req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', { siteName, siteLogo, domain, eventID: req.params.eventID, commentAuthor: req.body.commentAuthor, cache: true, layout: 'email.handlebars' }, function (err, html) {
                 const msg = {
@@ -1755,9 +1791,9 @@ router.post('/post/reply/:eventID/:commentID', (req, res) => {
         }
         ap.broadcastCreateMessage(jsonObject, event.followers, req.params.eventID)
         if (sendEmails) {
-          Event.findOne({ id: req.params.eventID }).distinct('attendees.email', function (error, ids) {
-            let attendeeEmails = ids;
-            if (!error) {
+          Event.findOne({ id: req.params.eventID }).then((event) => {
+            const attendeeEmails = event.attendees.filter(o => o.status === 'attending' && o.email).map(o => o.email);
+            if (attendeeEmails.length) {
               console.log("Sending emails to: " + attendeeEmails);
               req.app.get('hbsInstance').renderView('./views/emails/addeventcomment.handlebars', { siteName, siteLogo, domain, eventID: req.params.eventID, commentAuthor: req.body.replyAuthor, cache: true, layout: 'email.handlebars' }, function (err, html) {
                 const msg = {
