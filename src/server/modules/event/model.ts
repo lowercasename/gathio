@@ -91,7 +91,6 @@ const Attendees: Schema = new mongoose.Schema({
   id: {
     type: String,
     trim: true,
-    unique: true,
   },
   created: Date,
 });
