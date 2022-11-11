@@ -78,7 +78,7 @@ function createFeaturedPost(eventID, name, startUTC, endUTC, timezone, descripti
     "type": "Note",
     "name": "Test",
     'cc': 'https://www.w3.org/ns/activitystreams#Public',
-    "content": `<p>This is an event that was posted on <a href="https://${domain}">${siteName}</a>. If you follow this account, you'll see updates in your timeline about the event. If your software supports polls, you should get a poll in your DMs asking if you want to RSVP. You can reply and RSVP right from there. If your software has an event calendar built in, you should get an event in your inbox that you can RSVP to like you respond to any event.</p><p>For more information on how to interact with this, <a href="https://github.com/lowercasename/gathio/wiki/Fediverse-Instructions">check out this link</a>.</p>`,
+    "content": `<p>This is an event that was posted on <a href="https://${domain}/${eventID}">${siteName}</a>. If you follow this account, you'll see updates in your timeline about the event. If your software supports polls, you should get a poll in your DMs asking if you want to RSVP. You can reply and RSVP right from there. If your software has an event calendar built in, you should get an event in your inbox that you can RSVP to like you respond to any event.</p><p>For more information on how to interact with this, <a href="https://github.com/lowercasename/gathio/wiki/Fediverse-Instructions">check out this link</a>.</p>`,
     'attributedTo': `https://${domain}/${eventID}`,
   }
   return featured;
@@ -132,21 +132,26 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
     })
     .then((event) => {
       if (event) { 
+        const digest = crypto.createHash('sha256').update(JSON.stringify(message)).digest('base64');
         const privateKey = event.privateKey;
         const signer = crypto.createSign('sha256');
         let d = new Date();
-        let stringToSign = `(request-target): post ${inboxFragment}\nhost: ${targetDomain}\ndate: ${d.toUTCString()}`;
+        let stringToSign = `(request-target): post ${inboxFragment}\nhost: ${targetDomain}\ndate: ${d.toUTCString()}\ndigest: SHA-256=${digest}`;
         signer.update(stringToSign);
         signer.end();
         const signature = signer.sign(privateKey);
         const signature_b64 = signature.toString('base64');
-        const header = `keyId="https://${domain}/${eventID}",headers="(request-target) host date",signature="${signature_b64}"`;
+        const algorithm = 'rsa-sha256';
+        let   header = `keyId="https://${domain}/${eventID}",algorithm="${algorithm}",headers="(request-target) host date digest",signature="${signature_b64}"`;
         request({
           url: inbox,
           headers: {
             'Host': targetDomain,
             'Date': d.toUTCString(),
-            'Signature': header
+            'Signature': header,
+            'Digest': `SHA-256=${digest}`,
+            'Content-Type': 'application/activity+json',
+            'Accept': 'application/activity+json'
           },
           method: 'POST',
           json: true,
@@ -213,7 +218,7 @@ function broadcastCreateMessage(apObject, followers, eventID) {
           const actorJson = JSON.parse(follower.actorJson);
           const inbox = actorJson.inbox;
           const createMessage = {
-            '@context': 'https://www.w3.org/ns/activitystreams',
+            '@context': ['https://www.w3.org/ns/activitystreams', 'https://w3id.org/security/v1'],
             'id': `https://${domain}/${eventID}/m/${guidCreate}`,
             'type': 'Create',
             'actor': `https://${domain}/${eventID}`,
@@ -261,7 +266,7 @@ function broadcastAnnounceMessage(apObject, followers, eventID) {
           const actorJson = JSON.parse(follower.actorJson);
           const inbox = actorJson.inbox;
           const announceMessage = {
-            '@context': 'https://www.w3.org/ns/activitystreams',
+            '@context': ['https://www.w3.org/ns/activitystreams', 'https://w3id.org/security/v1'],
             'id': `https://${domain}/${eventID}/m/${guidUpdate}`,
             'cc': 'https://www.w3.org/ns/activitystreams#Public',
             'type': 'Announce',
