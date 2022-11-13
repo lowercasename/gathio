@@ -17,11 +17,13 @@ const Attendees = new mongoose.Schema({
     type: String,
     trim: true,
     unique: true,
+    sparse: true,
   },
   id: {
     type: String,
     trim: true,
     unique: true,
+    sparse: true,
   },
   created: Date,
 })
@@ -46,7 +48,7 @@ const Followers = new mongoose.Schema({
     type: String,
     trim: true
   },
-}, {_id: false})
+}, { _id: false })
 
 const ReplySchema = new mongoose.Schema({
   id: {
