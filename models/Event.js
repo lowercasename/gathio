@@ -16,12 +16,12 @@ const Attendees = new mongoose.Schema({
   removalPassword: {
     type: String,
     trim: true,
-    unique: true,
+    //unique: true, // FIXME: breaks on newer mongodb/mongoose: https://github.com/lowercasename/gathio/issues/75
   },
   id: {
     type: String,
     trim: true,
-    unique: true,
+    //unique: true,
   },
   created: Date,
 })
