@@ -128,7 +128,7 @@
 
 {{#if eventData.usersCanAttend}}
 <div class="card mb-4" id="eventAttendees">
-  <h5 class="card-header">Attendees {{#if eventAttendees}}({{eventAttendees.length}}){{/if}}
+  <h5 class="card-header">Attendees {{#if eventAttendees}}({{numberOfAttendees}}){{/if}}
     <div class="btn-group" role="group" aria-label="Attendance controls">
       {{#unless noMoreSpots}}
         <button type="button" id="attendEvent" class="btn btn-success" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> Add me</button>
@@ -171,6 +171,12 @@
         <label for="attendeeName">Your name</label>
         <div class="form-group">
           <input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="1-30">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="attendeeName">How many people in your party?</label>
+        <div class="form-group">
+          <input type="number" class="form-control" id="attendeeNumber" name="attendeeNumber" value="1" data-validation="required number" >
         </div>
       </div>
       <div class="form-group">
@@ -576,6 +582,9 @@
       axios.post('/attendee/provision', {}, { params: { eventID }})
         .then((response) => {
           modal.find('#removalPassword').val(response.data.removalPassword);
+          modal.find('#attendeeNumber')
+            .attr('data-validation-allowing', `range[1;${response.data.freeSpots}]`)
+            .attr('data-validation-error-msg', `Please enter a number between 1 and ${response.data.freeSpots}`);
           modal.modal(); 
         })
         .catch((error) => {

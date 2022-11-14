@@ -378,6 +378,9 @@ router.get('/:eventID', (req, res) => {
             if (!el.id) {
               el.id = el._id;
             }
+            if (el.number > 1) {
+              el.name = `${el.name} (${el.number} people)`;
+            }
             return el;
           })
           .filter((obj, pos, arr) => {
@@ -385,8 +388,14 @@ router.get('/:eventID', (req, res) => {
           });
 
         let spotsRemaining, noMoreSpots;
+        let numberOfAttendees = eventAttendees.reduce((acc, attendee) => {
+          if (attendee.status === 'attending') {
+            return acc + attendee.number || 1;
+          }
+          return acc;
+        }, 0);
         if (event.maxAttendees) {
-          spotsRemaining = event.maxAttendees - eventAttendees.length;
+          spotsRemaining = event.maxAttendees - numberOfAttendees;
           if (spotsRemaining <= 0) {
             noMoreSpots = true;
           }
@@ -410,6 +419,7 @@ router.get('/:eventID', (req, res) => {
             escapedName: escapedName,
             eventData: event,
             eventAttendees: eventAttendees,
+            numberOfAttendees,
             spotsRemaining: spotsRemaining,
             noMoreSpots: noMoreSpots,
             eventStartISO: eventStartISO,
@@ -1400,7 +1410,9 @@ router.post('/attendee/provision', async (req, res) => {
   });
   addToLog("provisionEventAttendee", "success", "Attendee provisioned in event " + req.query.eventID);
 
-  return res.json({ removalPassword });
+  // Return the removal password and the number of free spots remaining
+  const freeSpots = event.maxAttendees - event.attendees.reduce((acc, a) => acc + (a.status === 'attending' ? (a.number || 1) : 0), 0);
+  return res.json({ removalPassword, freeSpots });
 });
 
 router.post('/attendevent/:eventID', async (req, res) => {
@@ -1408,12 +1420,29 @@ router.post('/attendevent/:eventID', async (req, res) => {
   if (!req.body.removalPassword) {
     return res.sendStatus(500);
   }
+  const event = await Event.findOne({ id: req.params.eventID }).catch(e => {
+    addToLog("attendEvent", "error", "Attempt to attend event " + req.params.eventID + " failed with error: " + e);
+    return res.sendStatus(500);
+  });
+  if (!event) {
+    return res.sendStatus(404);
+  }
+  const attendee = event.attendees.find(a => a.removalPassword === req.body.removalPassword);
+  if (!attendee) {
+    return res.sendStatus(404);
+  }
+  // Do we have enough free spots in this event to accomodate this attendee?
+  const freeSpots = event.maxAttendees - event.attendees.reduce((acc, a) => acc + (a.status === 'attending' ? (a.number || 1) : 0), 0);
+  if (req.body.attendeeNumber > freeSpots) {
+    return res.sendStatus(403);
+  }
 
   Event.findOneAndUpdate({ id: req.params.eventID, 'attendees.removalPassword': req.body.removalPassword }, { 
     "$set": {
       "attendees.$.status": "attending",
       "attendees.$.name": req.body.attendeeName,
       "attendees.$.email": req.body.attendeeEmail,
+      "attendees.$.number": req.body.attendeeNumber,
     }
   }).then((event) => {
     addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
@@ -1450,7 +1479,7 @@ router.post('/attendevent/:eventID', async (req, res) => {
   })
     .catch((error) => {
       res.send('Database error, please try again :(');
-      addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err); 
+      addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + error);
     });
 });
 

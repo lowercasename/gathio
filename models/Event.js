@@ -25,6 +25,12 @@ const Attendees = new mongoose.Schema({
     unique: true,
     sparse: true,
   },
+  // The number of people that are attending under one 'attendee' object
+  number: {
+    type: Number,
+    trim: true,
+    default: 1
+  },
   created: Date,
 })
 
