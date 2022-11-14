@@ -125,13 +125,13 @@ function updateActivityPubActor(actor, description, name, location, imageFilenam
 
 function signAndSend(message, eventID, targetDomain, inbox, callback) {
   if (!isFederated) return;
-  let inboxFragment = inbox.replace('https://'+targetDomain,'');
+  let inboxFragment = inbox.replace('https://' + targetDomain, '');
   // get the private key
   Event.findOne({
     id: eventID
-    })
+  })
     .then((event) => {
-      if (event) { 
+      if (event) {
         const digest = crypto.createHash('sha256').update(JSON.stringify(message)).digest('base64');
         const privateKey = event.privateKey;
         const signer = crypto.createSign('sha256');
@@ -142,7 +142,7 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
         const signature = signer.sign(privateKey);
         const signature_b64 = signature.toString('base64');
         const algorithm = 'rsa-sha256';
-        let   header = `keyId="https://${domain}/${eventID}",algorithm="${algorithm}",headers="(request-target) host date digest",signature="${signature_b64}"`;
+        let header = `keyId="https://${domain}/${eventID}",algorithm="${algorithm}",headers="(request-target) host date digest",signature="${signature_b64}"`;
         request({
           url: inbox,
           headers: {
@@ -156,7 +156,7 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
           method: 'POST',
           json: true,
           body: message
-        }, function (error, response){
+        }, function (error, response) {
           if (error) {
             callback(error, null, 500);
           }
@@ -169,7 +169,7 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
             };
             Event.findOne({
               id: eventID,
-              }, function(err,event) {
+            }, function (err, event) {
               if (!event) return;
               event.activityPubMessages.push(newMessage);
               // also add the message's object if it has one
@@ -180,13 +180,14 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
                 });
               }
               event.save()
-              .then(() => {
-                addToLog("addActivityPubMessage", "success", "ActivityPubMessage added to event " + eventID);
-                callback(null, message.id, 200);
-              })
-              .catch((err) => { addToLog("addActivityPubMessage", "error", "Attempt to add ActivityPubMessage to event " + eventID + " failed with error: " + err);
-                callback(err, null, 500);
-              });
+                .then(() => {
+                  addToLog("addActivityPubMessage", "success", "ActivityPubMessage added to event " + eventID);
+                  callback(null, message.id, 200);
+                })
+                .catch((err) => {
+                  addToLog("addActivityPubMessage", "error", "Attempt to add ActivityPubMessage to event " + eventID + " failed with error: " + err);
+                  callback(err, null, 500);
+                });
             })
           }
         });
@@ -205,7 +206,7 @@ function broadcastCreateMessage(apObject, followers, eventID) {
   let guidCreate = crypto.randomBytes(16).toString('hex');
   Event.findOne({
     id: eventID,
-    }, function(err, event) {
+  }, function (err, event) {
     if (event) {
       // iterate over followers
       for (const follower of followers) {
@@ -226,7 +227,7 @@ function broadcastCreateMessage(apObject, followers, eventID) {
             'cc': 'https://www.w3.org/ns/activitystreams#Public',
             'object': apObject
           };
-          signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
+          signAndSend(createMessage, eventID, targetDomain, inbox, function (err, resp, status) {
             if (err) {
               console.log(`Didn't send to ${actorId}, status ${status} with error ${err}`);
             }
@@ -253,7 +254,7 @@ function broadcastAnnounceMessage(apObject, followers, eventID) {
   let guidUpdate = crypto.randomBytes(16).toString('hex');
   Event.findOne({
     id: eventID,
-    }, function(err, event) {
+  }, function (err, event) {
     if (event) {
       // iterate over followers
       for (const follower of followers) {
@@ -274,7 +275,7 @@ function broadcastAnnounceMessage(apObject, followers, eventID) {
             'object': apObject,
             'to': actorId
           };
-          signAndSend(announceMessage, eventID, targetDomain, inbox, function(err, resp, status) {
+          signAndSend(announceMessage, eventID, targetDomain, inbox, function (err, resp, status) {
             if (err) {
               console.log(`Didn't send to ${actorId}, status ${status} with error ${err}`);
             }
@@ -301,7 +302,7 @@ function broadcastUpdateMessage(apObject, followers, eventID) {
   // iterate over followers
   Event.findOne({
     id: eventID,
-    }, function(err, event) {
+  }, function (err, event) {
     if (event) {
       for (const follower of followers) {
         let actorId = follower.actorId;
@@ -319,7 +320,7 @@ function broadcastUpdateMessage(apObject, followers, eventID) {
             'actor': `https://${domain}/${eventID}`,
             'object': apObject
           };
-          signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
+          signAndSend(createMessage, eventID, targetDomain, inbox, function (err, resp, status) {
             if (err) {
               console.log(`Didn't send to ${actorId}, status ${status} with error ${err}`);
             }
@@ -341,7 +342,7 @@ function broadcastUpdateMessage(apObject, followers, eventID) {
 
 function broadcastDeleteMessage(apObject, followers, eventID, callback) {
   if (!isFederated) return;
-  callback = callback || function() {};
+  callback = callback || function () { };
   // we need to build an array of promises for each message we're sending, run Promise.all(), and then that will resolve when every message has been sent (or failed)
   // per spec, each promise will execute *as it is built*, which is fine, we just need the guarantee that they are all done
   let promises = [];
@@ -356,7 +357,7 @@ function broadcastDeleteMessage(apObject, followers, eventID, callback) {
       // get the inbox
       Event.findOne({
         id: eventID,
-        }, function(err, event) {
+      }, function (err, event) {
         if (event) {
           const follower = event.followers.find(el => el.actorId === actorId);
           if (follower) {
@@ -369,7 +370,7 @@ function broadcastDeleteMessage(apObject, followers, eventID, callback) {
               'actor': `https://${domain}/${eventID}`,
               'object': apObject
             };
-            signAndSend(createMessage, eventID, targetDomain, inbox, function(err, resp, status) {
+            signAndSend(createMessage, eventID, targetDomain, inbox, function (err, resp, status) {
               if (err) {
                 console.log(`Didn't send to ${actorId}, status ${status} with error ${err}`);
                 reject(`Didn't send to ${actorId}, status ${status} with error ${err}`);
@@ -401,7 +402,7 @@ function broadcastDeleteMessage(apObject, followers, eventID, callback) {
 // this sends a message "to:" an individual fediverse user
 function sendDirectMessage(apObject, actorId, eventID, callback) {
   if (!isFederated) return;
-  callback = callback || function() {};
+  callback = callback || function () { };
   const guidCreate = crypto.randomBytes(16).toString('hex');
   const guidObject = crypto.randomBytes(16).toString('hex');
   let d = new Date();
@@ -426,7 +427,7 @@ function sendDirectMessage(apObject, actorId, eventID, callback) {
   // get the inbox
   Event.findOne({
     id: eventID,
-    }, function(err, event) {
+  }, function (err, event) {
     if (event) {
       const follower = event.followers.find(el => el.actorId === actorId);
       if (follower) {
@@ -446,7 +447,7 @@ function sendDirectMessage(apObject, actorId, eventID, callback) {
 
 function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
   if (!isFederated) return;
-  callback = callback || function() {};
+  callback = callback || function () { };
   const guid = crypto.randomBytes(16).toString('hex');
   const actorId = thebody.actor;
   let message = {
@@ -459,7 +460,7 @@ function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
   // get the inbox
   Event.findOne({
     id: eventID,
-    }, function(err, event) {
+  }, function (err, event) {
     if (event) {
       const follower = event.followers.find(el => el.actorId === actorId);
       if (follower) {
@@ -477,7 +478,7 @@ function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
 function _handleFollow(req, res) {
   const myURL = new URL(req.body.actor);
   let targetDomain = myURL.hostname;
-  let eventID = req.body.object.replace(`https://${domain}/`,'');
+  let eventID = req.body.object.replace(`https://${domain}/`, '');
   // Add the user to the DB of accounts that follow the account
   // get the follower's username
   request({
@@ -485,26 +486,27 @@ function _handleFollow(req, res) {
     headers: {
       'Accept': 'application/activity+json',
       'Content-Type': 'application/activity+json'
-    }}, function (error, response, body) {
-      body = JSON.parse(body)
-      const name = body.preferredUsername || body.name || body.attributedTo;
-      const newFollower = {
-        actorId: req.body.actor,
-        followId: req.body.id,
-        name: name,
-        actorJson: JSON.stringify(body)
-      };
-      Event.findOne({
-        id: eventID,
-        }, function(err,event) {
-        // if this account is NOT already in our followers list, add it
-        if (event && !event.followers.map(el => el.actorId).includes(req.body.actor)) {
-          event.followers.push(newFollower);
-          event.save()
+    }
+  }, function (error, response, body) {
+    body = JSON.parse(body)
+    const name = body.preferredUsername || body.name || body.attributedTo;
+    const newFollower = {
+      actorId: req.body.actor,
+      followId: req.body.id,
+      name: name,
+      actorJson: JSON.stringify(body)
+    };
+    Event.findOne({
+      id: eventID,
+    }, function (err, event) {
+      // if this account is NOT already in our followers list, add it
+      if (event && !event.followers.map(el => el.actorId).includes(req.body.actor)) {
+        event.followers.push(newFollower);
+        event.save()
           .then(() => {
             addToLog("addEventFollower", "success", "Follower added to event " + eventID);
             // Accept the follow request
-            sendAcceptMessage(req.body, eventID, targetDomain, function(err, resp, status) {
+            sendAcceptMessage(req.body, eventID, targetDomain, function (err, resp, status) {
               if (err) {
                 console.log(`Didn't send Accept to ${req.body.actor}, status ${status} with error ${err}`);
               }
@@ -521,12 +523,12 @@ function _handleFollow(req, res) {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "name": `RSVP to ${event.name}`,
                     "type": "Question",
-                     "content": `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}? (If you reply "Yes", you'll be listed as an attendee on the event page.)`,
-                     "oneOf": [
-                       {"type":"Note","name": "Yes"},
-                     ],
-                    "endTime":event.start.toISOString(),
-                    "tag":[{"type":"Mention","href":req.body.actor,"name":name}]
+                    "content": `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}? (If you reply "Yes", you'll be listed as an attendee on the event page.)`,
+                    "oneOf": [
+                      { "type": "Note", "name": "Yes" },
+                    ],
+                    "endTime": event.start.toISOString(),
+                    "tag": [{ "type": "Mention", "href": req.body.actor, "name": name }]
                   }
                   // send direct message to user
                   sendDirectMessage(jsonObject, req.body.actor, eventID, function (error, response, statuscode) {
@@ -535,7 +537,7 @@ function _handleFollow(req, res) {
                       return res.status(statuscode).json(error);
                     }
                     else {
-                      return res.status(statuscode).json({messageid: response});
+                      return res.status(statuscode).json({ messageid: response });
                     }
                   });
                 }
@@ -543,206 +545,210 @@ function _handleFollow(req, res) {
             });
           })
           .catch((err) => {
-            addToLog("addEventFollower", "error", "Attempt to add follower to event " + eventID + " failed with error: " + err); 
+            addToLog("addEventFollower", "error", "Attempt to add follower to event " + eventID + " failed with error: " + err);
             return res.status(500).send('Database error, please try again :(');
           });
-        }
-        else {
-          // this person is already a follower so just say "ok"
-          return res.status(200);
-        }
-      })
-    }) //end request
+      }
+      else {
+        // this person is already a follower so just say "ok"
+        return res.status(200);
+      }
+    })
+  }) //end request
 }
 
 function _handleUndoFollow(req, res) {
   // get the record of all followers for this account
-  const eventID = req.body.object.object.replace(`https://${domain}/`,'');
+  const eventID = req.body.object.object.replace(`https://${domain}/`, '');
   Event.findOne({
     id: eventID,
-    }, function(err,event) {
-      if (!event) return;
-      // check to see if the Follow object's id matches the id we have on record
-      // is this even someone who follows us
-      const indexOfFollower = event.followers.findIndex(el => el.actorId === req.body.object.actor);
-      if (indexOfFollower !== -1) {
-        // does the id we have match the id we are being given
-        if (event.followers[indexOfFollower].followId === req.body.object.id) {
-          // we have a match and can trust the Undo! remove this person from the followers list
-          event.followers.splice(indexOfFollower, 1);
-          event.save()
+  }, function (err, event) {
+    if (!event) return;
+    // check to see if the Follow object's id matches the id we have on record
+    // is this even someone who follows us
+    const indexOfFollower = event.followers.findIndex(el => el.actorId === req.body.object.actor);
+    if (indexOfFollower !== -1) {
+      // does the id we have match the id we are being given
+      if (event.followers[indexOfFollower].followId === req.body.object.id) {
+        // we have a match and can trust the Undo! remove this person from the followers list
+        event.followers.splice(indexOfFollower, 1);
+        event.save()
           .then(() => {
             addToLog("removeEventFollower", "success", "Follower removed from event " + eventID);
             return res.sendStatus(200);
           })
-          .catch((err) => { 
-            addToLog("removeEventFollower", "error", "Attempt to remove follower from event " + eventID + " failed with error: " + err); 
-            return res.send('Database error, please try again :('); 
+          .catch((err) => {
+            addToLog("removeEventFollower", "error", "Attempt to remove follower from event " + eventID + " failed with error: " + err);
+            return res.send('Database error, please try again :(');
           });
-        }
       }
+    }
   });
 }
 
 function _handleAcceptEvent(req, res) {
-  let {name, attributedTo, inReplyTo, to, actor} = req.body;
+  let { name, attributedTo, inReplyTo, to, actor } = req.body;
   if (Array.isArray(to)) {
     to = to[0];
   }
-  const eventID = to.replace(`https://${domain}/`,'');
+  const eventID = to.replace(`https://${domain}/`, '');
   Event.findOne({
     id: eventID,
-    }, function(err,event) {
-      if (!event) return;
-      // does the id we got match the id of a thing we sent out
-      const message = event.activityPubMessages.find(el => el.id === req.body.object);
-      if (message) {
-        // it's a match
-        request({
-          url: actor,
-          headers: {
-            'Accept': 'application/activity+json',
-            'Content-Type': 'application/activity+json'
-          }}, function (error, response, body) {
-            body = JSON.parse(body)
-            // if this account is NOT already in our attendees list, add it
-            if (!event.attendees.map(el => el.id).includes(actor)) {
-              const attendeeName = body.preferredUsername || body.name || actor;
-              const newAttendee = {
-                name: attendeeName,
-                status: 'attending',
-                id: actor
-              };
-              event.attendees.push(newAttendee);
-              event.save()
-              .then((fullEvent) => {
-                addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
-                // get the new attendee with its hidden id from the full event
-                let fullAttendee = fullEvent.attendees.find(el => el.id === actor);
-                // send a "click here to remove yourself" link back to the user as a DM
-                const jsonObject = {
-                  "@context": "https://www.w3.org/ns/activitystreams",
-                  "name": `RSVP to ${event.name}`,
-                  "type": "Note",
-                  "content": `<span class=\"h-card\"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
-                  "tag":[{"type":"Mention","href":newAttendee.id,"name":newAttendee.name}]
-                }
-                // send direct message to user
-                sendDirectMessage(jsonObject, newAttendee.id, event.id);
-                return res.sendStatus(200);
-              })
-              .catch((err) => { 
-                addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err);
-                return res.status(500).send('Database error, please try again :(');
-              });
-            }
-            else {
-              // it's a duplicate and this person is already rsvped so just say OK
-              return res.status(200).send("Attendee is already registered.");
-            }
-        });
-      }
-    });
+  }, function (err, event) {
+    if (!event) return;
+    // does the id we got match the id of a thing we sent out
+    const message = event.activityPubMessages.find(el => el.id === req.body.object);
+    if (message) {
+      // it's a match
+      request({
+        url: actor,
+        headers: {
+          'Accept': 'application/activity+json',
+          'Content-Type': 'application/activity+json'
+        }
+      }, function (error, response, body) {
+        body = JSON.parse(body)
+        // if this account is NOT already in our attendees list, add it
+        if (!event.attendees.map(el => el.id).includes(actor)) {
+          const attendeeName = body.preferredUsername || body.name || actor;
+          const newAttendee = {
+            name: attendeeName,
+            status: 'attending',
+            id: actor,
+            number: 1,
+          };
+          event.attendees.push(newAttendee);
+          event.save()
+            .then((fullEvent) => {
+              addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
+              // get the new attendee with its hidden id from the full event
+              let fullAttendee = fullEvent.attendees.find(el => el.id === actor);
+              // send a "click here to remove yourself" link back to the user as a DM
+              const jsonObject = {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "name": `RSVP to ${event.name}`,
+                "type": "Note",
+                "content": `<span class=\"h-card\"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
+                "tag": [{ "type": "Mention", "href": newAttendee.id, "name": newAttendee.name }]
+              }
+              // send direct message to user
+              sendDirectMessage(jsonObject, newAttendee.id, event.id);
+              return res.sendStatus(200);
+            })
+            .catch((err) => {
+              addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err);
+              return res.status(500).send('Database error, please try again :(');
+            });
+        }
+        else {
+          // it's a duplicate and this person is already rsvped so just say OK
+          return res.status(200).send("Attendee is already registered.");
+        }
+      });
+    }
+  });
 }
 
 function _handleUndoAcceptEvent(req, res) {
-  let {name, attributedTo, inReplyTo, to, actor} = req.body;
+  let { name, attributedTo, inReplyTo, to, actor } = req.body;
   if (Array.isArray(to)) {
     to = to[0];
   }
-  const eventID = to.replace(`https://${domain}/`,'');
+  const eventID = to.replace(`https://${domain}/`, '');
   Event.findOne({
     id: eventID,
-    }, function(err,event) {
+  }, function (err, event) {
     if (!event) return;
     // does the id we got match the id of a thing we sent out
     const message = event.activityPubMessages.find(el => el.id === req.body.object.object);
     if (message) {
       // it's a match
       Event.update(
-          { id: eventID },
-          { $pull: { attendees: { id: actor } } }
+        { id: eventID },
+        { $pull: { attendees: { id: actor } } }
       )
-      .then(response => {
-        addToLog("oneClickUnattend", "success", "Attendee removed via one click unattend " + req.params.eventID);
-      });
+        .then(response => {
+          addToLog("oneClickUnattend", "success", "Attendee removed via one click unattend " + req.params.eventID);
+        });
     }
   });
 }
 
 function _handleCreateNote(req, res) {
   // figure out what this is in reply to -- it should be addressed specifically to us
-  let {name, attributedTo, inReplyTo, to} = req.body.object;
+  let { name, attributedTo, inReplyTo, to } = req.body.object;
   // if it's an array just grab the first element, since a poll should only broadcast back to the pollster
   if (Array.isArray(to)) {
     to = to[0];
   }
-  const eventID = to.replace(`https://${domain}/`,'');
+  const eventID = to.replace(`https://${domain}/`, '');
   // make sure this person is actually a follower
   Event.findOne({
     id: eventID,
-    }, function(err,event) {
-      if (!event) return;
-      // is this even someone who follows us
-      const indexOfFollower = event.followers.findIndex(el => el.actorId === req.body.object.attributedTo);
-      if (indexOfFollower !== -1) {
-        // compare the inReplyTo to its stored message, if it exists and it's going to the right follower then this is a valid reply
-        const message = event.activityPubMessages.find(el => {
-          const content = JSON.parse(el.content);
-          return inReplyTo === (content.object && content.object.id);
-        });
-        if (message) {
-          const content = JSON.parse(message.content);
-          // check if the message we sent out was sent to the actor this incoming message is attributedTo
-          if (content.to[0] === attributedTo) {
-            // it's a match, this is a valid poll response, add RSVP to database
-            // fetch the profile information of the user
-            request({
-              url: attributedTo,
-              headers: {
-                'Accept': 'application/activity+json',
-                'Content-Type': 'application/activity+json'
-              }}, function (error, response, body) {
-                body = JSON.parse(body)
-                // if this account is NOT already in our attendees list, add it
-                if (!event.attendees.map(el => el.id).includes(attributedTo)) {
-                  const attendeeName = body.preferredUsername || body.name || attributedTo;
-                  const newAttendee = {
-                    name: attendeeName,
-                    status: 'attending',
-                    id: attributedTo
-                  };
-                  event.attendees.push(newAttendee);
-                  event.save()
-                  .then((fullEvent) => {
-                    addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
-                    // get the new attendee with its hidden id from the full event
-                    let fullAttendee = fullEvent.attendees.find(el => el.id === attributedTo);
-                    // send a "click here to remove yourself" link back to the user as a DM
-                    const jsonObject = {
-                      "@context": "https://www.w3.org/ns/activitystreams",
-                      "name": `RSVP to ${event.name}`,
-                      "type": "Note",
-                      "content": `<span class=\"h-card\"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
-                      "tag":[{"type":"Mention","href":newAttendee.id,"name":newAttendee.name}]
-                    }
-                    // send direct message to user
-                    sendDirectMessage(jsonObject, newAttendee.id, event.id);
-                    return res.sendStatus(200);
-                  })
-                  .catch((err) => {
-                    addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err);
-                    return res.status(500).send('Database error, please try again :(');
-                  });
-                }
-                else {
-                  // it's a duplicate and this person is already rsvped so just say OK
-                  return res.status(200).send("Attendee is already registered.");
-                }
-            });
-          }
+  }, function (err, event) {
+    if (!event) return;
+    // is this even someone who follows us
+    const indexOfFollower = event.followers.findIndex(el => el.actorId === req.body.object.attributedTo);
+    if (indexOfFollower !== -1) {
+      // compare the inReplyTo to its stored message, if it exists and it's going to the right follower then this is a valid reply
+      const message = event.activityPubMessages.find(el => {
+        const content = JSON.parse(el.content);
+        return inReplyTo === (content.object && content.object.id);
+      });
+      if (message) {
+        const content = JSON.parse(message.content);
+        // check if the message we sent out was sent to the actor this incoming message is attributedTo
+        if (content.to[0] === attributedTo) {
+          // it's a match, this is a valid poll response, add RSVP to database
+          // fetch the profile information of the user
+          request({
+            url: attributedTo,
+            headers: {
+              'Accept': 'application/activity+json',
+              'Content-Type': 'application/activity+json'
+            }
+          }, function (error, response, body) {
+            body = JSON.parse(body)
+            // if this account is NOT already in our attendees list, add it
+            if (!event.attendees.map(el => el.id).includes(attributedTo)) {
+              const attendeeName = body.preferredUsername || body.name || attributedTo;
+              const newAttendee = {
+                name: attendeeName,
+                status: 'attending',
+                id: attributedTo,
+                number: 1,
+              };
+              event.attendees.push(newAttendee);
+              event.save()
+                .then((fullEvent) => {
+                  addToLog("addEventAttendee", "success", "Attendee added to event " + req.params.eventID);
+                  // get the new attendee with its hidden id from the full event
+                  let fullAttendee = fullEvent.attendees.find(el => el.id === attributedTo);
+                  // send a "click here to remove yourself" link back to the user as a DM
+                  const jsonObject = {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "name": `RSVP to ${event.name}`,
+                    "type": "Note",
+                    "content": `<span class=\"h-card\"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
+                    "tag": [{ "type": "Mention", "href": newAttendee.id, "name": newAttendee.name }]
+                  }
+                  // send direct message to user
+                  sendDirectMessage(jsonObject, newAttendee.id, event.id);
+                  return res.sendStatus(200);
+                })
+                .catch((err) => {
+                  addToLog("addEventAttendee", "error", "Attempt to add attendee to event " + req.params.eventID + " failed with error: " + err);
+                  return res.status(500).send('Database error, please try again :(');
+                });
+            }
+            else {
+              // it's a duplicate and this person is already rsvped so just say OK
+              return res.status(200).send("Attendee is already registered.");
+            }
+          });
         }
       }
+    }
   });
 }
 
@@ -750,8 +756,8 @@ function _handleDelete(req, res) {
   const deleteObjectId = req.body.object.id;
   // find all events with comments from the author
   Event.find({
-    "comments.actorId":req.body.actor
-    }, function(err,events) {
+    "comments.actorId": req.body.actor
+  }, function (err, events) {
     if (!events) {
       return res.sendStatus(404);
     }
@@ -778,20 +784,20 @@ function _handleDelete(req, res) {
     });
     eventWithComment.comments.splice(indexOfComment, 1);
     eventWithComment.save()
-    .then(() => {
-      addToLog("deleteComment", "success", "Comment deleted from event " + eventWithComment.id);
-      return res.sendStatus(200);
-    })
-    .catch((err) => {
-      addToLog("deleteComment", "error", "Attempt to delete comment " + req.body.object.id + "from event " + eventWithComment.id + " failed with error: " + err);
-      return res.sendStatus(500); 
-    });
+      .then(() => {
+        addToLog("deleteComment", "success", "Comment deleted from event " + eventWithComment.id);
+        return res.sendStatus(200);
+      })
+      .catch((err) => {
+        addToLog("deleteComment", "error", "Attempt to delete comment " + req.body.object.id + "from event " + eventWithComment.id + " failed with error: " + err);
+        return res.sendStatus(500);
+      });
   });
 }
 
 function _handleCreateNoteComment(req, res) {
   // figure out what this is in reply to -- it should be addressed specifically to us
-  let {attributedTo, inReplyTo, to, cc} = req.body.object;
+  let { attributedTo, inReplyTo, to, cc } = req.body.object;
   // normalize cc into an array
   if (typeof cc === 'string') {
     cc = [cc];
@@ -800,12 +806,12 @@ function _handleCreateNoteComment(req, res) {
   if (typeof to === 'string') {
     to = [to];
   }
-  
+
   // if this is a public message (in the to or cc fields)
   if (to.includes('https://www.w3.org/ns/activitystreams#Public') || (Array.isArray(cc) && cc.includes('https://www.w3.org/ns/activitystreams#Public'))) {
     // figure out which event(s) of ours it was addressing
     let ourEvents = cc.filter(el => el.includes(`https://${domain}/`))
-                  .map(el => el.replace(`https://${domain}/`,''));
+      .map(el => el.replace(`https://${domain}/`, ''));
     // comments should only be on one event. if more than one, ignore (spam, probably) 
     if (ourEvents.length === 1) {
       let eventID = ourEvents[0];
@@ -817,7 +823,8 @@ function _handleCreateNoteComment(req, res) {
         headers: {
           'Accept': 'application/activity+json',
           'Content-Type': 'application/activity+json'
-        }}, function (error, response, actor) {
+        }
+      }, function (error, response, actor) {
         if (!error) {
           const parsedActor = JSON.parse(actor);
           const name = parsedActor.preferredUsername || parsedActor.name || req.body.actor;
@@ -826,7 +833,7 @@ function _handleCreateNoteComment(req, res) {
             actorId: req.body.actor,
             activityId: req.body.object.id,
             author: name,
-            content: sanitizeHtml(req.body.object.content, {allowedTags: [], allowedAttributes: {}}).replace('@'+eventID,''),
+            content: sanitizeHtml(req.body.object.content, { allowedTags: [], allowedAttributes: {} }).replace('@' + eventID, ''),
             timestamp: moment(),
             activityJson: JSON.stringify(req.body),
             actorJson: actor
@@ -834,7 +841,7 @@ function _handleCreateNoteComment(req, res) {
 
           Event.findOne({
             id: eventID,
-            }, function(err,event) {
+          }, function (err, event) {
             if (!event) {
               return res.sendStatus(404);
             }
@@ -843,18 +850,18 @@ function _handleCreateNoteComment(req, res) {
             }
             event.comments.push(newComment);
             event.save()
-            .then(() => {
-              addToLog("addEventComment", "success", "Comment added to event " + eventID);
-              const guidObject = crypto.randomBytes(16).toString('hex');
-              const jsonObject = req.body.object;
-              jsonObject.attributedTo = newComment.actorId;
-              broadcastAnnounceMessage(jsonObject, event.followers, eventID)
-              return res.sendStatus(200);
-            })
-            .catch((err) => {
-              addToLog("addEventComment", "error", "Attempt to add comment to event " + eventID + " failed with error: " + err);
-              res.status(500).send('Database error, please try again :(' + err);
-            });
+              .then(() => {
+                addToLog("addEventComment", "success", "Comment added to event " + eventID);
+                const guidObject = crypto.randomBytes(16).toString('hex');
+                const jsonObject = req.body.object;
+                jsonObject.attributedTo = newComment.actorId;
+                broadcastAnnounceMessage(jsonObject, event.followers, eventID)
+                return res.sendStatus(200);
+              })
+              .catch((err) => {
+                addToLog("addEventComment", "error", "Attempt to add comment to event " + eventID + " failed with error: " + err);
+                res.status(500).send('Database error, please try again :(' + err);
+              });
           });
         }
       });
@@ -894,7 +901,7 @@ function processInbox(req, res) {
       _handleCreateNoteComment(req, res);
     } // CC'ed
   }
-  catch(e) {
+  catch (e) {
     console.log('Error in processing inbox:', e)
   }
 }

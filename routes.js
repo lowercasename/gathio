@@ -83,7 +83,7 @@ function render_plain() {
 }
 
 const ical = require('ical');
-const {exportIcal} = require('./helpers.js');
+const { exportIcal } = require('./helpers.js');
 
 const sgMail = require('@sendgrid/mail');
 const nodemailer = require("nodemailer");
@@ -185,7 +185,7 @@ router.get('/', (req, res) => {
     domain,
     email: contactEmail,
     siteName,
-    showKofi, 
+    showKofi,
   });
 });
 
@@ -627,7 +627,7 @@ router.get('/exportevent/:eventID', (req, res) => {
     .populate('eventGroup')
     .then((event) => {
       if (event) {
-        const string = exportIcal([ event ]);
+        const string = exportIcal([event]);
         res.send(string);
       }
     })
@@ -764,7 +764,7 @@ router.post('/newevent', async (req, res) => {
               if (acc.includes(current.email)) {
                 return acc;
               }
-              return [ current.email, ...acc ];
+              return [current.email, ...acc];
             }, []);
             subscribers.forEach(emailAddress => {
               req.app.get('hbsInstance').renderView('./views/emails/eventgroupupdated.handlebars', { siteName, siteLogo, domain, eventID: req.params.eventID, eventGroupName: eventGroup.name, eventName: event.name, eventID: event.id, eventGroupID: eventGroup.id, emailAddress: encodeURIComponent(emailAddress), cache: true, layout: 'email.handlebars' }, function (err, html) {
@@ -1437,7 +1437,7 @@ router.post('/attendevent/:eventID', async (req, res) => {
     return res.sendStatus(403);
   }
 
-  Event.findOneAndUpdate({ id: req.params.eventID, 'attendees.removalPassword': req.body.removalPassword }, { 
+  Event.findOneAndUpdate({ id: req.params.eventID, 'attendees.removalPassword': req.body.removalPassword }, {
     "$set": {
       "attendees.$.status": "attending",
       "attendees.$.name": req.body.attendeeName,
@@ -1660,30 +1660,30 @@ router.post('/subscribe/:eventGroupID', (req, res) => {
       eventGroup.save();
       if (sendEmails) {
         req.app.get('hbsInstance').renderView('./views/emails/subscribed.handlebars', { eventGroupName: eventGroup.name, eventGroupID: eventGroup.id, emailAddress: encodeURIComponent(subscriber.email), siteName, siteLogo, domain, cache: true, layout: 'email.handlebars' }, function (err, html) {
-            const msg = {
-              to: subscriber.email,
-              from: {
-                name: siteName,
-                email: contactEmail,
-              },
-              subject: `${siteName}: You have subscribed to an event group`,
-              html,
-            };
-            switch (mailService) {
-              case 'sendgrid':
-                sgMail.send(msg).catch(e => {
-                  console.error(e.toString());
-                  res.status(500).end();
-                });
-                break;
-              case 'nodemailer':
-                nodemailerTransporter.sendMail(msg).catch(e => {
-                  console.error(e.toString());
-                  res.status(500).end();
-                });
-                break;
-            }
-          });
+          const msg = {
+            to: subscriber.email,
+            from: {
+              name: siteName,
+              email: contactEmail,
+            },
+            subject: `${siteName}: You have subscribed to an event group`,
+            html,
+          };
+          switch (mailService) {
+            case 'sendgrid':
+              sgMail.send(msg).catch(e => {
+                console.error(e.toString());
+                res.status(500).end();
+              });
+              break;
+            case 'nodemailer':
+              nodemailerTransporter.sendMail(msg).catch(e => {
+                console.error(e.toString());
+                res.status(500).end();
+              });
+              break;
+          }
+        });
       }
       return res.redirect(`/group/${eventGroup.id}`)
     })
