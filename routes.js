@@ -1411,7 +1411,12 @@ router.post('/attendee/provision', async (req, res) => {
   addToLog("provisionEventAttendee", "success", "Attendee provisioned in event " + req.query.eventID);
 
   // Return the removal password and the number of free spots remaining
-  const freeSpots = event.maxAttendees - event.attendees.reduce((acc, a) => acc + (a.status === 'attending' ? (a.number || 1) : 0), 0);
+  let freeSpots;
+  if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
+    freeSpots = event.maxAttendees - event.attendees.reduce((acc, a) => acc + (a.status === 'attending' ? (a.number || 1) : 0), 0);
+  } else {
+    freeSpots = undefined;
+  }
   return res.json({ removalPassword, freeSpots });
 });
 
@@ -1432,9 +1437,12 @@ router.post('/attendevent/:eventID', async (req, res) => {
     return res.sendStatus(404);
   }
   // Do we have enough free spots in this event to accomodate this attendee?
-  const freeSpots = event.maxAttendees - event.attendees.reduce((acc, a) => acc + (a.status === 'attending' ? (a.number || 1) : 0), 0);
-  if (req.body.attendeeNumber > freeSpots) {
-    return res.sendStatus(403);
+  // First, check if the event has a max number of attendees
+  if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
+    const freeSpots = event.maxAttendees - event.attendees.reduce((acc, a) => acc + (a.status === 'attending' ? (a.number || 1) : 0), 0);
+    if (req.body.attendeeNumber > freeSpots) {
+      return res.sendStatus(403);
+    }
   }
 
   Event.findOneAndUpdate({ id: req.params.eventID, 'attendees.removalPassword': req.body.removalPassword }, {
