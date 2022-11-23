@@ -341,8 +341,11 @@ function broadcastUpdateMessage(apObject, followers, eventID) {
 }
 
 function broadcastDeleteMessage(apObject, followers, eventID, callback) {
-  if (!isFederated) return;
   callback = callback || function () { };
+  if (!isFederated) {
+    callback([]);
+    return;
+  }
   // we need to build an array of promises for each message we're sending, run Promise.all(), and then that will resolve when every message has been sent (or failed)
   // per spec, each promise will execute *as it is built*, which is fine, we just need the guarantee that they are all done
   let promises = [];
