@@ -377,7 +377,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="deleteEventForm" action="/deleteevent/{{eventData.id}}" method="post">
+      <form id="deleteEventForm" action="/deleteevent/{{eventData.id}}/{{eventData.editToken}}" method="post">
       <div class="modal-body">
         <p>Are you sure you want to delete this event? This action cannot be undone.</p>
       </div>

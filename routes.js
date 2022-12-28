@@ -1279,47 +1279,46 @@ router.post('/deleteevent/:eventID/:editToken', (req, res) => {
                 'Location': '/'
               });
               res.end();
+
+              // Send emails here otherwise they don't exist lol
+              if (sendEmails) {
+                  const attendeeEmails = event.attendees.filter(o => o.status === 'attending' && o.email).map(o => o.email);
+                  if (attendeeEmails.length) {
+                    console.log("Sending emails to: " + attendeeEmails);
+                    req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', { siteName, siteLogo, domain, eventName: event.name, cache: true, layout: 'email.handlebars' }, function (err, html) {
+                      const msg = {
+                        to: attendeeEmails,
+                        from: {
+                          name: siteName,
+                          email: contactEmail,
+                          address: contactEmail
+                        },
+                        subject: `${siteName}: ${event.name} was deleted`,
+                        html,
+                      };
+                      switch (mailService) {
+                        case 'sendgrid':
+                          sgMail.sendMultiple(msg).catch(e => {
+                            console.error(e.toString());
+                            res.status(500).end();
+                          });
+                          break;
+                        case 'nodemailer':
+                          nodemailerTransporter.sendMail(msg).catch(e => {
+                            console.error(e.toString());
+                            res.status(500).end();
+                          });
+                          break;
+                      }
+                    });
+                  }
+                  else {
+                    console.log("Nothing to send!");
+                  }
+              }
             })
             .catch((err) => { res.send('Sorry! Something went wrong (error deleting): ' + err); addToLog("deleteEvent", "error", "Attempt to delete event " + req.params.eventID + " failed with error: " + err); });
         });
-        // Send emails here otherwise they don't exist lol
-        if (sendEmails) {
-          Event.findOne({ id: req.params.eventID }).then((event) => {
-            const attendeeEmails = event.attendees.filter(o => o.status === 'attending' && o.email).map(o => o.email);
-            if (attendeeEmails.length) {
-              console.log("Sending emails to: " + attendeeEmails);
-              req.app.get('hbsInstance').renderView('./views/emails/deleteevent.handlebars', { siteName, siteLogo, domain, eventName: event.name, cache: true, layout: 'email.handlebars' }, function (err, html) {
-                const msg = {
-                  to: attendeeEmails,
-                  from: {
-                    name: siteName,
-                    email: contactEmail,
-                    address: contactEmail
-                  },
-                  subject: `${siteName}: ${event.name} was deleted`,
-                  html,
-                };
-                switch (mailService) {
-                  case 'sendgrid':
-                    sgMail.sendMultiple(msg).catch(e => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                  case 'nodemailer':
-                    nodemailerTransporter.sendMail(msg).catch(e => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                }
-              });
-            }
-            else {
-              console.log("Nothing to send!");
-            }
-          });
-        }
       }
       else {
         // Token doesn't match
