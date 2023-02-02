@@ -670,14 +670,18 @@ router.post('/newevent', async (req, res) => {
   let isPartOfEventGroup = false;
   if (req.files && Object.keys(req.files).length !== 0) {
     let eventImageBuffer = req.files.imageUpload.data;
-    Jimp.read(eventImageBuffer, (err, img) => {
-      if (err) addToLog("Jimp", "error", "Attempt to edit image failed with error: " + err);
-      img
-        .resize(920, Jimp.AUTO) // resize
-        .quality(80) // set JPEG quality
-        .write('./public/events/' + eventID + '.jpg'); // save
-    });
-    eventImageFilename = eventID + '.jpg';
+    eventImageFilename = await Jimp.read(eventImageBuffer)
+      .then(img => {
+        img
+          .resize(920, Jimp.AUTO) // resize
+          .quality(80) // set JPEG quality
+          .write('./public/events/' + eventID + '.jpg'); // save
+        const filename = eventID + '.jpg';
+        return filename;
+        })
+      .catch(err => {
+        addToLog("Jimp", "error", "Attempt to edit image failed with error: " + err);
+      });
   }
   let startUTC = moment.tz(req.body.eventStart, 'D MMMM YYYY, hh:mm a', req.body.timezone);
   let endUTC = moment.tz(req.body.eventEnd, 'D MMMM YYYY, hh:mm a', req.body.timezone);
