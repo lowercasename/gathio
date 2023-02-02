@@ -3,9 +3,10 @@
 {{else}}
   <div id="genericEventImageContainer" style="background-image: url(/images/seigaiha.png);"></div>
 {{/if}}
+<div class="h-event">
 <div class="row">
   <div class="col-lg">
-      <h3 id="eventName" data-event-id="{{eventData.id}}">{{eventData.name}}</h3>
+      <h3 class="p-name" id="eventName" data-event-id="{{eventData.id}}">{{eventData.name}}</h3>
   </div>
   <div class="col-lg-3 ml-2 edit-buttons">
     {{#if editingEnabled}}
@@ -24,13 +25,13 @@
             <span class="fa-li">
               <i class="fas fa-map-marker-alt"></i>
             </span>
-            {{eventData.location}}
+            <span class="p-location">{{eventData.location}}</span>
           </li>
           <li>
             <span class="fa-li">
               <i class="fas fa-fw fa-calendar-day"></i>
             </span>
-            {{{displayDate}}}
+            <span class="dt-duration">{{{displayDate}}}</span>
             <br>
             <span class="text-muted">
               {{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
@@ -66,7 +67,7 @@
             <span class="fa-li">
               <i class="fas fa-fw fa-share-square"></i>
             </span>
-            <a href="https://{{domain}}/{{eventData.id}}">https://{{domain}}/{{eventData.id}}</a>
+            <a class="u-url" href="https://{{domain}}/{{eventData.id}}">https://{{domain}}/{{eventData.id}}</a>
             <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
               <i class="fas fa-copy"></i> Copy
             </button>
@@ -121,7 +122,7 @@
 {{/if}}
 <div class="card mb-4" id="eventDescription">
   <h5 class="card-header">About</h5>
-  <div class="card-body">
+  <div class="card-body p-summary">
     {{{parsedDescription}}}
   </div>
 </div>
@@ -228,7 +229,7 @@
     </div>
   </div>
 </div>
-
+</div>
   {{#if editingEnabled}}
   <div class="modal fade" id="removeAttendeeModal" tabindex="-1" role="dialog" aria-labelledby="removeAttendeeModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
