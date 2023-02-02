@@ -7,7 +7,7 @@
     "start": "nodemon ./start.js"
   },
   "engines": {
-    "node": ">=10.18.1"
+    "node": ">=16.16.0"
   },
   "keywords": [],
   "author": "",

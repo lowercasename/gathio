@@ -1,4 +1,4 @@
-FROM node:13-alpine
+FROM node:16-alpine
 WORKDIR /app
 RUN apk add --no-cache python3 build-base
 ADD package.json package-lock.json /app/
