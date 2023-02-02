@@ -11,7 +11,7 @@ const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklm
 
 const randomstring = require("randomstring");
 
-const { body, validationResult } = require('express-validator/check');
+const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
 

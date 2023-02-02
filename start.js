@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const databaseCredentials = require('./config/database.js');
 const port = require('./config/domain.js').port;
 
-mongoose.connect(databaseCredentials.url, { useNewUrlParser: true });
+mongoose.connect(databaseCredentials.url, { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.set('useCreateIndex', true);
 mongoose.Promise = global.Promise;
 mongoose.connection
