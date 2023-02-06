@@ -32,6 +32,8 @@
               <i class="fas fa-fw fa-calendar-day"></i>
             </span>
             <span class="dt-duration">{{{displayDate}}}</span>
+            <time class="dt-start" datetime="{{eventStartISO}}"></time>
+            <time class="dt-end" datetime="{{eventEndISO}}"></time>
             <br>
             <span class="text-muted">
               {{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
