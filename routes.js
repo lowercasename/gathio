@@ -103,7 +103,7 @@ if (mailService) {
       nodemailerTransporter = nodemailer.createTransport({
         host: apiCredentials.smtpServer,
         port: apiCredentials.smtpPort,
-        secure: false, // true for 465, false for other ports
+        secure: apiCredentials.smtpSecure, // true for 465, false for other ports
         auth: {
           user: apiCredentials.smtpUsername, // generated ethereal user
           pass: apiCredentials.smtpPassword, // generated ethereal password

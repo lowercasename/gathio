@@ -2,7 +2,7 @@
   <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editModalLabel">Edit '{{eventData.name}}'</h5>
+        <h5 class="modal-title" id="editModalLabel">{{{__ "edit"}}} '{{eventData.name}}'</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -11,93 +11,88 @@
         <form id="editEventForm" action="/editevent/{{eventData.id}}/{{eventData.editToken}}" method="post"
           enctype="multipart/form-data" autocomplete="off">
           <div class="form-group">
-            <label for="eventName" class="col-form-label">Event name</label>
+            <label for="eventName" class="col-form-label">{{{__ "eventname"}}}</label>
             <input type="text" class="form-control" id="eventName" name="eventName"
-              placeholder="Make it snappy." value="{{eventData.name}}" data-validation="required length"
+              placeholder="{{{__ "snappy"}}}" value="{{eventData.name}}" data-validation="required length"
               data-validation-length="3-120">
           </div>
           <div class="form-group">
-            <label for="eventLocation" class="col-form-label">Location</label>
+            <label for="eventLocation" class="col-form-label">{{{__ "location"}}}</label>
             <input type="text" class="form-control" id="eventLocation" name="eventLocation"
-              placeholder="Be specific." value="{{eventData.location}}" data-validation="required length"
+              placeholder="{{{__ "specific"}}}" value="{{eventData.location}}" data-validation="required length"
               data-validation-length="3-120">
           </div>
           <div class="form-group">
-            <label for="eventStart" class="col-form-label">Starts</label>
+            <label for="eventStart" class="col-form-label">{{{__ "starts"}}}</label>
             <input readonly type="text" class="form-control" id="eventStart" name="eventStart" value=""
               data-validation="required">
           </div>
           <div class="form-group">
-            <label for="eventEnd" class="col-form-label">Ends</label>
+            <label for="eventEnd" class="col-form-label">{{{__ "ends"}}}</label>
             <input readonly type="text" class="form-control" id="eventEnd" name="eventEnd" value=""
               data-validation="required">
           </div>
           <div class="form-group">
-            <label for="timezone" class="col-form-label">Timezone</label>
+            <label for="timezone" class="col-form-label">{{{__ "timezone"}}}</label>
             <select class="select2" id="timezone" name="timezone"></select>
           </div>
           <div class="form-group">
-            <label for="eventDescription" class="col-form-label">Description</label>
+            <label for="eventDescription" class="col-form-label">{{{__ "description"}}}</label>
             <textarea class="form-control" id="eventDescription" name="eventDescription"
               data-validation="required">{{eventData.description}}</textarea>
-            <small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting
-              supported.</small>
+            <small class="form-text">{{{__ "mdsupport"}}}</small>
           </div>
           <div class="form-group">
-            <label for="eventURL" class="col-form-label">Link</label>
+            <label for="eventURL" class="col-form-label">{{{__ "link"}}}</label>
             <input type="url" class="form-control" id="eventURL" name="eventURL" value="{{eventData.url}}"
-              placeholder="For tickets or another event page (optional)." data-validation="url"
+              placeholder="{{{__ "anotherpage"}}}" data-validation="url"
               data-validation-optional="true">
           </div>
           <div class="form-group">
-            <label for="hostName" class="col-form-label">Host name</label>
+            <label for="hostName" class="col-form-label">{{{__ "hostname"}}}</label>
             <input type="text" class="form-control" id="hostName" name="hostName"
-              placeholder="Will be shown on the event page (optional)." value="{{eventData.hostName}}"
+              placeholder="{{{__ "isshowpage"}}}" value="{{eventData.hostName}}"
               data-validation="length" data-validation-length="3-120" data-validation-optional="true">
           </div>
           <div class="form-group">
-            <label for="eventImage" class="col-form-label">Cover image</label>
+            <label for="eventImage" class="col-form-label">{{{__ "coverimg"}}}</label>
             <div class="image-preview" id="image-preview">
-              <label for="image-upload" id="image-label">Choose file</label>
+              <label for="image-upload" id="image-label">{{{__ "choosefile"}}}</label>
               <input type="file" name="imageUpload" id="image-upload" />
             </div>
-            <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
+            <small class="form-text">{{{__ "recommendeddimensions"}}}</small>
             {{#if eventData.image}}
-              <button type="button" class="btn btn-danger" id="deleteImage">Delete image</button>
+              <button type="button" class="btn btn-danger" id="deleteImage">{{{__ "imgdel"}}}</button>
             {{/if}}
           </div>
           <div class="form-group">
-            <div class="mb-2">Options</div>
+            <div class="mb-2">{{{__ "options"}}}</div>
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="eventGroupCheckbox"
                 name="eventGroupCheckbox" {{#if eventData.eventGroup}}checked{{/if}}>
               <label class="form-check-label" for="eventGroupCheckbox">
-                This event is part of an event group
+                {{{__ "grouppart"}}}
               </label>
             </div>
             <div class="card text-white bg-secondary my-2" id="eventGroupData" {{#if eventData.eventGroup}}style="display:flex" {{/if}}>
               <div class="card-header">
-                <strong>Link this event to an event group</strong>
+                <strong>{{{__ "linktogroup"}}}</strong>
               </div>
               <div class="card-body">
                 <div class="form-group">
-                  <label for="eventGroupID" class="form-label">Event group ID</label>
+                  <label for="eventGroupID" class="form-label">{{{__ "eventgroupid"}}}</label>
                   <div class="form-group">
                     <input type="text" class="form-control" id="eventGroupID" name="eventGroupID"
                       placeholder="" data-validation-optional="true" value="{{eventData.eventGroup.id}}">
-                    <small class="form-text">You can find this short string of characters in the
-                      event group's link, in your confirmation email, or on the event group's
-                      page.</small>
+                    <small class="form-text">{{{__ "shortstringdesc"}}}</small>
                   </div>
                 </div>
                 <div class="form-group">
-                  <label for="eventGroupEditToken" class="form-label">Event group secret
-                    editing code</label>
+                  <label for="eventGroupEditToken" class="form-label">{{{__ "groupsecretcode"}}}</label>
                   <div class="form-group">
                     <input type="text" class="form-control" id="eventGroupEditToken"
                       name="eventGroupEditToken" placeholder="" data-validation-optional="true" value="{{eventData.eventGroup.editToken}}">
-                    <small class="form-text">You can find this long string of characters in the
-                      confirmation email you received when you created the event group.</small>
+                    <small class="form-text">{{{__ "longstringdesc"}}}</small>
                   </div>
                 </div>
               </div>
@@ -106,7 +101,7 @@
               <input class="form-check-input" type="checkbox" id="interactionCheckbox"
                 name="interactionCheckbox" {{#if eventData.usersCanComment}}checked{{/if}}>
               <label class="form-check-label" for="interactionCheckbox">
-                Users can post comments on this event
+                {{{__ "commentmod"}}}
               </label>
             </div>
             <div class="form-check">
@@ -114,7 +109,7 @@
                 type="checkbox" id="joinCheckbox" name="joinCheckbox"
                 {{#if eventData.usersCanAttend}}checked{{/if}}>
               <label class="form-check-label" for="joinCheckbox">
-                Users can mark themselves as attending this event
+                {{{__ "selfmark"}}}
               </label>
             </div>
             <div class="form-check" id="maxAttendeesCheckboxContainer"
@@ -122,30 +117,30 @@
               <input class="form-check-input" type="checkbox" id="maxAttendeesCheckbox"
                 name="maxAttendeesCheckbox" {{#if eventData.maxAttendees}}checked{{/if}}>
               <label class="form-check-label" for="maxAttendeesCheckbox">
-                Set a limit on the maximum number of attendees
+                {{{__ "limitset"}}}
               </label>
             </div>
           </div>
           <div class="form-group" id="maxAttendeesContainer"
             {{#if eventData.maxAttendees}}style="display:flex" {{/if}}>
-            <label for="maxAttendees" class="col-form-label">Attendee limit</label>
+            <label for="maxAttendees" class="col-form-label">{{{__ "attendeelimit"}}}</label>
             <input type="number" class="form-control" id="maxAttendees" name="maxAttendees"
-              placeholder="Enter a number." data-validation="number" data-validation-optional="true"
+              placeholder="{{{__ "enternum"}}}" data-validation="number" data-validation-optional="true"
               value="{{eventData.maxAttendees}}">
           </div>
 
           <div class="form-group">
             <div class="card border-danger mb-3">
-              <div class="card-header text-danger">Delete this event</div>
+              <div class="card-header text-danger">{{{__ "delevent"}}}</div>
               <div class="card-body text-danger">
-                <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal" data-event-id="{{eventData.id}}"><i class="fas fa-trash"></i> Delete</button>
+                <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal" data-event-id="{{eventData.id}}"><i class="fas fa-trash"></i> {{{__ "del"}}}</button>
               </div>
             </div>
           </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+        <button type="submit" class="btn btn-primary">{{{__ "save"}}}</button>
         </form>
       </div>
     </div>

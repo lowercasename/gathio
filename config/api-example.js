@@ -4,5 +4,6 @@ module.exports = {
     'smtpServer': '', // If using Nodemailer, your SMTP server hostname goes here
     'smtpPort': '', // If using Nodemailer, your SMTP server port goes here
     'smtpUsername': '', // If using Nodemailer, your SMTP server username goes here
-    'smtpPassword': '' // If using Nodemailer, your SMTP password goes here
+    'smtpPassword': '', // If using Nodemailer, your SMTP password goes here
+    'smtpSecure': true // true for 465, false for other ports
 };

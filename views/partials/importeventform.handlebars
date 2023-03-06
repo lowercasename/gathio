@@ -1,6 +1,6 @@
-<h4 class="mb-2">Import an existing event</h4>
+<h4 class="mb-2">{{{__ "importevent"}}}</h4>
 <p>
-  Upload an .ics file here to instantly create an event. You can save a Facebook event as an .ics file by clicking on the context menu next to the 'Import' and 'Edit' buttons on the event page and choosing the 'Export Event' option. Then select the 'Save to calendar' option and save the file on your computer.
+  {{{__ "importdesc"}}}
 </p>
 
 <img class="img-thumbnail mb-3 d-block mx-auto" src="/images/facebook-export.png" alt="Image showing the location of the export option on Facebook" />
@@ -10,16 +10,16 @@
     <div class="custom-file" id="icsImportContainer">
     <input required name="icsImportControl" type="file" class="custom-file-input" id="icsImportControl" aria-describedby="fileHelp" accept="text/calendar">
     <label name="icsImportLabel" class="custom-file-label" id="icsImportLabel" for="icsImportControl">
-       <i class="far fa-file-alt"></i> Select file
+       <i class="far fa-file-alt"></i> {{{__ "selectfile"}}}
     </label>
   </div>
   </div>
   <div class="form-group">
-    <label for="creatorEmail" class="form-label">Your email</label>
+    <label for="creatorEmail" class="form-label">{{{__ "youremail"}}}</label>
     <div class="form-group">
-      <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="We won't spam you <3" data-validation="email" data-validation-optional="true">
-      <small class="form-text">We will send your secret editing link to this email address.</small>
+      <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="{{{__ "notspam"}}} <3" data-validation="email" data-validation-optional="true">
+      <small class="form-text">{{{__ "emaildesc"}}}</small>
     </div>
   </div>
-  <button type="submit" class="d-block mt-3 mx-auto btn btn-primary w-50">Import</button>
+  <button type="submit" class="d-block mt-3 mx-auto btn btn-primary w-50">{{{__ "import"}}}</button>
 </form>

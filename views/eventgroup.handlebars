@@ -9,9 +9,9 @@
   </div>
   <div class="col-lg-2 ml-2 edit-buttons">
     {{#if editingEnabled}}
-      <button type="button" id="editEvent" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit group</button>
+      <button type="button" id="editEvent" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{{__ "editgroup"}}}</button>
     {{else}}
-      <button type="button" id="editEvent" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Edit group</button>
+      <button type="button" id="editEvent" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{{__ "editgroup"}}}</button>
     {{/if}}
   </div>
 </div>
@@ -20,7 +20,7 @@
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
-  Welcome to your event group! We've just sent you an email with your secret editing link, which you can also see in the address bar above. Haven't got the email? Check your spam or junk folder. To share your event group, use the link you can see just below this message - that way your attendees won't be able to edit or delete your event group!
+  {{{__ "groupwelcome"}}}
 </div>
 {{/if}}
 <div class="container my-4 pr-0">
@@ -34,7 +34,7 @@
                 <span class="fa-li">
                   <i class="fas fa-fw fa-user-circle"></i>
                 </span>
-                <span class="text-muted">Hosted by</span> {{eventGroupData.hostName}}
+                <span class="text-muted">{{{__ "hostedby"}}}
               </li>
             {{/if}}
             {{#if eventGroupData.url}}
@@ -53,7 +53,7 @@
               </span>
               <a href="https://{{domain}}/group/{{eventGroupData.id}}">https://{{domain}}/group/{{eventGroupData.id}}</a>
               <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}">
-                <i class="fas fa-copy"></i> Copy
+                <i class="fas fa-copy"></i> {{{__ "copy"}}}
               </button>
             </li>
             <li>
@@ -65,10 +65,9 @@
               <button type="button" id="copyFeedLink"
                 class="eventInformationAction btn btn-outline-secondary btn-sm"
                 data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}/feed.ics">
-                <i class="fas fa-copy"></i> Copy
+                <i class="fas fa-copy"></i> {{{__ "copy"}}}
               </button>
-              <p class="text-muted small">Paste this URL into your calendar app
-                to subscribe to a live feed of events from this group.</p>
+              <p class="text-muted small">{{{__ "urlpaste"}}}</p>
             </li>
           </ul>
         </div>
@@ -79,11 +78,11 @@
         <button type="button" class="btn btn-outline-secondary btn-sm"
           data-event-id="{{eventGroupData.id}}" data-toggle="modal"
           data-target="#subscribeModal">
-          <i class="fas fa-envelope"></i> Subscribe to updates
+          <i class="fas fa-envelope"></i> {{{__ "subscribe"}}}
         </button>
         <button type="button" id="exportICS" class="btn btn-outline-secondary
           btn-sm" data-event-id="{{eventGroupData.id}}">
-          <i class="fas fa-download"></i> Export as ICS
+          <i class="fas fa-download"></i> {{{__ "ICSexport"}}}
         </button>
       </aside>
     </div>
@@ -92,15 +91,15 @@
 
 {{#if editingEnabled}}
   <div class="alert alert-success">
-    <p>To add an event to this group, copy and paste the two codes below into the 'Event Group' box when creating a new event or editing an existing event.</p>
+    <p>{{{__ "groupaddevent"}}}</p>
     <div class="table-responsive">
       <table style="width:100%">
         <tr style="border-bottom:1px solid rgba(0,0,0,0.2)">
-          <td><strong>Event group ID</strong></td>
+          <td><strong>{{{__ "eventgroupid"}}}</strong></td>
           <td><span class="code">{{eventGroupData.id}}</span></td>
         </tr>
         <tr>
-          <td><strong>Event group editing password</strong></td>
+          <td><strong>{{{__ "eventgroupeditpwd"}}}</strong></td>
           <td><span class="code">{{eventGroupData.editToken}}</span></td>
         </tr>
       </table>
@@ -110,13 +109,13 @@
 {{/if}}
 
 <div class="card mb-4" id="eventDescription">
-    <h5 class="card-header">About</h5>  
+    <h5 class="card-header">{{{__ "about"}}}</h5>  
   <div class="card-body">
     {{{parsedDescription}}}
   </div>
 </div>
 <div class="card mt-4 mb-4" id="upcomingEvents">
-  <h5 class="card-header">Upcoming events</h5>
+  <h5 class="card-header">{{{__ "eventupcome"}}}</h5>
   <div class="list-group list-group-flush">
   {{#if upcomingEventsExist}}
     {{#each events}}
@@ -129,7 +128,7 @@
       {{/unless}}
     {{/each}}
   {{else}}
-      <div class="list-group-item">No events!</div>
+      <div class="list-group-item">{{{__ "noevents"}}}</div>
   {{/if}}
   </div>
 </div>
@@ -141,19 +140,19 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="deleteModalLabel">Delete '{{eventGroupData.name}}'</h5>
+        <h5 class="modal-title" id="deleteModalLabel">{{{__ "del"}}} '{{eventGroupData.name}}'</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <form id="deleteEventGroupForm" action="/deleteeventgroup/{{eventGroupData.id}}/{{eventGroupData.editToken}}" method="post">
       <div class="modal-body">
-        <p>Are you sure you want to delete this event group? This action cannot be undone.</p>
-        <p>This will <strong>not</strong> delete the individual events contained in this group. They can be linked to another group later.</p>
+        <p>{{{__ "groupdelconfirm"}}}</p>
+        <p>{{{__ "groupdeldesc"}}}</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-danger">Delete event group</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+        <button type="submit" class="btn btn-danger">{{{__ "groupdel"}}}</button>
       </div>
       </form>
     </div>
@@ -167,7 +166,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="subscribeModalLabel">Subscribe to '{{eventGroupData.name}}'</h5>
+        <h5 class="modal-title" id="subscribeModalLabel">{{{__ "groupsub"}}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -175,8 +174,7 @@
       <form id="subscribeForm" action="/subscribe/{{eventGroupData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <p class="form-text small">Enter your email address to receive updates
-            whenever a new event is created in this group.</p>
+          <p class="form-text small">{{{__ "receivegroup"}}}</p>
         </div>
         <div class="form-group">
           <input type="email" class="form-control" id="emailAddress"
@@ -184,8 +182,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-success">Subscribe</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+        <button type="submit" class="btn btn-success">{{{__ "sub"}}}</button>
       </div>
       </form>
     </div>
@@ -196,7 +194,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editTokenModalLabel">Enter editing password</h5>
+        <h5 class="modal-title" id="editTokenModalLabel">{{{__ "editpwd"}}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -204,9 +202,9 @@
       <form id="verifyTokenForm" action="/verifytoken/group/{{eventGroupData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <p class="form-text small">Enter the editing password you received by email or were shown when the event was created.</p>
+          <p class="form-text small">{{{__ "editpwddesc"}}}</p>
           <div class="form-group">
-            <input type="text" class="form-control" id="editToken" name="editToken" placeholder="Get it right!" data-validation="required">
+            <input type="text" class="form-control" id="editToken" name="editToken" placeholder="{{{__"right"}}}" data-validation="required">
           </div>
           <div class="form-group">
               <div class="alert alert-danger" style="display:none;"></div>
@@ -214,8 +212,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Edit group</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+        <button type="submit" class="btn btn-primary">{{{__ "editgroup"}}}</button>
       </div>
       </form>
     </div>
@@ -277,8 +275,8 @@
       input_field: "#eventGroupImageUpload",
       preview_box: "#eventGroupImagePreview",
       label_field: "#eventGroupImageLabel",
-      label_default: "Choose file",
-      label_selected: "Change file",
+      label_default: "{{{__ "choosefile"}}}",
+      label_selected: "{{{__ "changefile"}}}",
       no_label: false
     });
     $("#eventGroupImagePreview").css("background-image", "url('/events/{{eventGroupData.image}}')");
@@ -294,12 +292,12 @@
       })
     })
     $("#copyEventLink").click(function(){
-      $(this).html('<i class="fas fa-copy"></i> Copied!');
-      setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
+      $(this).html('<i class="fas fa-copy"></i> {{{__ "copied"}}}');
+      setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> {{{__ "copy"}}}');}, 5000);
     });
     $("#copyFeedLink").click(function(){
-      $(this).html('<i class="fas fa-copy"></i> Copied!');
-      setTimeout(function(){ $("#copyFeedLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
+      $(this).html('<i class="fas fa-copy"></i> {{{__ "copied"}}}');
+      setTimeout(function(){ $("#copyFeedLink").html('<i class="fas fa-copy"></i> {{{__ "copy"}}}');}, 5000);
     });
 
       $('#verifyTokenForm').on('submit', function(e) {
@@ -317,7 +315,7 @@
                 }
             },
             error: function(response, status, xhr) {
-               form.find('.alert').text('That editing password is incorrect. Try again.').show();
+               form.find('.alert').text('{{{__ "incorrectpwd"}}}').show();
             }
         });
       });

@@ -1,7 +1,7 @@
-<h2>New event</h2>
+<h2>{{{__ "neweventpage"}}}</h2>
 <hr>
 <div class="alert alert-info mb-4 text-center" role="alert">
-  <i class="fas fa-exclamation-circle"></i> Events are visible to anyone who knows the link.
+  <i class="fas fa-exclamation-circle"></i> {{{__ "newevent"}}}
 </div>
 
 
@@ -12,13 +12,13 @@
 <div class="container mb-4">
   <div class="row">
     <div class="col-sm-4 p-2">
-      <button type="button" id="showNewEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-file"></i> Create a new event</button>
+      <button type="button" id="showNewEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-file"></i> {{{__ "createnew"}}}</button>
     </div>
     <div class="col-sm-4 p-2">
-      <button type="button" id="showImportEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-file-import"></i> Import an existing event</button>
+      <button type="button" id="showImportEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-file-import"></i> {{{__ "importnew"}}}</button>
     </div>
     <div class="col-sm-4 p-2">
-      <button type="button" id="showNewEventGroupFormButton" class="btn btn-secondary w-100"><i class="fas fa-folder-open"></i> Create a new event group </button>
+      <button type="button" id="showNewEventGroupFormButton" class="btn btn-secondary w-100"><i class="fas fa-folder-open"></i> {{{__ "newgroup"}}} </button>
     </div>
   </div>
 </div>
@@ -37,7 +37,7 @@
 
   <script>
   $.validate({
-    lang: 'en',
+    //lang: 'en',
     errorElementClass: "is-invalid",
     errorMessageClass: "text-danger",
     successElementClass: "is-valid"
@@ -48,7 +48,7 @@
       $('#icsImportControl').next('label').html('<i class="far fa-file-alt"></i> ' + file);
     }
     $('#eventStart').datepicker({
-      language: 'en',
+      //language: 'en',
       minDate: new Date(),
       timepicker: true,
       dateFormat: 'd MM yyyy',
@@ -58,7 +58,7 @@
       }
     });
     $('#eventEnd').datepicker({
-      language: 'en',
+      //language: 'en',
       minDate: new Date(),
       timepicker: true,
       dateFormat: 'd MM yyyy',

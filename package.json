@@ -26,6 +26,7 @@
     "generate-rsa-keypair": "^0.2.1",
     "greenlock": "^2.8.8",
     "greenlock-express": "^2.7.18",
+    "i18n": "^0.15.1",
     "ical": "^0.6.0",
     "ical-generator": "^1.11.0",
     "jimp": "^0.16.1",

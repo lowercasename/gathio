@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const Log = mongoose.model('Log');
 var moment = require('moment-timezone');
 const icalGenerator = require('ical-generator');
-
+var i18n = require('i18n');
 // LOGGING
 
 function addToLog(process, status, message) {
@@ -51,7 +51,23 @@ function exportIcal(events, calendarName) {
   return string;
 }
 
+function getI18nHelpers() {
+  var _helpers = {};
+  // 声明handlebar中的i18n helper函数
+  // __函数不考虑单复数
+  _helpers.__ = function () {
+    return i18n.__.apply(this, arguments);
+  };
+  // __n函数考虑单复数
+  _helpers.__n = function () {
+    return i18n.__n.apply(this, arguments);
+  };
+
+  return _helpers;
+}
+
 module.exports = {
   addToLog,
   exportIcal,
+  getI18nHelpers,
 }

@@ -10,9 +10,9 @@
   </div>
   <div class="col-lg-3 ml-2 edit-buttons">
     {{#if editingEnabled}}
-      <button type="button" id="editEvent" class="btn btn-success" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit event</button>
+      <button type="button" id="editEvent" class="btn btn-success" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{{__ "eventedit"}}}</button>
     {{else}}
-      <button type="button" id="editEvent" class="btn btn-success" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Edit event</button>
+      <button type="button" id="editEvent" class="btn btn-success" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{{__ "eventedit"}}}</button>
     {{/if}}
   </div>
 </div>
@@ -36,7 +36,7 @@
             <time class="dt-end" datetime="{{eventEndISO}}"></time>
             <br>
             <span class="text-muted">
-              {{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
+              {{#if eventHasBegun}}{{#unless eventHasConcluded}}{{{__ "started"}}} {{else}}{{{__ "ended"}}} {{/unless}}{{/if}}{{fromNow}}
             </span>
           </li>
           {{#if eventHasHost}}
@@ -44,7 +44,7 @@
               <span class="fa-li">
                 <i class="fas fa-fw fa-user-circle"></i>
               </span>
-              <span class="text-muted">Hosted by</span> {{eventData.hostName}}
+              <span class="text-muted">{{{__ "hostedby"}}}
             </li>
           {{/if}}
           {{#if eventData.eventGroup}}
@@ -52,7 +52,7 @@
               <span class="fa-li">
                 <i class="fas fa-fw fa-calendar-alt"></i>
               </span>
-              <span class="text-muted">Part of</span> <a href="/group/{{eventData.eventGroup.id}}">{{eventData.eventGroup.name}}</a>
+              <span class="text-muted">{{{__ "partof"}}}
             </li>
           {{/if}}
           {{#if eventData.url}}
@@ -71,7 +71,7 @@
             </span>
             <a class="u-url" href="https://{{domain}}/{{eventData.id}}">https://{{domain}}/{{eventData.id}}</a>
             <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
-              <i class="fas fa-copy"></i> Copy
+              <i class="fas fa-copy"></i> {{{__ "copy"}}}
             </button>
           </li>
           {{#if isFederated}}
@@ -81,7 +81,7 @@
             </span>
             @{{eventData.id}}@{{domain}}
             <button type="button" id="copyAPLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="@{{eventData.id}}@{{domain}}">
-              <i class="fas fa-copy"></i> Copy
+              <i class="fas fa-copy"></i> {{{__ "copy"}}}
             </button>
           </li>
           {{/if}}
@@ -90,17 +90,17 @@
     </div>
     <div class="col-lg-3" id="eventActions">
       <aside class="btn-group-vertical d-flex" role="group" aria-label="Event actions">
-        <a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="btn btn-outline-secondary btn-sm">
-          <i class="far fa-calendar-plus"></i> Add to Google Calendar
+        <a href="https://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="btn btn-outline-secondary btn-sm">
+          <i class="far fa-calendar-plus"></i> {{{__ "addtoGC"}}}
         </a>
         <button type="button" id="exportICS" class="btn btn-outline-secondary btn-sm" data-event-id="{{eventData.id}}">
-          <i class="fas fa-download"></i> Export as ICS
+          <i class="fas fa-download"></i> {{{__ "ICSexport"}}}
         </button>
-        <a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
-          <i class="fas fa-map-marked"></i> Show on Google Maps
+        <a target="_blank" href="https://maps.google.com/?q={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-map-marked"></i> {{{__ "showonGM"}}}
         </a>
         <a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
-          <i class="fas fa-map-marked"></i> Show on OpenStreetMap
+          <i class="fas fa-map-marked"></i> {{{__ "showonOM"}}}
         </a>
       </aside>
     </div>
@@ -109,7 +109,7 @@
 
 {{#if eventHasConcluded}}
 <div class="alert alert-warning mb-4" role="alert">
-  This event has concluded. It can no longer be edited, and will be automatically deleted <span class="daysToDeletion"></span>.
+  {{{__ "concludeddel"}}}
 </div>
 {{/if}}
 {{#if firstLoad}}
@@ -117,13 +117,13 @@
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
-  <p>Welcome to your event!</p>
-  <p>Your secret editing password for this event is: <strong>{{eventData.editToken}}</strong>. It's been saved in your browser storage, and if you supplied your email, it's also been sent to you. If you didn't supply your email, you <strong>must save it somewhere safe</strong>, because it won't be shown again!</p>
-  <p>To share your event, use the link you can see just above this message - that way your attendees won't be able to edit or delete your event!</p>
+  <p>{{{__ "eventwelcome"}}}</p>
+  <p>{{{__ "eventattention"}}}</p>
+  <p>{{{__ "eventshare"}}}</p>
 </div>
 {{/if}}
 <div class="card mb-4" id="eventDescription">
-  <h5 class="card-header">About</h5>
+  <h5 class="card-header">{{{__ "about"}}}</h5>
   <div class="card-body p-summary">
     {{{parsedDescription}}}
   </div>
@@ -131,30 +131,30 @@
 
 {{#if eventData.usersCanAttend}}
 <div class="card mb-4" id="eventAttendees">
-  <h5 class="card-header">Attendees {{#if eventAttendees}}({{numberOfAttendees}}){{/if}}
+  <h5 class="card-header">{{{__ "attendees"}}} {{#if eventAttendees}}({{numberOfAttendees}}){{/if}}
     <div class="btn-group" role="group" aria-label="Attendance controls">
       {{#unless noMoreSpots}}
-        <button type="button" id="attendEvent" class="btn btn-success" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> Add me</button>
+        <button type="button" id="attendEvent" class="btn btn-success" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> {{{__ "addme"}}}</button>
       {{/unless}}
-      <button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
+      <button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> {{{__ "removeme"}}}</button>
     </div>
   </h5>
   <div class="card-body">
     {{#if eventData.maxAttendees}}
       {{#if noMoreSpots}}
-        <div class="alert alert-warning text-center">This event is at capacity.</div>
+        <div class="alert alert-warning text-center">{{{__ "eventcapacity"}}}</div>
       {{else}}
-        <div class="alert alert-warning text-center">{{spotsRemaining}} {{plural spotsRemaining "spot(s)"}} remaining - add yourself now!</div>
+        <div class="alert alert-warning text-center">{{spotsRemaining}} {{plural spotsRemaining "spot(s)"}} {{{__ "remaining"}}}</div>
       {{/if}}
     {{/if}}
     {{#if eventAttendees}}
       <ul class="attendeesList">
         {{#each eventAttendees}}
-          <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+          <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title='{{{__ "removeuser"}}}'><i class="fas fa-user-times"></i></a>{{/if}}</li>
         {{/each}}
       </ul>
     {{else}}
-      <p class="text-center text-muted mb-0">No attendees yet!</p>
+      <p class="text-center text-muted mb-0">{{{__ "noattendees"}}}</p>
     {{/if}}
   </div>
 </div>
@@ -163,7 +163,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="attendModalLabel">Add yourself to '{{eventData.name}}'</h5>
+        <h5 class="modal-title" id="attendModalLabel">{{{__ "addself"}}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -171,34 +171,34 @@
       <form id="attendEventForm" action="/attendevent/{{eventData.id}}" method="post">
     <div class="modal-body">
       <div class="form-group">
-        <label for="attendeeName">Your name</label>
+        <label for="attendeeName">{{{__ "joinname"}}}</label>
         <div class="form-group">
-          <input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="1-30">
+          <input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="{{{__ "or"}}}" data-validation="required length" data-validation-length="1-30">
         </div>
       </div>
       <div class="form-group">
-        <label for="attendeeName">How many people in your party?</label>
+        <label for="attendeeName">{{{__ "peoplenum"}}}</label>
         <div class="form-group">
           <input type="number" class="form-control" id="attendeeNumber" name="attendeeNumber" value="1" data-validation="required number" >
         </div>
       </div>
       <div class="form-group">
-        <label for="attendeeEmail">Your email (optional)</label>
-        <p class="form-text small">If you provide your email, you will receive updates to the event.</p>
+        <label for="attendeeEmail">{{{__ "joinemail"}}}</label>
+        <p class="form-text small">{{{__ "joinemaildesc"}}}</p>
         <div class="form-group">
-          <input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email" data-validation-optional="true">
+          <input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="{{{__ "notspam"}}} <3" data-validation="email" data-validation-optional="true">
         </div>
       </div>
       <div class="form-group">
-        <label for="removalPassword">Deletion password</label>
-        <p class="form-text small">You will need this password if you want to remove yourself from the list of event attendees. If you provided your email, you'll receive it by email. Otherwise, write it down now because it will <strong>not be shown again</strong>.</p>
+        <label for="removalPassword">{{{__ "delpasswd"}}}</label>
+        <p class="form-text small">{{{__ "delpwddesc"}}}</p>
         <input type="text" class="form-control" readonly id="removalPassword"
         name="removalPassword">
       </div>
     </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Add myself</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+        <button type="submit" class="btn btn-primary">{{{__ "addmyself"}}}</button>
       </div>
       </form>
     </div>
@@ -209,7 +209,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="unattendModalLabel">Remove yourself from '{{eventData.name}}'</h5>
+        <h5 class="modal-title" id="unattendModalLabel">{{{__ "selfremove"}}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -217,15 +217,15 @@
       <form id="unattendEventForm" action="/unattendevent/{{eventData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <label for="removalPassword" class="form-label">Your deletion password</label>
-          <p class="form-text small">Lost your password? Get in touch with the event organiser.</p>
+          <label for="removalPassword" class="form-label">{{{__ "pwddel"}}}</label>
+          <p class="form-text small">{{{__ "lostpwd"}}}</p>
           <input type="text" class="form-control" id="removalPassword"
           name="removalPassword">
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Remove myself</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+        <button type="submit" class="btn btn-primary">{{{__ "rmmyself"}}}</button>
       </div>
       </form>
     </div>
@@ -237,18 +237,18 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="removeAttendeeModalLabel">Remove attendee from '{{eventData.name}}'</h5>
+          <h5 class="modal-title" id="removeAttendeeModalLabel">{{{__ "rmattendee"}}}</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
       <form id="removeAttendeeForm" action="/removeattendee/{{eventData.id}}/" method="post">
       <div class="modal-body">
-        <p>Are you sure you want to remove this attendee from the event? This action cannot be undone.</p>
+        <p>{{{__ "confirmrmA"}}}</p>
           </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-danger">Remove attendee</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+          <button type="submit" class="btn btn-danger">{{{__ "rmA"}}}</button>
         </div>
         </form>
       </div>
@@ -260,17 +260,17 @@
 
 {{#if eventData.usersCanComment}}
 <div class="card mb-4" id="eventComments">
-  <h5 class="card-header">Discussion</h5>
+  <h5 class="card-header">{{{__ "discussion"}}}</h5>
   <div class="card-body">
     <form id="commentForm" action="/post/comment/{{eventData.id}}/" method="post">
       <div class="form-group">
-        <input type="text" class="form-control" id="commentAuthor" name="commentAuthor" placeholder="Your name" data-validation="required length" data-validation-length="1-60">
+        <input type="text" class="form-control" id="commentAuthor" name="commentAuthor" placeholder="{{{__ "joinname"}}}" data-validation="required length" data-validation-length="1-60">
       </div>
       <div class="form-group">
         <div class="input-group">
-          <textarea class="form-control" id="commentContent" name="commentContent" style="resize: none;" placeholder="What would you like to ask?" data-validation="required length" data-validation-length="1-280"></textarea>
+          <textarea class="form-control" id="commentContent" name="commentContent" style="resize: none;" placeholder="{{{__ "eventask"}}}" data-validation="required length" data-validation-length="1-280"></textarea>
           <div class="input-group-append">
-            <button type="submit" class="btn btn-primary btn-block h-100" id="postComment">Send <i class="fas fa-chevron-right"></i></button>
+            <button type="submit" class="btn btn-primary btn-block h-100" id="postComment">{{{__ "send"}}} <i class="fas fa-chevron-right"></i></button>
           </div>
         </div>
       </div>
@@ -300,12 +300,12 @@
             </div>
             <div class="col-lg-3 commentMetadata text-right">
               <button type="button" class="btn btn-outline-primary btn-sm openReplyBox">
-                <i class="fas fa-comment"></i> Reply
+                <i class="fas fa-comment"></i> {{{__ "reply"}}}
               </button>
               {{#if ../editingEnabled}}
                 <form class="d-inline" action="/deletecomment/{{../eventData.id}}/{{this._id}}/{{../eventData.editToken}}" method="post">
                   <button type="submit" class="btn btn-outline-danger btn-sm deleteComment">
-                    <i class="fas fa-trash"></i> Delete
+                    <i class="fas fa-trash"></i> {{{__ "del"}}}
                   </button>
                 </form>
               {{/if}}
@@ -315,13 +315,13 @@
             <div class="col-md">
               <form id="replyForm" action="/post/reply/{{../eventData.id}}/{{this._id}}" method="post">
                 <div class="form-group">
-                  <input type="text" class="form-control form-control-sm" id="replyAuthor" name="replyAuthor" placeholder="Your name" data-validation="required length" data-validation-length="1-60">
+                  <input type="text" class="form-control form-control-sm" id="replyAuthor" name="replyAuthor" placeholder="{{{__ "joinname"}}}" data-validation="required length" data-validation-length="1-60">
                 </div>
                 <div class="form-group">
                   <div class="input-group">
-                    <textarea class="form-control form-control-sm" id="replyContent" name="replyContent" style="resize: none;" placeholder="What would you like to reply?" data-validation="required length" data-validation-length="1-280"></textarea>
+                    <textarea class="form-control form-control-sm" id="replyContent" name="replyContent" style="resize: none;" placeholder="{{{__ "eventreply"" data-validation="required length" data-validation-length="1-280"></textarea>
                     <div class="input-group-append">
-                      <button type="submit" class="btn btn-primary btn-block h-100 btn-sm" id="postReply">Reply <i class="fas fa-chevron-right"></i></button>
+                      <button type="submit" class="btn btn-primary btn-block h-100 btn-sm" id="postReply">{{{__ "reply"}}} <i class="fas fa-chevron-right"></i></button>
                     </div>
                   </div>
                 </div>
@@ -340,7 +340,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editTokenModalLabel">Enter editing password</h5>
+        <h5 class="modal-title" id="editTokenModalLabel">{{{__ "editpwd"}}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -348,9 +348,9 @@
       <form id="verifyTokenForm" action="/verifytoken/event/{{eventData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <p class="form-text small">Enter the editing password you received by email or were shown when the event was created.</p>
+          <p class="form-text small">{{{__ "editpwddesc"}}}</p>
           <div class="form-group">
-            <input type="text" class="form-control" id="editToken" name="editToken" placeholder="Get it right!" data-validation="required">
+            <input type="text" class="form-control" id="editToken" name="editToken" placeholder="{{{__ "right"}}}" data-validation="required">
           </div>
           <div class="form-group">
               <div class="alert alert-danger" style="display:none;"></div>
@@ -358,8 +358,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Edit event</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+        <button type="submit" class="btn btn-primary">{{{__ "eventedit"}}}</button>
       </div>
       </form>
     </div>
@@ -375,18 +375,18 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="deleteModalLabel">Delete '{{eventData.name}}'</h5>
+        <h5 class="modal-title" id="deleteModalLabel">{{{__ "del"}}} '{{eventData.name}}'</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <form id="deleteEventForm" action="/deleteevent/{{eventData.id}}/{{eventData.editToken}}" method="post">
       <div class="modal-body">
-        <p>Are you sure you want to delete this event? This action cannot be undone.</p>
+        <p>{{{__ "eventdelconfirm"}}}</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-danger">Delete event</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+        <button type="submit" class="btn btn-danger">{{{__ "eventdel"}}}</button>
       </div>
       </form>
     </div>
@@ -514,8 +514,8 @@
       input_field: "#image-upload",
       preview_box: "#image-preview",
       label_field: "#image-label",
-      label_default: "Choose file",
-      label_selected: "Change file",
+      label_default: "{{{__ "choosefile"}}}",
+      label_selected: "{{{__ "changefile"}}}",
       no_label: false
     });
     $("#image-preview").css("background-image", "url('/events/{{eventData.image}}')");
@@ -534,13 +534,13 @@
       })
     })
     $("#copyEventLink").click(function(){
-      $(this).html('<i class="fas fa-copy"></i> Copied!');
-      setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
+      $(this).html('<i class="fas fa-copy"></i> {{{__ "copied"}}}');
+      setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> {{{__ "copy"}}}');}, 5000);
     })
     new ClipboardJS('#copyAPLink');
     $("#copyAPLink").click(function(){
-      $(this).html('<i class="fas fa-copy"></i> Copied!');
-      setTimeout(function(){ $("#copyAPLink").html('<i class="fas fa-copy"></i> Copy');}, 5000);
+      $(this).html('<i class="fas fa-copy"></i> {{{__ "copied"}}}');
+      setTimeout(function(){ $("#copyAPLink").html('<i class="fas fa-copy"></i> {{{__ "copy"}}}');}, 5000);
     })
     $(".daysToDeletion").html(moment("{{eventEndISO}}").add(7, 'days').fromNow());
     if ($("#joinCheckbox").is(':checked')){
@@ -590,7 +590,7 @@
           if (response.data.freeSpots !== undefined) {
             modal.find('#attendeeNumber')
               .attr('data-validation-allowing', `range[1;${response.data.freeSpots}]`)
-              .attr('data-validation-error-msg', `Please enter a number between 1 and ${response.data.freeSpots}`);
+              .attr('data-validation-error-msg', `{{{__ "numlimit"}}}`);
           }
           modal.modal(); 
         })
@@ -615,7 +615,7 @@
                 }
             },
             error: function(response, status, xhr) {
-               form.find('.alert').text('That editing password is incorrect. Try again.').show();
+               form.find('.alert').text('{{{__ "incorrectpwd"}}}').show();
             }
         });
       });

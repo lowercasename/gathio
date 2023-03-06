@@ -2,7 +2,7 @@
   <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editModalLabel">Edit '{{eventGroupData.name}}'</h5>
+        <h5 class="modal-title" id="editModalLabel">{{{__ "edit"}}} '{{eventGroupData.name}}'</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -10,42 +10,42 @@
       <div class="modal-body">
       <form id="editEventForm" action="/editeventgroup/{{eventGroupData.id}}/{{eventGroupData.editToken}}" method="post" enctype="multipart/form-data" autocomplete="off">
         <div class="form-group">
-          <label for="eventGroupName" >Name</label>
-          <input type="text" class="form-control" id="eventGroupName" name="eventGroupName" placeholder="Make it snappy." value="{{eventGroupData.name}}" data-validation="required length" data-validation-length="3-120">
+          <label for="eventGroupName" >{{{__ "name"}}}</label>
+          <input type="text" class="form-control" id="eventGroupName" name="eventGroupName" placeholder="{{{__ "snappy"}}}" value="{{eventGroupData.name}}" data-validation="required length" data-validation-length="3-120">
         </div>
         <div class="form-group">
-          <label for="eventGroupDescription" >Description</label>
+          <label for="eventGroupDescription" >{{{__ "description"}}}</label>
           <textarea class="form-control" id="eventGroupDescription" name="eventGroupDescription" data-validation="required">{{eventGroupData.description}}</textarea>
-          <small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting supported.</small>
+          <small class="form-text">{{{__ "mdsupportA"}}}</small>
         </div>
         <div class="form-group">
-          <label for="eventGroupURL" >Link</label>
-          <input type="url" class="form-control" id="eventURL" name="eventGroupURL" value="{{eventGroupData.url}}" placeholder="For tickets or a page with more information (optional)." data-validation="url" data-validation-optional="true">
+          <label for="eventGroupURL" >{{{__ "link"}}}</label>
+          <input type="url" class="form-control" id="eventURL" name="eventGroupURL" value="{{eventGroupData.url}}" placeholder="{{{__ "moreinfo"}}}" data-validation="url" data-validation-optional="true">
         </div>
         <div class="form-group">
-          <label for="hostName" >Host or organisation name</label>
-          <input type="text" class="form-control" id="hostName" name="hostName" placeholder="Will be shown on the event group page (optional)." value="{{eventGroupData.hostName}}" data-validation="length" data-validation-length="3-120" data-validation-optional="true">
+          <label for="hostName" >{{{__ "host"}}}</label>
+          <input type="text" class="form-control" id="hostName" name="hostName" placeholder="{{{__ "isshowgroup"}}}" value="{{eventGroupData.hostName}}" data-validation="length" data-validation-length="3-120" data-validation-optional="true">
         </div>
         <div class="form-group">
-          <label>Cover image</label>
+          <label>{{{__ "coverimg"}}}</label>
           <div class="image-preview" id="eventGroupImagePreview">
             <label for="eventGroupImageUpload" id="eventGroupImageLabel">Choose file</label>
             <input type="file" name="eventGroupImageUpload" id="eventGroupImageUpload" />
           </div>
-          <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
+          <small class="form-text">{{{__ "recommendeddimensions"}}}</small>
         </div>
         <div class="form-group">
           <div class="card border-danger mb-3">
-            <div class="card-header text-danger">Delete this event group</div>
+            <div class="card-header text-danger">{{{__ "delgroup"}}}</div>
             <div class="card-body text-danger">
-              <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i> Delete event group</button>
+              <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i> {{{__ "delegroup"}}}</button>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
+        <button type="submit" class="btn btn-primary">{{{__ "save"}}}</button>
       </form>
       </div>
     </div>

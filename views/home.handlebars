@@ -1,22 +1,22 @@
-<p class="lead">A quick and easy way to make and share events which respects your privacy.</p>
+<p class="lead">{{{__ "intro"}}}</p>
 
 <hr>
 
-<p>You don't need to sign up for an account. When you create an event, we generate a password which allows you to edit the event. Send all your guests the public link, and all your co-hosts the secret editing link containing the password. A week after the event finishes, it's deleted from our servers for ever, and your email goes with it.</p>
+<p>{{{__ "desc"}}}</p>
 
 <div id="example-event" class="text-center w-100 mt-4 mb-5">
   <img src="images/example-event.png" class="img-fluid w-75 mx-auto shadow-lg rounded">
 </div>
 
-<p>Also, we don't show you ads, don't sell your data, and never send you unnecessary emails.</p>
+<p>{{{__ "privacy"}}}</p>
 
-<p>But remember: all our events are visible to anyone who knows the link, so probably don't use <strong>gath<span class="text-muted">io</span></strong> to plot your surprise birthday party or revolution. Or whatever, you do you.</p>
+<p>{{{__ "attention"}}}</p>
 
 {{#if showKofi}}
 <div class="card border-secondary mt-5 mb-3 mx-auto" style="min-width:300px;max-width:50%;">
   <div class="card-body text-secondary">
-    <p>If you find yourself using and enjoying <strong>gath<span class="text-muted">io</span></strong>, consider buying me a coffee. It'll help keep the site running! <i class="far fa-heart"></i></p>
-    <script type='text/javascript' src='https://ko-fi.com/widgets/widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support Me on Ko-fi', '#46b798', 'Q5Q2O7T5');kofiwidget2.draw();</script>
+    <p>{{{__ "kofi"}}} <i class="far fa-heart"></i></p>
+    <script type='text/javascript' src='https://ko-fi.com/widgets/widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('{{{__ "support"}}}', '#46b798', 'Q5Q2O7T5');kofiwidget2.draw();</script>
   </div>
 </div>
 {{/if}}
