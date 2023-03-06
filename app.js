@@ -16,9 +16,9 @@ app.use(session({
     secret: 'Py0Bf3aWZC8kYkYTpRztmYMyS22pFFGi'
 }));
 i18n.configure({
-    locales:['en-US'],  //声明包含的语言
-    directory: __dirname + '/locales',  //翻译json文件的路径
-    defaultLocale: 'en-US'   //默认的语言，即为上述标准4
+    locales:['en-US'],  //include langs
+    directory: __dirname + '/locales',  //the path to the json file
+    defaultLocale: 'en-US'   //default lang
 });
 app.use(i18n.init);
 // View engine //
@@ -60,31 +60,31 @@ app.use('/', routes);
 app.use(setLocale);
 module.exports = app;
 
-// 定义setLocale中间件
+// def setLocale
 function setLocale(req, res, next){
     var locale;
-    // 当req进入i18n中间件的时候，已经通过sessionId信息获取了用户数据
-    // 获取用户数据中的locale数据
+    // Get the locale data in the user data
     if(req.user){
         locale = req.user.locale;
     }
-    // 获取cookie中的locale数据
+    // Get the locale data in the cookie
     else if(req.signedCookies['locale']){
         locale = req.signedCookies['locale'];
     }
-    // 获取浏览器第一个偏好语言，这个函数是express提供的
+    // Get the first preferred language of the browser, this function is provided by express
+    // User-selected languages will be added later
     else if(req.acceptsLanguages()){
         locale = req.acceptsLanguages();
     }
-    // 没有语言偏好的时候网站使用的语言为中文
+    // When there is no language preference, the language used on the website is English
     else{
         locale = 'en-US';
     }
-    // 如果cookie中保存的语言偏好与此处使用的语言偏好不同，更新cookie中的语言偏好设置
+    // If the language preference saved in the cookie is different from the language preference used here, update the language preference setting in the cookie
     if(req.signedCookies['locale'] !== locale){
         res.cookie('locale', locale, { signed: true, httpOnly: true });
     }
-    // 设置i18n对这个请求所使用的语言
+    // Set the language that i18n will use for this request
     req.setLocale(locale);
     next();
 };

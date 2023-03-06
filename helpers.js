@@ -53,12 +53,12 @@ function exportIcal(events, calendarName) {
 
 function getI18nHelpers() {
   var _helpers = {};
-  // 声明handlebar中的i18n helper函数
-  // __函数不考虑单复数
+  // Declare the i18n helper function in the handlebar
+  // __ Not considering singular and plural
   _helpers.__ = function () {
     return i18n.__.apply(this, arguments);
   };
-  // __n函数考虑单复数
+  // __n Considering singular and plural
   _helpers.__n = function () {
     return i18n.__n.apply(this, arguments);
   };
