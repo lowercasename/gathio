@@ -118,7 +118,7 @@
 	"attendeelimit": "Attendee limit",
 	"delevent": "Delete this event",
 	"importevent": "Import an existing event",
-	"importdesc": "Upload an .ics file here to instantly create an event. You can save a Facebook event as an .ics file by clicking on the context menu next to the 'Import' and 'Edit' buttons on the event page and choosing the 'Export Event' option. Then select the 'Save to calendar' option and save the file on your computer.",
+	"importdesc": "Upload an .ics file here to instantly create an event. You can save a Facebook event as an .ics file by clicking on the context menu next to the \"Import\" and \"Edit\" buttons on the event page and choosing the \"Export Event\" option. Then select the \"Save to calendar\" option and save the file on your computer.",
 	"selectfile": "Select file",
 	"youremail": "Your email",
 	"emaildesc": "We will send your secret editing link to this email address.",
