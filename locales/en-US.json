@@ -55,7 +55,7 @@
 	"groupwelcome": "Welcome to your event group! We've just sent you an email with your secret editing link, which you can also see in the address bar above. Haven't got the email? Check your spam or junk folder. To share your event group, use the link you can see just below this message - that way your attendees won't be able to edit or delete your event group!",
 	"urlpaste": "Paste this URL into your calendar app\nto subscribe to a live feed of events from this group.",
 	"subscribe": "Subscribe to updates",
-	"groupaddevent": "To add an event to this group, copy and paste the two codes below into the 'Event Group' box when creating a new event or editing an existing event.",
+	"groupaddevent": "To add an event to this group, copy and paste the two codes below into the \"Event Group\" box when creating a new event or editing an existing event.",
 	"eventgroupid": "Event group ID",
 	"eventgroupeditpwd": "Event group editing password",
 	"eventupcome": "Upcoming events",
