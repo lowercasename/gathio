@@ -5,7 +5,8 @@ const cors = require('cors');
 const routes = require('./routes');
 const hbs  = require('express-handlebars');
 const bodyParser = require('body-parser');
-const i18n = require('i18n');
+// const i18n = require('i18n');
+const { I18n } = require('i18n');
 
 const app = express();
 // Configuration //
@@ -15,14 +16,17 @@ const app = express();
 app.use(session({
     secret: 'Py0Bf3aWZC8kYkYTpRztmYMyS22pFFGi'
 }));
-i18n.configure({
+
+// Internationalization //
+const i18n = new I18n({
     locales:['en-US'],  //include langs
-    directory: __dirname + '/locales',  //the path to the json file
-    defaultLocale: 'en-US'   //default lang
+    directory: path.join(__dirname, 'locales'),
+    defaultLocale: 'en-US'
 });
 app.use(i18n.init);
+
 // View engine //
-hbsInstance = hbs.create({
+const hbsInstance = hbs.create({
     defaultLayout: 'main',
     partialsDir: ['views/partials/'],
     layoutsDir: 'views/layouts/',
@@ -77,7 +81,7 @@ function setLocale(req, res, next){
         locale = req.acceptsLanguages();
     }
     // When there is no language preference, the language used on the website is English
-    else{
+    else {
         locale = 'en-US';
     }
     // If the language preference saved in the cookie is different from the language preference used here, update the language preference setting in the cookie
