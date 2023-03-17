@@ -10,13 +10,13 @@
       <div class="modal-body">
       <form id="editEventForm" action="/editeventgroup/{{eventGroupData.id}}/{{eventGroupData.editToken}}" method="post" enctype="multipart/form-data" autocomplete="off">
         <div class="form-group">
-          <label for="eventGroupName" >{{{__ "name"}}}</label>
+          <label for="eventGroupName" >{{{__ "groupName"}}}</label>
           <input type="text" class="form-control" id="eventGroupName" name="eventGroupName" placeholder="{{{__ "snappy"}}}" value="{{eventGroupData.name}}" data-validation="required length" data-validation-length="3-120">
         </div>
         <div class="form-group">
           <label for="eventGroupDescription" >{{{__ "description"}}}</label>
           <textarea class="form-control" id="eventGroupDescription" name="eventGroupDescription" data-validation="required">{{eventGroupData.description}}</textarea>
-          <small class="form-text">{{{__ "mdsupportA"}}}</small>
+          <small class="form-text">{{{__ "markdownSupported"}}}</small>
         </div>
         <div class="form-group">
           <label for="eventGroupURL" >{{{__ "link"}}}</label>
@@ -27,16 +27,16 @@
           <input type="text" class="form-control" id="hostName" name="hostName" placeholder="{{{__ "isshowgroup"}}}" value="{{eventGroupData.hostName}}" data-validation="length" data-validation-length="3-120" data-validation-optional="true">
         </div>
         <div class="form-group">
-          <label>{{{__ "coverimg"}}}</label>
+          <label>{{{__ "coverImage"}}}</label>
           <div class="image-preview" id="eventGroupImagePreview">
             <label for="eventGroupImageUpload" id="eventGroupImageLabel">Choose file</label>
             <input type="file" name="eventGroupImageUpload" id="eventGroupImageUpload" />
           </div>
-          <small class="form-text">{{{__ "recommendeddimensions"}}}</small>
+          <small class="form-text">{{{__ "recommendedDimensions"}}}</small>
         </div>
         <div class="form-group">
           <div class="card border-danger mb-3">
-            <div class="card-header text-danger">{{{__ "delgroup"}}}</div>
+            <div class="card-header text-danger">{{{__ "delGroup"}}}</div>
             <div class="card-body text-danger">
               <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i> {{{__ "delegroup"}}}</button>
             </div>

@@ -1,6 +1,6 @@
-<h4 class="mb-2">{{{__ "importevent"}}}</h4>
+<h4 class="mb-2">{{{__ "importEvent"}}}</h4>
 <p>
-  {{{__ "importdesc"}}}
+  {{{__ "importDesc"}}}
 </p>
 
 <img class="img-thumbnail mb-3 d-block mx-auto" src="/images/facebook-export.png" alt="Image showing the location of the export option on Facebook" />
@@ -10,15 +10,15 @@
     <div class="custom-file" id="icsImportContainer">
     <input required name="icsImportControl" type="file" class="custom-file-input" id="icsImportControl" aria-describedby="fileHelp" accept="text/calendar">
     <label name="icsImportLabel" class="custom-file-label" id="icsImportLabel" for="icsImportControl">
-       <i class="far fa-file-alt"></i> {{{__ "selectfile"}}}
+       <i class="far fa-file-alt"></i> {{{__ "selectFile"}}}
     </label>
   </div>
   </div>
   <div class="form-group">
-    <label for="creatorEmail" class="form-label">{{{__ "youremail"}}}</label>
+    <label for="creatorEmail" class="form-label">{{{__ "yourEmail"}}}</label>
     <div class="form-group">
-      <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="{{{__ "notspam"}}} <3" data-validation="email" data-validation-optional="true">
-      <small class="form-text">{{{__ "emaildesc"}}}</small>
+      <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="{{{__ "optional"}}}" data-validation="email" data-validation-optional="true">
+      <small class="form-text">{{{__ "emailDesc"}}}</small>
     </div>
   </div>
   <button type="submit" class="d-block mt-3 mx-auto btn btn-primary w-50">{{{__ "import"}}}</button>

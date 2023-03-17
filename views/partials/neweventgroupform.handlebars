@@ -1,9 +1,9 @@
-<h4 class="mb-2">{{{__ "groupcreate"}}}</h4>
-<p>{{{__ "groupdesc"}}}</p>
-<p>{{{__ "groupattention"}}}</p>
+<h4 class="mb-2">{{{__ "createGroup"}}}</h4>
+<p>{{{__ "groupDesc"}}}</p>
+<p>{{{__ "groupRemovalNotice"}}}</p>
 <form id="newEventForm" action="/neweventgroup" method="post" enctype="multipart/form-data">
   <div class="form-group row">
-    <label for="eventGroupName" class="col-sm-2 col-form-label">{{{__ "groupname"}}}</label>
+    <label for="eventGroupName" class="col-sm-2 col-form-label">{{{__ "groupName"}}}</label>
     <div class="form-group col-sm-10">
       <input type="text" class="form-control" id="eventGroupName" name="eventGroupName" placeholder="{{{__ "snappy"}}}" value="{{data.eventName}}" data-validation="required length" data-validation-length="3-120">
     </div>
@@ -11,37 +11,37 @@
   <div class="form-group row">
     <label for="eventGroupDescription" class="col-sm-2 col-form-label">{{{__ "description"}}}</label>
     <div class="form-group col-sm-10">
-      <textarea class="form-control expand" id="eventGroupDescription" name="eventGroupDescription" data-validation="required" placeholder="{{{__ "editlater"}}}"></textarea>
-      <small class="form-text">{{{__ "mdsupportA"}}}</small>
+      <textarea class="form-control expand" id="eventGroupDescription" name="eventGroupDescription" data-validation="required" placeholder="{{{__ "editLater"}}}"></textarea>
+      <small class="form-text">{{{__ "markdownSupported"}}}</small>
     </div>
   </div>
   <div class="form-group row">
     <label for="eventGroupURL" class="col-sm-2 col-form-label">{{{__ "link"}}}</label>
     <div class="form-group col-sm-10">
-      <input type="url" class="form-control" id="eventGroupURL" name="eventGroupURL" placeholder="{{{__ "moreinfo"}}}" data-validation="url" data-validation-optional="true">
+      <input type="url" class="form-control" id="eventGroupURL" name="eventGroupURL" placeholder="{{{__ "linkDescGroup"}}}" data-validation="url" data-validation-optional="true">
     </div>
   </div>
   <div class="form-group row">
-    <label for="eventGroupImage" class="col-sm-2 col-form-label">{{{__ "coverimg"}}}</label>
+    <label for="eventGroupImage" class="col-sm-2 col-form-label">{{{__ "coverImage"}}}</label>
     <div class="form-group col-sm-10">
       <div class="image-preview" id="eventGroupImagePreview">
-        <label for="image-upload" id="eventGroupImageLabel">{{{__ "choosefile"}}}</label>
+        <label for="image-upload" id="eventGroupImageLabel">{{{__ "chooseFile"}}}</label>
         <input type="file" name="imageUpload" id="eventGroupImageUpload" />
       </div>
-      <small class="form-text">{{{__ "recommendeddimensions"}}}</small>
+      <small class="form-text">{{{__ "recommendedDimensions"}}}</small>
     </div>
   </div>
   <div class="form-group row">
     <label for="hostName" class="col-sm-2 col-form-label">{{{__ "host"}}}</label>
     <div class="form-group col-sm-10">
-      <input type="text" class="form-control" id="hostName" name="hostName" placeholder="{{{__ "isshowgroup"}}}" data-validation="length" data-validation-length="2-60" data-validation-optional="true">
+      <input type="text" class="form-control" id="hostName" name="hostName" placeholder="{{{__ "willBeShownGroup"}}}" data-validation="length" data-validation-length="2-60" data-validation-optional="true">
     </div>
   </div>
   <div class="form-group row">
-    <label for="creatorEmail" class="col-sm-2 col-form-label">{{{__ "youremail"}}}</label>
+    <label for="creatorEmail" class="col-sm-2 col-form-label">{{{__ "yourEmail"}}}</label>
     <div class="form-group col-sm-10">
-      <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="{{{__ "notspamA"}}}" data-validation="email" data-validation-optional="true">
-      <small class="form-text">{{{__ "emaildescA"}}}</small>
+      <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="{{{__ "optional"}}}" data-validation="email" data-validation-optional="true">
+      <small class="form-text">{{{__ "emailDescGroup"}}}</small>
     </div>
   </div>
   <div class="form-group row">
@@ -57,8 +57,8 @@
       input_field: "#eventGroupImageUpload",
       preview_box: "#eventGroupImagePreview",
       label_field: "#eventGroupImageLabel",
-      label_default: "{{{__ "choosefile"}}}",
-      label_selected: "{{{__ "changefile"}}}",
+      label_default: "{{{__ "chooseFile"}}}",
+      label_selected: "{{{__ "changeFile"}}}",
       no_label: false
     });
     autosize($('textarea'));

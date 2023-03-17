@@ -1,8 +1,8 @@
-<h4 class="mb-2">{{{__ "createevent"}}}</h4>
+<h4 class="mb-2">{{{__ "createEvent"}}}</h4>
 <form id="newEventForm" action="/newevent" method="post" enctype="multipart/form-data">
    <input type="text" hidden class="form-control" id="eventType" name="eventType" value="{{eventType}}">
   <div class="form-group row">
-    <label for="eventName" class="col-sm-2 col-form-label">{{{__ "eventname"}}}</label>
+    <label for="eventName" class="col-sm-2 col-form-label">{{{__ "eventName"}}}</label>
     <div class="form-group col-sm-10">
       <input type="text" class="form-control" id="eventName" name="eventName" placeholder="{{{__ "snappy"}}}" value="{{data.eventName}}" data-validation="required length" data-validation-length="3-120">
     </div>
@@ -34,76 +34,65 @@
   <div class="form-group row">
     <label for="eventDescription" class="col-sm-2 col-form-label">{{{__ "description"}}}</label>
     <div class="form-group col-sm-10">
-      <textarea class="form-control expand" id="eventDescription" name="eventDescription" data-validation="required" placeholder="{{{__ "editlater"}}}"></textarea>
-      <small class="form-text">{{{__ "mdsupportA"}}}</small>
+      <textarea class="form-control expand" id="eventDescription" name="eventDescription" data-validation="required" placeholder="{{{__ "editLater"}}}"></textarea>
+      <small class="form-text">{{{__ "markdownSupported"}}}</small>
     </div>
   </div>
   <div class="form-group row">
     <label for="eventURL" class="col-sm-2 col-form-label">Link</label>
     <div class="form-group col-sm-10">
-      <input type="url" class="form-control" id="eventURL" name="eventURL" placeholder="{{{__ "anotherpage"}}}" data-validation="url" data-validation-optional="true">
+      <input type="url" class="form-control" id="eventURL" name="eventURL" placeholder="{{{__ "linkDesc"}}}" data-validation="url" data-validation-optional="true">
     </div>
   </div>
   <div class="form-group row">
     <label for="eventImage" class="col-sm-2 col-form-label">{{{__ coverimg}}}</label>
     <div class="form-group col-sm-10">
       <div class="image-preview" id="eventImagePreview">
-        <label for="image-upload" id="eventImageLabel">{{{__ "choosefile"}}}</label>
+        <label for="image-upload" id="eventImageLabel">{{{__ "chooseFile"}}}</label>
         <input type="file" name="imageUpload" id="eventImageUpload" accept="image/jpeg,image/gif,image/png" />
       </div>
-      <small class="form-text">{{{__ "recommendeddimensions"}}}</small>
+      <small class="form-text">{{{__ "recommendedDimensions"}}}</small>
     </div>
   </div>
-  {{#unless isPublic}}
   <div class="form-group row">
-    <label for="eventPassword" class="col-sm-2 col-form-label">{{{__ "eventpwd"}}}</label>
+    <label for="hostName" class="col-sm-2 col-form-label">{{{__ "hostName"}}}</label>
     <div class="form-group col-sm-10">
-      <input type="password" class="form-control" id="eventPassword" name="eventPassword" placeholder="{{{__ "notforget"}}}" data-validation="required">
-    </div>
-    <div class="form-group col-sm-10 offset-sm-2">
-      <div class="" id="passwordStrengthBar"></div>
+      <input type="text" class="form-control" id="hostName" name="hostName" placeholder="{{{__ "willBeShownEvent"}}}" data-validation="length" data-validation-length="2-60" data-validation-optional="true">
     </div>
   </div>
-  {{/unless}}
   <div class="form-group row">
-    <label for="hostName" class="col-sm-2 col-form-label">{{{__ "hostname"}}}</label>
+    <label for="creatorEmail" class="col-sm-2 col-form-label">{{{__ "yourEmail"}}}</label>
     <div class="form-group col-sm-10">
-      <input type="text" class="form-control" id="hostName" name="hostName" placeholder="{{{__ "isshowpage"}}}" data-validation="length" data-validation-length="2-60" data-validation-optional="true">
+      <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="{{{__ "optional"}}}" data-validation="email" data-validation-optional="true">
+      <small class="form-text">{{{__ "emailDesc"}}}</small>
     </div>
   </div>
   <div class="form-group row">
-    <label for="creatorEmail" class="col-sm-2 col-form-label">{{{__ "youremail"}}}</label>
-    <div class="form-group col-sm-10">
-      <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="{{{__ "notspamA"}}}" data-validation="email" data-validation-optional="true">
-      <small class="form-text">{{{__ "emaildescA"}}}</small>
-    </div>
-  </div>
-  <div class="form-group row">
-    <div class="col-sm-2">{{{__ options}}}</div>
+    <div class="col-sm-2">{{{__ "options"}}}</div>
     <div class="col-sm-10">
       <div class="form-check">
         <input class="form-check-input" type="checkbox" id="eventGroupCheckbox" name="eventGroupCheckbox">
         <label class="form-check-label" for="eventGroupCheckbox">
-          {{{__ "grouppart"}}}
+          {{{__ "partOfEventGroup"}}}
         </label>
       </div>
       <div class="card text-white bg-secondary my-2" id="eventGroupData">
         <div class="card-header">
-          <strong>{{{__ "linktogroup"}}}</strong>
+          <strong>{{{__ "linkToEventGroup"}}}</strong>
         </div>
         <div class="card-body">
           <div class="form-group row">
-            <label for="eventGroupID" class="col-sm-2 col-form-label">{{{__ "eventgroupid"}}}</label>
+            <label for="eventGroupID" class="col-sm-2 col-form-label">{{{__ "eventGroupId"}}}</label>
             <div class="form-group col-sm-10">
               <input type="text" class="form-control" id="eventGroupID" name="eventGroupID" placeholder="" data-validation-optional="true">
-              <small class="form-text">{{{__ "shortstringdescA"}}}</small>
+              <small class="form-text">{{{__ "shortStringDesc"}}}</small>
             </div>
           </div>
           <div class="form-group row">
-            <label for="eventGroupEditToken" class="col-sm-2 col-form-label">{{{__ "groupeditpwd"}}}</label>
+            <label for="eventGroupEditToken" class="col-sm-2 col-form-label">{{{__ "groupSecretCode"}}}</label>
             <div class="form-group col-sm-10">
               <input type="text" class="form-control" id="eventGroupEditToken" name="eventGroupEditToken" placeholder="" data-validation-optional="true">
-              <small class="form-text">{{{__ "longstringdescA"}}}</small>
+              <small class="form-text">{{{__ "longStringDesc"}}}</small>
             </div>
           </div>
         </div>
@@ -111,27 +100,27 @@
       <div class="form-check">
         <input class="form-check-input" type="checkbox" id="interactionCheckbox" name="interactionCheckbox">
         <label class="form-check-label" for="interactionCheckbox">
-          {{{__ "commentmod"}}}
+          {{{__ "usersCanComment"}}}
         </label>
       </div>
       <div class="form-check">
         <input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox">
         <label class="form-check-label" for="joinCheckbox">
-          {{{__ "selfmark"}}}
+          {{{__ "usersCanAttend"}}}
         </label>
       </div>
       <div class="form-check" id="maxAttendeesCheckboxContainer">
         <input class="form-check-input" type="checkbox" id="maxAttendeesCheckbox" name="maxAttendeesCheckbox">
         <label class="form-check-label" for="maxAttendeesCheckbox">
-          {{{__ "limitset"}}}
+          {{{__ "setAttendeeLimit"}}}
         </label>
       </div>
     </div>
   </div>
   <div class="form-group row" id="maxAttendeesContainer">
-    <label for="maxAttendees" class="col-sm-2 col-form-label">{{{__ "attendeelimit"}}}</label>
+    <label for="maxAttendees" class="col-sm-2 col-form-label">{{{__ "attendeeLimit"}}}</label>
     <div class="form-group col-sm-10">
-      <input type="number" class="form-control" id="maxAttendees" name="maxAttendees" placeholder="{{{__ "enternum"}}}" data-validation="number" data-validation-optional="true">
+      <input type="number" class="form-control" id="maxAttendees" name="maxAttendees" placeholder="{{{__ "enterNumber"}}}" data-validation="number" data-validation-optional="true">
     </div>
   </div>
   <div class="form-group row">
@@ -149,8 +138,8 @@
       input_field: "#eventImageUpload",
       preview_box: "#eventImagePreview",
       label_field: "#eventImageLabel",
-      label_default: "{{{__ "choosefile"}}}",
-      label_selected: "{{{__ "changefile"}}}",
+      label_default: "{{{__ "chooseFile"}}}",
+      label_selected: "{{{__ "changeFile"}}}",
       no_label: false
     });
     autosize($('textarea'));

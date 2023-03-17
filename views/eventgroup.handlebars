@@ -9,9 +9,9 @@
   </div>
   <div class="col-lg-2 ml-2 edit-buttons">
     {{#if editingEnabled}}
-      <button type="button" id="editEvent" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{{__ "editgroup"}}}</button>
+      <button type="button" id="editEvent" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{{__ "editGroup"}}}</button>
     {{else}}
-      <button type="button" id="editEvent" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{{__ "editgroup"}}}</button>
+      <button type="button" id="editEvent" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{{__ "editGroup"}}}</button>
     {{/if}}
   </div>
 </div>
@@ -20,7 +20,7 @@
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
-  {{{__ "groupwelcome"}}}
+  {{{__ "groupWelcome"}}}
 </div>
 {{/if}}
 <div class="container my-4 pr-0">
@@ -34,7 +34,7 @@
                 <span class="fa-li">
                   <i class="fas fa-fw fa-user-circle"></i>
                 </span>
-                <span class="text-muted">{{{__ "hostedby"}}}
+                <span class="text-muted">{{{__ "hostedBy"}}}
               </li>
             {{/if}}
             {{#if eventGroupData.url}}
@@ -67,7 +67,7 @@
                 data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}/feed.ics">
                 <i class="fas fa-copy"></i> {{{__ "copy"}}}
               </button>
-              <p class="text-muted small">{{{__ "urlpaste"}}}</p>
+              <p class="text-muted small">{{{__ "urlPaste"}}}</p>
             </li>
           </ul>
         </div>
@@ -82,7 +82,7 @@
         </button>
         <button type="button" id="exportICS" class="btn btn-outline-secondary
           btn-sm" data-event-id="{{eventGroupData.id}}">
-          <i class="fas fa-download"></i> {{{__ "ICSexport"}}}
+          <i class="fas fa-download"></i> {{{__ "exportAsICS"}}}
         </button>
       </aside>
     </div>
@@ -91,15 +91,15 @@
 
 {{#if editingEnabled}}
   <div class="alert alert-success">
-    <p>{{{__ "groupaddevent"}}}</p>
+    <p>{{{__ "groupAddEvent"}}}</p>
     <div class="table-responsive">
       <table style="width:100%">
         <tr style="border-bottom:1px solid rgba(0,0,0,0.2)">
-          <td><strong>{{{__ "eventgroupid"}}}</strong></td>
+          <td><strong>{{{__ "eventGroupId"}}}</strong></td>
           <td><span class="code">{{eventGroupData.id}}</span></td>
         </tr>
         <tr>
-          <td><strong>{{{__ "eventgroupeditpwd"}}}</strong></td>
+          <td><strong>{{{__ "eventGroupEditPassword"}}}</strong></td>
           <td><span class="code">{{eventGroupData.editToken}}</span></td>
         </tr>
       </table>
@@ -115,7 +115,7 @@
   </div>
 </div>
 <div class="card mt-4 mb-4" id="upcomingEvents">
-  <h5 class="card-header">{{{__ "eventupcome"}}}</h5>
+  <h5 class="card-header">{{{__ "upcomingEvents"}}}</h5>
   <div class="list-group list-group-flush">
   {{#if upcomingEventsExist}}
     {{#each events}}
@@ -128,7 +128,7 @@
       {{/unless}}
     {{/each}}
   {{else}}
-      <div class="list-group-item">{{{__ "noevents"}}}</div>
+      <div class="list-group-item">{{{__ "noEvents"}}}</div>
   {{/if}}
   </div>
 </div>
@@ -147,12 +147,12 @@
       </div>
       <form id="deleteEventGroupForm" action="/deleteeventgroup/{{eventGroupData.id}}/{{eventGroupData.editToken}}" method="post">
       <div class="modal-body">
-        <p>{{{__ "groupdelconfirm"}}}</p>
-        <p>{{{__ "groupdeldesc"}}}</p>
+        <p>{{{__ "groupDelConfirm"}}}</p>
+        <p>{{{__ "groupDelDesc"}}}</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
-        <button type="submit" class="btn btn-danger">{{{__ "groupdel"}}}</button>
+        <button type="submit" class="btn btn-danger">{{{__ "groupDel"}}}</button>
       </div>
       </form>
     </div>
@@ -166,7 +166,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="subscribeModalLabel">{{{__ "groupsub"}}}</h5>
+        <h5 class="modal-title" id="subscribeModalLabel">{{{__ "groupSub"}}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -174,7 +174,7 @@
       <form id="subscribeForm" action="/subscribe/{{eventGroupData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <p class="form-text small">{{{__ "receivegroup"}}}</p>
+          <p class="form-text small">{{{__ "receiveGroupUpdates"}}}</p>
         </div>
         <div class="form-group">
           <input type="email" class="form-control" id="emailAddress"
@@ -194,7 +194,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editTokenModalLabel">{{{__ "editpwd"}}}</h5>
+        <h5 class="modal-title" id="editTokenModalLabel">{{{__ "editPassword"}}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -202,7 +202,7 @@
       <form id="verifyTokenForm" action="/verifytoken/group/{{eventGroupData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <p class="form-text small">{{{__ "editpwddesc"}}}</p>
+          <p class="form-text small">{{{__ "editPasswordDesc"}}}</p>
           <div class="form-group">
             <input type="text" class="form-control" id="editToken" name="editToken" placeholder="{{{__"right"}}}" data-validation="required">
           </div>
@@ -213,7 +213,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">{{{__ "close"}}}</button>
-        <button type="submit" class="btn btn-primary">{{{__ "editgroup"}}}</button>
+        <button type="submit" class="btn btn-primary">{{{__ "editGroup"}}}</button>
       </div>
       </form>
     </div>
@@ -275,8 +275,8 @@
       input_field: "#eventGroupImageUpload",
       preview_box: "#eventGroupImagePreview",
       label_field: "#eventGroupImageLabel",
-      label_default: "{{{__ "choosefile"}}}",
-      label_selected: "{{{__ "changefile"}}}",
+      label_default: "{{{__ "chooseFile"}}}",
+      label_selected: "{{{__ "changeFile"}}}",
       no_label: false
     });
     $("#eventGroupImagePreview").css("background-image", "url('/events/{{eventGroupData.image}}')");
@@ -315,7 +315,7 @@
                 }
             },
             error: function(response, status, xhr) {
-               form.find('.alert').text('{{{__ "incorrectpwd"}}}').show();
+               form.find('.alert').text('{{{__ "incorrectPassword"}}}').show();
             }
         });
       });

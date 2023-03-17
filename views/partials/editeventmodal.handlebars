@@ -11,7 +11,7 @@
         <form id="editEventForm" action="/editevent/{{eventData.id}}/{{eventData.editToken}}" method="post"
           enctype="multipart/form-data" autocomplete="off">
           <div class="form-group">
-            <label for="eventName" class="col-form-label">{{{__ "eventname"}}}</label>
+            <label for="eventName" class="col-form-label">{{{__ "eventName"}}}</label>
             <input type="text" class="form-control" id="eventName" name="eventName"
               placeholder="{{{__ "snappy"}}}" value="{{eventData.name}}" data-validation="required length"
               data-validation-length="3-120">
@@ -40,29 +40,29 @@
             <label for="eventDescription" class="col-form-label">{{{__ "description"}}}</label>
             <textarea class="form-control" id="eventDescription" name="eventDescription"
               data-validation="required">{{eventData.description}}</textarea>
-            <small class="form-text">{{{__ "mdsupport"}}}</small>
+            <small class="form-text">{{{__ "markdownSupported"}}}</small>
           </div>
           <div class="form-group">
             <label for="eventURL" class="col-form-label">{{{__ "link"}}}</label>
             <input type="url" class="form-control" id="eventURL" name="eventURL" value="{{eventData.url}}"
-              placeholder="{{{__ "anotherpage"}}}" data-validation="url"
+              placeholder="{{{__ "linkDesc"}}}" data-validation="url"
               data-validation-optional="true">
           </div>
           <div class="form-group">
-            <label for="hostName" class="col-form-label">{{{__ "hostname"}}}</label>
+            <label for="hostName" class="col-form-label">{{{__ "hostName"}}}</label>
             <input type="text" class="form-control" id="hostName" name="hostName"
-              placeholder="{{{__ "isshowpage"}}}" value="{{eventData.hostName}}"
+              placeholder="{{{__ "willBeShownEvent"}}}" value="{{eventData.hostName}}"
               data-validation="length" data-validation-length="3-120" data-validation-optional="true">
           </div>
           <div class="form-group">
-            <label for="eventImage" class="col-form-label">{{{__ "coverimg"}}}</label>
+            <label for="eventImage" class="col-form-label">{{{__ "coverImage"}}}</label>
             <div class="image-preview" id="image-preview">
-              <label for="image-upload" id="image-label">{{{__ "choosefile"}}}</label>
+              <label for="image-upload" id="image-label">{{{__ "chooseFile"}}}</label>
               <input type="file" name="imageUpload" id="image-upload" />
             </div>
-            <small class="form-text">{{{__ "recommendeddimensions"}}}</small>
+            <small class="form-text">{{{__ "recommendedDimensions"}}}</small>
             {{#if eventData.image}}
-              <button type="button" class="btn btn-danger" id="deleteImage">{{{__ "imgdel"}}}</button>
+              <button type="button" class="btn btn-danger" id="deleteImage">{{{__ "delImage"}}}</button>
             {{/if}}
           </div>
           <div class="form-group">
@@ -71,28 +71,28 @@
               <input class="form-check-input" type="checkbox" id="eventGroupCheckbox"
                 name="eventGroupCheckbox" {{#if eventData.eventGroup}}checked{{/if}}>
               <label class="form-check-label" for="eventGroupCheckbox">
-                {{{__ "grouppart"}}}
+                {{{__ "partOfEventGroup"}}}
               </label>
             </div>
             <div class="card text-white bg-secondary my-2" id="eventGroupData" {{#if eventData.eventGroup}}style="display:flex" {{/if}}>
               <div class="card-header">
-                <strong>{{{__ "linktogroup"}}}</strong>
+                <strong>{{{__ "linkToEventGroup"}}}</strong>
               </div>
               <div class="card-body">
                 <div class="form-group">
-                  <label for="eventGroupID" class="form-label">{{{__ "eventgroupid"}}}</label>
+                  <label for="eventGroupID" class="form-label">{{{__ "eventGroupId"}}}</label>
                   <div class="form-group">
                     <input type="text" class="form-control" id="eventGroupID" name="eventGroupID"
                       placeholder="" data-validation-optional="true" value="{{eventData.eventGroup.id}}">
-                    <small class="form-text">{{{__ "shortstringdesc"}}}</small>
+                    <small class="form-text">{{{__ "shortStringDesc"}}}</small>
                   </div>
                 </div>
                 <div class="form-group">
-                  <label for="eventGroupEditToken" class="form-label">{{{__ "groupsecretcode"}}}</label>
+                  <label for="eventGroupEditToken" class="form-label">{{{__ "groupSecretCode"}}}</label>
                   <div class="form-group">
                     <input type="text" class="form-control" id="eventGroupEditToken"
                       name="eventGroupEditToken" placeholder="" data-validation-optional="true" value="{{eventData.eventGroup.editToken}}">
-                    <small class="form-text">{{{__ "longstringdesc"}}}</small>
+                    <small class="form-text">{{{__ "longStringDesc"}}}</small>
                   </div>
                 </div>
               </div>
@@ -101,7 +101,7 @@
               <input class="form-check-input" type="checkbox" id="interactionCheckbox"
                 name="interactionCheckbox" {{#if eventData.usersCanComment}}checked{{/if}}>
               <label class="form-check-label" for="interactionCheckbox">
-                {{{__ "commentmod"}}}
+                {{{__ "usersCanComment"}}}
               </label>
             </div>
             <div class="form-check">
@@ -109,7 +109,7 @@
                 type="checkbox" id="joinCheckbox" name="joinCheckbox"
                 {{#if eventData.usersCanAttend}}checked{{/if}}>
               <label class="form-check-label" for="joinCheckbox">
-                {{{__ "selfmark"}}}
+                {{{__ "usersCanAttend"}}}
               </label>
             </div>
             <div class="form-check" id="maxAttendeesCheckboxContainer"
@@ -117,21 +117,21 @@
               <input class="form-check-input" type="checkbox" id="maxAttendeesCheckbox"
                 name="maxAttendeesCheckbox" {{#if eventData.maxAttendees}}checked{{/if}}>
               <label class="form-check-label" for="maxAttendeesCheckbox">
-                {{{__ "limitset"}}}
+                {{{__ "setAttendeeLimit"}}}
               </label>
             </div>
           </div>
           <div class="form-group" id="maxAttendeesContainer"
             {{#if eventData.maxAttendees}}style="display:flex" {{/if}}>
-            <label for="maxAttendees" class="col-form-label">{{{__ "attendeelimit"}}}</label>
+            <label for="maxAttendees" class="col-form-label">{{{__ "attendeeLimit"}}}</label>
             <input type="number" class="form-control" id="maxAttendees" name="maxAttendees"
-              placeholder="{{{__ "enternum"}}}" data-validation="number" data-validation-optional="true"
+              placeholder="{{{__ "enterNumber"}}}" data-validation="number" data-validation-optional="true"
               value="{{eventData.maxAttendees}}">
           </div>
 
           <div class="form-group">
             <div class="card border-danger mb-3">
-              <div class="card-header text-danger">{{{__ "delevent"}}}</div>
+              <div class="card-header text-danger">{{{__ "delEvent"}}}</div>
               <div class="card-body text-danger">
                 <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal" data-event-id="{{eventData.id}}"><i class="fas fa-trash"></i> {{{__ "del"}}}</button>
               </div>
