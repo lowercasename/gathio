@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# A Docker-based test script. It builds the Docker image, starts the container,
+# and then waits for the server to be ready. Once the server is ready, it
+# makes a request to the server and then kills the container. A 200 response
+# code is expected.
+
 set -eux -o pipefail
 
 cleanup() {
