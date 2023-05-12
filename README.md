@@ -1,6 +1,6 @@
 # gathio
 
-[![Build Status](https://travis-ci.com/lowercasename/gathio.svg?branch=master)](https://travis-ci.com/lowercasename/gathio)
+[![Build status](https://github.com/lowercasename/gathio/actions/workflows/ci.yaml/badge.svg)](https://github.com/lowercasename/gathio/actions/workflows/ci.yaml)
 
 Self-destructing, shareable, no-registration event pages.
 
