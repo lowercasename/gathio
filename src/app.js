@@ -16,7 +16,7 @@ const app = express();
 
 
 // View engine //
-hbsInstance = hbs.create({
+const hbsInstance = hbs.create({
     defaultLayout: 'main',
     partialsDir: ['views/partials/'],
     layoutsDir: 'views/layouts/',

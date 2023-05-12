@@ -23,7 +23,7 @@ require('./models/Event');
 require('./models/Log');
 require('./models/EventGroup');
 
-const app = require('./app');
+const app = require('./app.js');
 
 global.appRoot = path.resolve(__dirname);
 

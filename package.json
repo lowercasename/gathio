@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon ./start.js"
+    "build": "tsc",
+    "start": "node dist/start.js",
+    "dev": "nodemon -e ts,js --watch src --exec \"pnpm run build ; pnpm run start\""
   },
   "engines": {
     "node": ">=16.16.0"
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "eslint": "^8.40.0",
-    "nodemon": "^2.0.22"
+    "nodemon": "^2.0.22",
+    "typescript": "^5.0.4"
   }
 }
