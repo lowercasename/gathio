@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/start.js",
-    "dev": "nodemon -e ts,js --watch src --exec \"pnpm run build ; pnpm run start\""
+    "dev": "nodemon -e ts,js --watch src --exec \"pnpm run build ; pnpm run start\"",
+    "test": "./test.sh"
   },
   "engines": {
     "node": ">=16.16.0"

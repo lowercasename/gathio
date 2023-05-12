@@ -1,0 +1,36 @@
+name: Build test
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: "pnpm-lock.yaml"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Set up config files
+        run: |
+          cp src/config/api-example.js src/config/api.js
+          cp src/config/database-example.js src/config/database.js
+          cp src/config/domain-example.js src/config/domain.js
+      - name: Build
+        run: pnpm build
+        continue-on-error: true
+      - name: Start and test
+        run: |
+          pnpm start &
+          sleep 5
+          curl -sSf http://localhost:3000
