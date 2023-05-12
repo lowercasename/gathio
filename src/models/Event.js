@@ -1,17 +1,17 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Attendees = new mongoose.Schema({
   name: {
     type: String,
-    trim: true
+    trim: true,
   },
   status: {
     type: String,
-    trim: true
+    trim: true,
   },
   email: {
     type: String,
-    trim: true
+    trim: true,
   },
   removalPassword: {
     type: String,
@@ -29,226 +29,231 @@ const Attendees = new mongoose.Schema({
   number: {
     type: Number,
     trim: true,
-    default: 1
+    default: 1,
   },
   created: Date,
-})
+});
 
-const Followers = new mongoose.Schema({
-  // this is the id of the original follow *request*, which we use to validate Undo events
-  followId: {
-    type: String,
-    trim: true
+const Followers = new mongoose.Schema(
+  {
+    // this is the id of the original follow *request*, which we use to validate Undo events
+    followId: {
+      type: String,
+      trim: true,
+    },
+    // this is the actual remote user profile id
+    actorId: {
+      type: String,
+      trim: true,
+    },
+    // this is the stringified JSON of the entire user profile
+    actorJson: {
+      type: String,
+      trim: true,
+    },
+    name: {
+      type: String,
+      trim: true,
+    },
   },
-  // this is the actual remote user profile id
-  actorId: {
-    type: String,
-    trim: true
-  },
-  // this is the stringified JSON of the entire user profile
-  actorJson: {
-    type: String,
-    trim: true
-  },
-  name: {
-    type: String,
-    trim: true
-  },
-}, { _id: false })
+  { _id: false }
+);
 
 const ReplySchema = new mongoose.Schema({
   id: {
     type: String,
     required: true,
     unique: true,
-    sparse: true
+    sparse: true,
   },
   author: {
     type: String,
     trim: true,
-    required: true
+    required: true,
   },
   content: {
     type: String,
     trim: true,
-    required: true
+    required: true,
   },
   timestamp: {
     type: Date,
     trim: true,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
 const ActivityPubMessages = new mongoose.Schema({
   id: {
     type: String,
     required: true,
     unique: true,
-    sparse: true
+    sparse: true,
   },
   content: {
     type: String,
     trim: true,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
 const CommentSchema = new mongoose.Schema({
   id: {
     type: String,
     required: true,
     unique: true,
-    sparse: true
+    sparse: true,
   },
   author: {
     type: String,
     trim: true,
-    required: true
+    required: true,
   },
   content: {
     type: String,
     trim: true,
-    required: true
+    required: true,
   },
   timestamp: {
     type: Date,
     trim: true,
-    required: true
+    required: true,
   },
   activityJson: {
     type: String,
-    trim: true
+    trim: true,
   },
   actorJson: {
     type: String,
-    trim: true
+    trim: true,
   },
   activityId: {
     type: String,
-    trim: true
+    trim: true,
   },
   actorId: {
     type: String,
-    trim: true
+    trim: true,
   },
-  replies: [ReplySchema]
-})
+  replies: [ReplySchema],
+});
 
 const EventSchema = new mongoose.Schema({
   id: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   type: {
     type: String,
     trim: true,
-    required: true
+    required: true,
   },
   name: {
     type: String,
     trim: true,
-    required: true
+    required: true,
   },
   location: {
     type: String,
     trim: true,
-    required: true
+    required: true,
   },
-  start: { // Stored as a UTC timestamp
+  start: {
+    // Stored as a UTC timestamp
     type: Date,
     trim: true,
-    required: true
+    required: true,
   },
-  end: { // Stored as a UTC timestamp
+  end: {
+    // Stored as a UTC timestamp
     type: Date,
     trim: true,
-    required: true
+    required: true,
   },
   timezone: {
     type: String,
-    default: 'Etc/UTC'
+    default: "Etc/UTC",
   },
   description: {
     type: String,
     trim: true,
-    required: true
+    required: true,
   },
   image: {
     type: String,
-    trim: true
+    trim: true,
   },
   url: {
     type: String,
-    trim: true
+    trim: true,
   },
   creatorEmail: {
     type: String,
-    trim: true
+    trim: true,
   },
   hostName: {
     type: String,
-    trim: true
+    trim: true,
   },
   viewPassword: {
     type: String,
-    trim: true
+    trim: true,
   },
   editPassword: {
     type: String,
-    trim: true
+    trim: true,
   },
   editToken: {
     type: String,
     trim: true,
     minlength: 32,
-    maxlength: 32
+    maxlength: 32,
   },
-  eventGroup: { type: mongoose.Schema.Types.ObjectId, ref: 'EventGroup' },
+  eventGroup: { type: mongoose.Schema.Types.ObjectId, ref: "EventGroup" },
   usersCanAttend: {
     type: Boolean,
     trim: true,
-    default: false
+    default: false,
   },
   showUsersList: {
     type: Boolean,
     trim: true,
-    default: false
+    default: false,
   },
   usersCanComment: {
     type: Boolean,
     trim: true,
-    default: false
+    default: false,
   },
   firstLoad: {
     type: Boolean,
     trim: true,
-    default: true
+    default: true,
   },
   attendees: [Attendees],
   maxAttendees: {
-    type: Number
+    type: Number,
   },
   comments: [CommentSchema],
   activityPubActor: {
     type: String,
-    trim: true
+    trim: true,
   },
   activityPubEvent: {
     type: String,
-    trim: true
+    trim: true,
   },
   publicKey: {
     type: String,
-    trim: true
+    trim: true,
   },
   privateKey: {
     type: String,
-    trim: true
+    trim: true,
   },
   followers: [Followers],
-  activityPubMessages: [ActivityPubMessages]
+  activityPubMessages: [ActivityPubMessages],
 });
 
-module.exports = mongoose.model('Event', EventSchema);
+module.exports = mongoose.model("Event", EventSchema);
