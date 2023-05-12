@@ -937,46 +937,44 @@ router.post("/newevent", async (req, res) => {
       addToLog("createEvent", "success", "Event " + eventID + "created");
       // Send email with edit link
       if (req.body.creatorEmail && sendEmails) {
-        req.app
-          .get("hbsInstance")
-          .renderView(
-            "./views/emails/createevent.handlebars",
-            {
-              eventID,
-              editToken,
-              siteName,
-              siteLogo,
-              domain,
-              cache: true,
-              layout: "email.handlebars",
-            },
-            function (err, html) {
-              const msg = {
-                to: req.body.creatorEmail,
-                from: {
-                  name: siteName,
-                  email: contactEmail,
-                  address: contactEmail,
-                },
-                subject: `${siteName}: ${req.body.eventName}`,
-                html,
-              };
-              switch (mailService) {
-                case "sendgrid":
-                  sgMail.send(msg).catch((e) => {
-                    console.error(e.toString());
-                    res.status(500).end();
-                  });
-                  break;
-                case "nodemailer":
-                  nodemailerTransporter.sendMail(msg).catch((e) => {
-                    console.error(e.toString());
-                    res.status(500).end();
-                  });
-                  break;
-              }
+        req.app.get("hbsInstance").renderView(
+          "./views/emails/createevent.handlebars",
+          {
+            eventID,
+            editToken,
+            siteName,
+            siteLogo,
+            domain,
+            cache: true,
+            layout: "email.handlebars",
+          },
+          function (err, html) {
+            const msg = {
+              to: req.body.creatorEmail,
+              from: {
+                name: siteName,
+                email: contactEmail,
+                address: contactEmail,
+              },
+              subject: `${siteName}: ${req.body.eventName}`,
+              html,
+            };
+            switch (mailService) {
+              case "sendgrid":
+                sgMail.send(msg).catch((e) => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+                break;
+              case "nodemailer":
+                nodemailerTransporter.sendMail(msg).catch((e) => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+                break;
             }
-          );
+          }
+        );
       }
       // If the event was added to a group, send an email to any group
       // subscribers
@@ -989,49 +987,47 @@ router.post("/newevent", async (req, res) => {
             return [current.email, ...acc];
           }, []);
           subscribers.forEach((emailAddress) => {
-            req.app
-              .get("hbsInstance")
-              .renderView(
-                "./views/emails/eventgroupupdated.handlebars",
-                {
-                  siteName,
-                  siteLogo,
-                  domain,
-                  eventID: req.params.eventID,
-                  eventGroupName: eventGroup.name,
-                  eventName: event.name,
-                  eventID: event.id,
-                  eventGroupID: eventGroup.id,
-                  emailAddress: encodeURIComponent(emailAddress),
-                  cache: true,
-                  layout: "email.handlebars",
-                },
-                function (err, html) {
-                  const msg = {
-                    to: emailAddress,
-                    from: {
-                      name: siteName,
-                      email: contactEmail,
-                    },
-                    subject: `${siteName}: New event in ${eventGroup.name}`,
-                    html,
-                  };
-                  switch (mailService) {
-                    case "sendgrid":
-                      sgMail.send(msg).catch((e) => {
-                        console.error(e.toString());
-                        res.status(500).end();
-                      });
-                      break;
-                    case "nodemailer":
-                      nodemailerTransporter.sendMail(msg).catch((e) => {
-                        console.error(e.toString());
-                        res.status(500).end();
-                      });
-                      break;
-                  }
+            req.app.get("hbsInstance").renderView(
+              "./views/emails/eventgroupupdated.handlebars",
+              {
+                siteName,
+                siteLogo,
+                domain,
+                eventID: req.params.eventID,
+                eventGroupName: eventGroup.name,
+                eventName: event.name,
+                eventID: event.id,
+                eventGroupID: eventGroup.id,
+                emailAddress: encodeURIComponent(emailAddress),
+                cache: true,
+                layout: "email.handlebars",
+              },
+              function (err, html) {
+                const msg = {
+                  to: emailAddress,
+                  from: {
+                    name: siteName,
+                    email: contactEmail,
+                  },
+                  subject: `${siteName}: New event in ${eventGroup.name}`,
+                  html,
+                };
+                switch (mailService) {
+                  case "sendgrid":
+                    sgMail.send(msg).catch((e) => {
+                      console.error(e.toString());
+                      res.status(500).end();
+                    });
+                    break;
+                  case "nodemailer":
+                    nodemailerTransporter.sendMail(msg).catch((e) => {
+                      console.error(e.toString());
+                      res.status(500).end();
+                    });
+                    break;
                 }
-              );
+              }
+            );
           });
         });
       }
@@ -1098,46 +1094,44 @@ router.post("/importevent", (req, res) => {
         addToLog("createEvent", "success", "Event " + eventID + " created");
         // Send email with edit link
         if (creatorEmail && sendEmails) {
-          req.app
-            .get("hbsInstance")
-            .renderView(
-              "./views/emails/createevent.handlebars",
-              {
-                eventID,
-                editToken,
-                siteName,
-                siteLogo,
-                domain,
-                cache: true,
-                layout: "email.handlebars",
-              },
-              function (err, html) {
-                const msg = {
-                  to: req.body.creatorEmail,
-                  from: {
-                    name: siteName,
-                    email: contactEmail,
-                    address: contactEmail,
-                  },
-                  subject: `${siteName}: ${importedEventData.summary}`,
-                  html,
-                };
-                switch (mailService) {
-                  case "sendgrid":
-                    sgMail.send(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                  case "nodemailer":
-                    nodemailerTransporter.sendMail(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                }
+          req.app.get("hbsInstance").renderView(
+            "./views/emails/createevent.handlebars",
+            {
+              eventID,
+              editToken,
+              siteName,
+              siteLogo,
+              domain,
+              cache: true,
+              layout: "email.handlebars",
+            },
+            function (err, html) {
+              const msg = {
+                to: req.body.creatorEmail,
+                from: {
+                  name: siteName,
+                  email: contactEmail,
+                  address: contactEmail,
+                },
+                subject: `${siteName}: ${importedEventData.summary}`,
+                html,
+              };
+              switch (mailService) {
+                case "sendgrid":
+                  sgMail.send(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
+                case "nodemailer":
+                  nodemailerTransporter.sendMail(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
               }
-            );
+            }
+          );
         }
         res.writeHead(302, {
           Location: "/" + eventID + "?e=" + editToken,
@@ -1199,46 +1193,44 @@ router.post("/neweventgroup", (req, res) => {
       );
       // Send email with edit link
       if (req.body.creatorEmail && sendEmails) {
-        req.app
-          .get("hbsInstance")
-          .renderView(
-            "./views/emails/createeventgroup.handlebars",
-            {
-              eventGroupID,
-              editToken,
-              siteName,
-              siteLogo,
-              domain,
-              cache: true,
-              layout: "email.handlebars",
-            },
-            function (err, html) {
-              const msg = {
-                to: req.body.creatorEmail,
-                from: {
-                  name: siteName,
-                  email: contactEmail,
-                  address: contactEmail,
-                },
-                subject: `${siteName}: ${req.body.eventGroupName}`,
-                html,
-              };
-              switch (mailService) {
-                case "sendgrid":
-                  sgMail.send(msg).catch((e) => {
-                    console.error(e.toString());
-                    res.status(500).end();
-                  });
-                  break;
-                case "nodemailer":
-                  nodemailerTransporter.sendMail(msg).catch((e) => {
-                    console.error(e.toString());
-                    res.status(500).end();
-                  });
-                  break;
-              }
+        req.app.get("hbsInstance").renderView(
+          "./views/emails/createeventgroup.handlebars",
+          {
+            eventGroupID,
+            editToken,
+            siteName,
+            siteLogo,
+            domain,
+            cache: true,
+            layout: "email.handlebars",
+          },
+          function (err, html) {
+            const msg = {
+              to: req.body.creatorEmail,
+              from: {
+                name: siteName,
+                email: contactEmail,
+                address: contactEmail,
+              },
+              subject: `${siteName}: ${req.body.eventGroupName}`,
+              html,
+            };
+            switch (mailService) {
+              case "sendgrid":
+                sgMail.send(msg).catch((e) => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+                break;
+              case "nodemailer":
+                nodemailerTransporter.sendMail(msg).catch((e) => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+                break;
             }
-          );
+          }
+        );
       }
       res.writeHead(302, {
         Location: "/group/" + eventGroupID + "?e=" + editToken,
@@ -1469,46 +1461,44 @@ router.post("/editevent/:eventID/:editToken", (req, res) => {
                   .map((o) => o.email);
                 if (attendeeEmails.length) {
                   console.log("Sending emails to: " + attendeeEmails);
-                  req.app
-                    .get("hbsInstance")
-                    .renderView(
-                      "./views/emails/editevent.handlebars",
-                      {
-                        diffText,
-                        eventID: req.params.eventID,
-                        siteName,
-                        siteLogo,
-                        domain,
-                        cache: true,
-                        layout: "email.handlebars",
-                      },
-                      function (err, html) {
-                        const msg = {
-                          to: attendeeEmails,
-                          from: {
-                            name: siteName,
-                            email: contactEmail,
-                            address: contactEmail,
-                          },
-                          subject: `${siteName}: ${event.name} was just edited`,
-                          html,
-                        };
-                        switch (mailService) {
-                          case "sendgrid":
-                            sgMail.sendMultiple(msg).catch((e) => {
-                              console.error(e.toString());
-                              res.status(500).end();
-                            });
-                            break;
-                          case "nodemailer":
-                            nodemailerTransporter.sendMail(msg).catch((e) => {
-                              console.error(e.toString());
-                              res.status(500).end();
-                            });
-                            break;
-                        }
+                  req.app.get("hbsInstance").renderView(
+                    "./views/emails/editevent.handlebars",
+                    {
+                      diffText,
+                      eventID: req.params.eventID,
+                      siteName,
+                      siteLogo,
+                      domain,
+                      cache: true,
+                      layout: "email.handlebars",
+                    },
+                    function (err, html) {
+                      const msg = {
+                        to: attendeeEmails,
+                        from: {
+                          name: siteName,
+                          email: contactEmail,
+                          address: contactEmail,
+                        },
+                        subject: `${siteName}: ${event.name} was just edited`,
+                        html,
+                      };
+                      switch (mailService) {
+                        case "sendgrid":
+                          sgMail.sendMultiple(msg).catch((e) => {
+                            console.error(e.toString());
+                            res.status(500).end();
+                          });
+                          break;
+                        case "nodemailer":
+                          nodemailerTransporter.sendMail(msg).catch((e) => {
+                            console.error(e.toString());
+                            res.status(500).end();
+                          });
+                          break;
                       }
-                    );
+                    }
+                  );
                 } else {
                   console.log("Nothing to send!");
                 }
@@ -1788,45 +1778,43 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                     .map((o) => o.email);
                   if (attendeeEmails.length) {
                     console.log("Sending emails to: " + attendeeEmails);
-                    req.app
-                      .get("hbsInstance")
-                      .renderView(
-                        "./views/emails/deleteevent.handlebars",
-                        {
-                          siteName,
-                          siteLogo,
-                          domain,
-                          eventName: event.name,
-                          cache: true,
-                          layout: "email.handlebars",
-                        },
-                        function (err, html) {
-                          const msg = {
-                            to: attendeeEmails,
-                            from: {
-                              name: siteName,
-                              email: contactEmail,
-                              address: contactEmail,
-                            },
-                            subject: `${siteName}: ${event.name} was deleted`,
-                            html,
-                          };
-                          switch (mailService) {
-                            case "sendgrid":
-                              sgMail.sendMultiple(msg).catch((e) => {
-                                console.error(e.toString());
-                                res.status(500).end();
-                              });
-                              break;
-                            case "nodemailer":
-                              nodemailerTransporter.sendMail(msg).catch((e) => {
-                                console.error(e.toString());
-                                res.status(500).end();
-                              });
-                              break;
-                          }
+                    req.app.get("hbsInstance").renderView(
+                      "./views/emails/deleteevent.handlebars",
+                      {
+                        siteName,
+                        siteLogo,
+                        domain,
+                        eventName: event.name,
+                        cache: true,
+                        layout: "email.handlebars",
+                      },
+                      function (err, html) {
+                        const msg = {
+                          to: attendeeEmails,
+                          from: {
+                            name: siteName,
+                            email: contactEmail,
+                            address: contactEmail,
+                          },
+                          subject: `${siteName}: ${event.name} was deleted`,
+                          html,
+                        };
+                        switch (mailService) {
+                          case "sendgrid":
+                            sgMail.sendMultiple(msg).catch((e) => {
+                              console.error(e.toString());
+                              res.status(500).end();
+                            });
+                            break;
+                          case "nodemailer":
+                            nodemailerTransporter.sendMail(msg).catch((e) => {
+                              console.error(e.toString());
+                              res.status(500).end();
+                            });
+                            break;
                         }
-                      );
+                      }
+                    );
                   } else {
                     console.log("Nothing to send!");
                   }
@@ -2111,45 +2099,43 @@ router.post("/attendevent/:eventID", async (req, res) => {
       );
       if (sendEmails) {
         if (req.body.attendeeEmail) {
-          req.app
-            .get("hbsInstance")
-            .renderView(
-              "./views/emails/addeventattendee.handlebars",
-              {
-                eventID: req.params.eventID,
-                siteName,
-                siteLogo,
-                domain,
-                removalPassword: req.body.removalPassword,
-                cache: true,
-                layout: "email.handlebars",
-              },
-              function (err, html) {
-                const msg = {
-                  to: req.body.attendeeEmail,
-                  from: {
-                    name: siteName,
-                    email: contactEmail,
-                  },
-                  subject: `${siteName}: You're RSVPed to ${event.name}`,
-                  html,
-                };
-                switch (mailService) {
-                  case "sendgrid":
-                    sgMail.send(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                  case "nodemailer":
-                    nodemailerTransporter.sendMail(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                }
+          req.app.get("hbsInstance").renderView(
+            "./views/emails/addeventattendee.handlebars",
+            {
+              eventID: req.params.eventID,
+              siteName,
+              siteLogo,
+              domain,
+              removalPassword: req.body.removalPassword,
+              cache: true,
+              layout: "email.handlebars",
+            },
+            function (err, html) {
+              const msg = {
+                to: req.body.attendeeEmail,
+                from: {
+                  name: siteName,
+                  email: contactEmail,
+                },
+                subject: `${siteName}: You're RSVPed to ${event.name}`,
+                html,
+              };
+              switch (mailService) {
+                case "sendgrid":
+                  sgMail.send(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
+                case "nodemailer":
+                  nodemailerTransporter.sendMail(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
               }
-            );
+            }
+          );
         }
       }
       res.redirect(`/${req.params.eventID}`);
@@ -2187,44 +2173,42 @@ router.post("/unattendevent/:eventID", (req, res) => {
       );
       if (sendEmails) {
         if (req.body.attendeeEmail) {
-          req.app
-            .get("hbsInstance")
-            .renderView(
-              "./views/emails/unattendevent.handlebars",
-              {
-                eventID: req.params.eventID,
-                siteName,
-                siteLogo,
-                domain,
-                cache: true,
-                layout: "email.handlebars",
-              },
-              function (err, html) {
-                const msg = {
-                  to: req.body.attendeeEmail,
-                  from: {
-                    name: siteName,
-                    email: contactEmail,
-                  },
-                  subject: `${siteName}: You have been removed from an event`,
-                  html,
-                };
-                switch (mailService) {
-                  case "sendgrid":
-                    sgMail.send(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                  case "nodemailer":
-                    nodemailerTransporter.sendMail(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                }
+          req.app.get("hbsInstance").renderView(
+            "./views/emails/unattendevent.handlebars",
+            {
+              eventID: req.params.eventID,
+              siteName,
+              siteLogo,
+              domain,
+              cache: true,
+              layout: "email.handlebars",
+            },
+            function (err, html) {
+              const msg = {
+                to: req.body.attendeeEmail,
+                from: {
+                  name: siteName,
+                  email: contactEmail,
+                },
+                subject: `${siteName}: You have been removed from an event`,
+                html,
+              };
+              switch (mailService) {
+                case "sendgrid":
+                  sgMail.send(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
+                case "nodemailer":
+                  nodemailerTransporter.sendMail(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
               }
-            );
+            }
+          );
         }
       }
       res.writeHead(302, {
@@ -2269,43 +2253,41 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
       if (sendEmails) {
         // currently this is never called because we don't have the email address
         if (req.body.attendeeEmail) {
-          req.app
-            .get("hbsInstance")
-            .renderView(
-              "./views/emails/removeeventattendee.handlebars",
-              {
-                eventName: req.params.eventName,
-                siteName,
-                domain,
-                cache: true,
-                layout: "email.handlebars",
-              },
-              function (err, html) {
-                const msg = {
-                  to: req.body.attendeeEmail,
-                  from: {
-                    name: siteName,
-                    email: contactEmail,
-                  },
-                  subject: `${siteName}: You have been removed from an event`,
-                  html,
-                };
-                switch (mailService) {
-                  case "sendgrid":
-                    sgMail.send(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                  case "nodemailer":
-                    nodemailerTransporter.sendMail(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                }
+          req.app.get("hbsInstance").renderView(
+            "./views/emails/removeeventattendee.handlebars",
+            {
+              eventName: req.params.eventName,
+              siteName,
+              domain,
+              cache: true,
+              layout: "email.handlebars",
+            },
+            function (err, html) {
+              const msg = {
+                to: req.body.attendeeEmail,
+                from: {
+                  name: siteName,
+                  email: contactEmail,
+                },
+                subject: `${siteName}: You have been removed from an event`,
+                html,
+              };
+              switch (mailService) {
+                case "sendgrid":
+                  sgMail.send(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
+                case "nodemailer":
+                  nodemailerTransporter.sendMail(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
               }
-            );
+            }
+          );
         }
       }
       res.writeHead(302, {
@@ -2341,44 +2323,42 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
       if (sendEmails) {
         // currently this is never called because we don't have the email address
         if (req.body.attendeeEmail) {
-          req.app
-            .get("hbsInstance")
-            .renderView(
-              "./views/emails/removeeventattendee.handlebars",
-              {
-                eventName: req.params.eventName,
-                siteName,
-                siteLogo,
-                domain,
-                cache: true,
-                layout: "email.handlebars",
-              },
-              function (err, html) {
-                const msg = {
-                  to: req.body.attendeeEmail,
-                  from: {
-                    name: siteName,
-                    email: contactEmail,
-                  },
-                  subject: `${siteName}: You have been removed from an event`,
-                  html,
-                };
-                switch (mailService) {
-                  case "sendgrid":
-                    sgMail.send(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                  case "nodemailer":
-                    nodemailerTransporter.sendMail(msg).catch((e) => {
-                      console.error(e.toString());
-                      res.status(500).end();
-                    });
-                    break;
-                }
+          req.app.get("hbsInstance").renderView(
+            "./views/emails/removeeventattendee.handlebars",
+            {
+              eventName: req.params.eventName,
+              siteName,
+              siteLogo,
+              domain,
+              cache: true,
+              layout: "email.handlebars",
+            },
+            function (err, html) {
+              const msg = {
+                to: req.body.attendeeEmail,
+                from: {
+                  name: siteName,
+                  email: contactEmail,
+                },
+                subject: `${siteName}: You have been removed from an event`,
+                html,
+              };
+              switch (mailService) {
+                case "sendgrid":
+                  sgMail.send(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
+                case "nodemailer":
+                  nodemailerTransporter.sendMail(msg).catch((e) => {
+                    console.error(e.toString());
+                    res.status(500).end();
+                  });
+                  break;
               }
-            );
+            }
+          );
         }
       }
       res.writeHead(302, {
@@ -2420,46 +2400,44 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
       eventGroup.subscribers.push(subscriber);
       eventGroup.save();
       if (sendEmails) {
-        req.app
-          .get("hbsInstance")
-          .renderView(
-            "./views/emails/subscribed.handlebars",
-            {
-              eventGroupName: eventGroup.name,
-              eventGroupID: eventGroup.id,
-              emailAddress: encodeURIComponent(subscriber.email),
-              siteName,
-              siteLogo,
-              domain,
-              cache: true,
-              layout: "email.handlebars",
-            },
-            function (err, html) {
-              const msg = {
-                to: subscriber.email,
-                from: {
-                  name: siteName,
-                  email: contactEmail,
-                },
-                subject: `${siteName}: You have subscribed to an event group`,
-                html,
-              };
-              switch (mailService) {
-                case "sendgrid":
-                  sgMail.send(msg).catch((e) => {
-                    console.error(e.toString());
-                    res.status(500).end();
-                  });
-                  break;
-                case "nodemailer":
-                  nodemailerTransporter.sendMail(msg).catch((e) => {
-                    console.error(e.toString());
-                    res.status(500).end();
-                  });
-                  break;
-              }
+        req.app.get("hbsInstance").renderView(
+          "./views/emails/subscribed.handlebars",
+          {
+            eventGroupName: eventGroup.name,
+            eventGroupID: eventGroup.id,
+            emailAddress: encodeURIComponent(subscriber.email),
+            siteName,
+            siteLogo,
+            domain,
+            cache: true,
+            layout: "email.handlebars",
+          },
+          function (err, html) {
+            const msg = {
+              to: subscriber.email,
+              from: {
+                name: siteName,
+                email: contactEmail,
+              },
+              subject: `${siteName}: You have subscribed to an event group`,
+              html,
+            };
+            switch (mailService) {
+              case "sendgrid":
+                sgMail.send(msg).catch((e) => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+                break;
+              case "nodemailer":
+                nodemailerTransporter.sendMail(msg).catch((e) => {
+                  console.error(e.toString());
+                  res.status(500).end();
+                });
+                break;
             }
-          );
+          }
+        );
       }
       return res.redirect(`/group/${eventGroup.id}`);
     })
@@ -2557,45 +2535,43 @@ router.post("/post/comment/:eventID", (req, res) => {
                 .map((o) => o.email);
               if (attendeeEmails.length) {
                 console.log("Sending emails to: " + attendeeEmails);
-                req.app
-                  .get("hbsInstance")
-                  .renderView(
-                    "./views/emails/addeventcomment.handlebars",
-                    {
-                      siteName,
-                      siteLogo,
-                      domain,
-                      eventID: req.params.eventID,
-                      commentAuthor: req.body.commentAuthor,
-                      cache: true,
-                      layout: "email.handlebars",
-                    },
-                    function (err, html) {
-                      const msg = {
-                        to: attendeeEmails,
-                        from: {
-                          name: siteName,
-                          email: contactEmail,
-                        },
-                        subject: `${siteName}: New comment in ${event.name}`,
-                        html,
-                      };
-                      switch (mailService) {
-                        case "sendgrid":
-                          sgMail.sendMultiple(msg).catch((e) => {
-                            console.error(e.toString());
-                            res.status(500).end();
-                          });
-                          break;
-                        case "nodemailer":
-                          nodemailerTransporter.sendMail(msg).catch((e) => {
-                            console.error(e.toString());
-                            res.status(500).end();
-                          });
-                          break;
-                      }
+                req.app.get("hbsInstance").renderView(
+                  "./views/emails/addeventcomment.handlebars",
+                  {
+                    siteName,
+                    siteLogo,
+                    domain,
+                    eventID: req.params.eventID,
+                    commentAuthor: req.body.commentAuthor,
+                    cache: true,
+                    layout: "email.handlebars",
+                  },
+                  function (err, html) {
+                    const msg = {
+                      to: attendeeEmails,
+                      from: {
+                        name: siteName,
+                        email: contactEmail,
+                      },
+                      subject: `${siteName}: New comment in ${event.name}`,
+                      html,
+                    };
+                    switch (mailService) {
+                      case "sendgrid":
+                        sgMail.sendMultiple(msg).catch((e) => {
+                          console.error(e.toString());
+                          res.status(500).end();
+                        });
+                        break;
+                      case "nodemailer":
+                        nodemailerTransporter.sendMail(msg).catch((e) => {
+                          console.error(e.toString());
+                          res.status(500).end();
+                        });
+                        break;
                     }
-                  );
+                  }
+                );
               } else {
                 console.log("Nothing to send!");
               }
@@ -2671,45 +2647,43 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                 .map((o) => o.email);
               if (attendeeEmails.length) {
                 console.log("Sending emails to: " + attendeeEmails);
-                req.app
-                  .get("hbsInstance")
-                  .renderView(
-                    "./views/emails/addeventcomment.handlebars",
-                    {
-                      siteName,
-                      siteLogo,
-                      domain,
-                      eventID: req.params.eventID,
-                      commentAuthor: req.body.replyAuthor,
-                      cache: true,
-                      layout: "email.handlebars",
-                    },
-                    function (err, html) {
-                      const msg = {
-                        to: attendeeEmails,
-                        from: {
-                          name: siteName,
-                          email: contactEmail,
-                        },
-                        subject: `${siteName}: New comment in ${event.name}`,
-                        html,
-                      };
-                      switch (mailService) {
-                        case "sendgrid":
-                          sgMail.sendMultiple(msg).catch((e) => {
-                            console.error(e.toString());
-                            res.status(500).end();
-                          });
-                          break;
-                        case "nodemailer":
-                          nodemailerTransporter.sendMail(msg).catch((e) => {
-                            console.error(e.toString());
-                            res.status(500).end();
-                          });
-                          break;
-                      }
+                req.app.get("hbsInstance").renderView(
+                  "./views/emails/addeventcomment.handlebars",
+                  {
+                    siteName,
+                    siteLogo,
+                    domain,
+                    eventID: req.params.eventID,
+                    commentAuthor: req.body.replyAuthor,
+                    cache: true,
+                    layout: "email.handlebars",
+                  },
+                  function (err, html) {
+                    const msg = {
+                      to: attendeeEmails,
+                      from: {
+                        name: siteName,
+                        email: contactEmail,
+                      },
+                      subject: `${siteName}: New comment in ${event.name}`,
+                      html,
+                    };
+                    switch (mailService) {
+                      case "sendgrid":
+                        sgMail.sendMultiple(msg).catch((e) => {
+                          console.error(e.toString());
+                          res.status(500).end();
+                        });
+                        break;
+                      case "nodemailer":
+                        nodemailerTransporter.sendMail(msg).catch((e) => {
+                          console.error(e.toString());
+                          res.status(500).end();
+                        });
+                        break;
                     }
-                  );
+                  }
+                );
               } else {
                 console.log("Nothing to send!");
               }

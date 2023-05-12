@@ -1,16 +1,16 @@
-version: '3'
+version: "3"
 
 volumes:
-    mongodb_data_db:
+  mongodb_data_db:
 
 services:
-    gathio:
-        build: .
-        links:
-         - mongo
-        ports:
-            - 3000:3000
-    mongo:
-        image: mongo:latest
-        volumes:
-            - mongodb_data_db:/data/db        
+  gathio:
+    build: .
+    links:
+      - mongo
+    ports:
+      - 3000:3000
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongodb_data_db:/data/db
