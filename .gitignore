@@ -2,9 +2,10 @@
 
 # gathio custom
 
-config/api.js
-config/database.js
-config/domain.js
+dist
+src/config/api.js
+src/config/database.js
+src/config/domain.js
 public/events/*
 !public/events/.gitkeep
 
