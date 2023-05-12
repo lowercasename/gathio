@@ -276,7 +276,15 @@ router.get("/:eventID/featured", (req, res) => {
     type: "OrderedCollection",
     orderedItems: [ap.createFeaturedPost(eventID)],
   };
-  res.json(featured);
+  if (
+    req.headers.accept &&
+    (req.headers.accept.includes("application/activity+json") ||
+      req.headers.accept.includes("application/ld+json"))
+  ) {
+    res.header("Content-Type", "application/activity+json").send(featured);
+  } else {
+    res.header("Content-Type", "application/json").send(featured);
+  }
 });
 
 // return the JSON for a given activitypub message
@@ -295,7 +303,19 @@ router.get("/:eventID/m/:hash", (req, res) => {
       } else {
         const message = event.activityPubMessages.find((el) => el.id === id);
         if (message) {
-          return res.json(JSON.parse(message.content));
+          if (
+            req.headers.accept &&
+            (req.headers.accept.includes("application/activity+json") ||
+              req.headers.accept.includes("application/ld+json"))
+          ) {
+            res
+              .header("Content-Type", "application/activity+json")
+              .send(JSON.parse(message.content));
+          } else {
+            res
+              .header("Content-Type", "application/json")
+              .send(JSON.parse(message.content));
+          }
         } else {
           res.status(404);
           return res.render("404", { url: req.url });
@@ -340,7 +360,19 @@ router.get("/.well-known/webfinger", (req, res) => {
           res.status(404);
           res.render("404", { url: req.url });
         } else {
-          res.json(ap.createWebfinger(eventID, domain));
+          if (
+            req.headers.accept &&
+            (req.headers.accept.includes("application/activity+json") ||
+              req.headers.accept.includes("application/ld+json"))
+          ) {
+            res
+              .header("Content-Type", "application/activity+json")
+              .send(ap.createWebfinger(eventID, domain));
+          } else {
+            res
+              .header("Content-Type", "application/json")
+              .send(ap.createWebfinger(eventID, domain));
+          }
         }
       })
       .catch((err) => {
@@ -513,7 +545,9 @@ router.get("/:eventID", (req, res) => {
             req.headers.accept.includes("application/json") ||
             req.headers.accept.includes("application/json+ld"))
         ) {
-          res.json(JSON.parse(event.activityPubActor));
+          res
+            .header("Content-Type", "application/activity+json")
+            .send(JSON.parse(event.activityPubActor));
         } else {
           res.set("X-Robots-Tag", "noindex");
           res.render("event", {
@@ -588,7 +622,19 @@ router.get("/:eventID/followers", (req, res) => {
         },
         "@context": ["https://www.w3.org/ns/activitystreams"],
       };
-      return res.json(followersCollection);
+      if (
+        req.headers.accept &&
+        (req.headers.accept.includes("application/activity+json") ||
+          req.headers.accept.includes("application/ld+json"))
+      ) {
+        return res
+          .header("Content-Type", "application/activity+json")
+          .send(followersCollection);
+      } else {
+        return res
+          .header("Content-Type", "application/json")
+          .send(followersCollection);
+      }
     } else {
       return res.status(400).send("Bad request.");
     }
