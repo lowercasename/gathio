@@ -2,10 +2,8 @@
 
 # gathio custom
 
+config/config.toml
 dist
-src/config/api.js
-src/config/database.js
-src/config/domain.js
 public/events/*
 !public/events/.gitkeep
 
