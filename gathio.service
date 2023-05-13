@@ -1,0 +1,13 @@
+[Unit]
+Description=Gathio
+After=network.target
+
+[Service]
+Type=simple
+User=gathio
+WorkingDirectory=/srv/gathio
+ExecStart=/usr/bin/pnpm start
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
