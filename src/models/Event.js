@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const Attendees = new mongoose.Schema({
   name: {
@@ -256,4 +256,4 @@ const EventSchema = new mongoose.Schema({
   activityPubMessages: [ActivityPubMessages],
 });
 
-module.exports = mongoose.model("Event", EventSchema);
+export default mongoose.model("Event", EventSchema);

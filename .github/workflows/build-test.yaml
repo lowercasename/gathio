@@ -22,10 +22,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Set up config files
-        run: |
-          cp src/config/api-example.js src/config/api.js
-          cp src/config/database-example.js src/config/database.js
-          cp src/config/domain-example.js src/config/domain.js
+        run: cp config/config.example.toml config/config.toml
       - name: Build
         run: pnpm build
         continue-on-error: true

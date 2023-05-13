@@ -1,48 +1,55 @@
-const fs = require("fs");
+import fs from "fs";
+import express from "express";
+import { customAlphabet } from "nanoid";
+import randomstring from "randomstring";
+import { getConfig } from "./lib/config.js";
+import { addToLog, exportIcal } from "./helpers.js";
+import moment from "moment-timezone";
+import { marked } from "marked";
+import generateRSAKeypair from "generate-rsa-keypair";
+import crypto from "crypto";
+import request from "request";
+import niceware from "niceware";
+import ical from "ical";
+import sgMail from "@sendgrid/mail";
+import nodemailer from "nodemailer";
+import fileUpload from "express-fileupload";
+import Jimp from "jimp";
+import schedule from "node-schedule";
+import {
+  createActivityPubActor,
+  createActivityPubEvent,
+  createFeaturedPost,
+  createWebfinger,
+  updateActivityPubActor,
+  updateActivityPubEvent,
+  broadcastCreateMessage,
+  broadcastUpdateMessage,
+  broadcastDeleteMessage,
+  sendDirectMessage,
+  processInbox,
+} from "./activitypub.js";
+import Event from "./models/Event.js";
+import EventGroup from "./models/EventGroup.js";
+import path from "path";
 
-const express = require("express");
-
-const mongoose = require("mongoose");
+const config = getConfig();
+const domain = config.general.domain;
+const contactEmail = config.general.email;
+const siteName = config.general.site_name;
+const mailService = config.general.mail_service;
+const siteLogo = config.general.email_logo_url;
+const isFederated = config.general.is_federated || true;
+const showKofi = config.general.show_kofi;
 
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
 // because ActivityPub doesn't like it in IDs
-const { customAlphabet } = require("nanoid");
 const nanoid = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_",
   21
 );
 
-const randomstring = require("randomstring");
-
-const { body, validationResult } = require("express-validator");
-
 const router = express.Router();
-
-const Event = mongoose.model("Event");
-const EventGroup = mongoose.model("EventGroup");
-const addToLog = require("./helpers.js").addToLog;
-
-var moment = require("moment-timezone");
-
-const marked = require("marked");
-
-const generateRSAKeypair = require("generate-rsa-keypair");
-const crypto = require("crypto");
-const request = require("request");
-const niceware = require("niceware");
-
-const domain = require("./config/domain.js").domain;
-const contactEmail = require("./config/domain.js").email;
-const mailService = require("./config/domain.js").mailService;
-const siteName = require("./config/domain.js").sitename;
-const siteLogo = require("./config/domain.js").logo_url;
-let isFederated = require("./config/domain.js").isFederated;
-let showKofi = require("./config/domain.js").showKofi;
-// if the federation config isn't set, things are federated by default
-if (isFederated === undefined) {
-  isFederated = true;
-}
-const ap = require("./activitypub.js");
 
 // Extra marked renderer (used to render plaintext event description for page metadata)
 // Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
@@ -85,31 +92,23 @@ function render_plain() {
   return render;
 }
 
-const ical = require("ical");
-const { exportIcal } = require("./helpers.js");
-
-const sgMail = require("@sendgrid/mail");
-const nodemailer = require("nodemailer");
-
-const apiCredentials = require("./config/api.js");
-
 let sendEmails = false;
 let nodemailerTransporter;
-if (mailService) {
-  switch (mailService) {
+if (config.general.mail_service) {
+  switch (config.general.mail_service) {
     case "sendgrid":
-      sgMail.setApiKey(apiCredentials.sendgrid);
+      sgMail.setApiKey(config.sendgrid?.api_key);
       console.log("Sendgrid is ready to send emails.");
       sendEmails = true;
       break;
     case "nodemailer":
       nodemailerTransporter = nodemailer.createTransport({
-        host: apiCredentials.smtpServer,
-        port: apiCredentials.smtpPort,
+        host: config.nodemailer?.smtp_server,
+        port: config.nodemailer?.smtp_port,
         secure: false, // true for 465, false for other ports
         auth: {
-          user: apiCredentials.smtpUsername, // generated ethereal user
-          pass: apiCredentials.smtpPassword, // generated ethereal password
+          user: config.nodemailer?.smtp_username,
+          pass: config.nodemailer?.smtp_password,
         },
       });
       nodemailerTransporter.verify((error, success) => {
@@ -128,12 +127,9 @@ if (mailService) {
   }
 }
 
-const fileUpload = require("express-fileupload");
-var Jimp = require("jimp");
 router.use(fileUpload());
 
 // SCHEDULED DELETION
-const schedule = require("node-schedule");
 schedule.scheduleJob("59 23 * * *", function (fireDate) {
   const too_old = moment.tz("Etc/UTC").subtract(7, "days").toDate();
   console.log(
@@ -166,24 +162,27 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
         };
 
         if (event.image) {
-          fs.unlink(global.appRoot + "/public/events/" + event.image, (err) => {
-            if (err) {
+          fs.unlink(
+            path.join(process.cwd(), "/public/events/" + event.image),
+            (err) => {
+              if (err) {
+                addToLog(
+                  "deleteOldEvents",
+                  "error",
+                  "Attempt to delete event image for old event " +
+                    event.id +
+                    " failed with error: " +
+                    err
+                );
+              }
+              // Image removed
               addToLog(
                 "deleteOldEvents",
                 "error",
-                "Attempt to delete event image for old event " +
-                  event.id +
-                  " failed with error: " +
-                  err
+                "Image deleted for old event " + event.id
               );
             }
-            // Image removed
-            addToLog(
-              "deleteOldEvents",
-              "error",
-              "Image deleted for old event " + event.id
-            );
-          });
+          );
         }
         // Check if event has ActivityPub fields
         if (event.activityPubActor && event.activityPubEvent) {
@@ -192,12 +191,12 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
           const jsonUpdateObject = JSON.parse(event.activityPubActor);
           const jsonEventObject = JSON.parse(event.activityPubEvent);
           // first broadcast AP messages, THEN delete from DB
-          ap.broadcastDeleteMessage(
+          broadcastDeleteMessage(
             jsonUpdateObject,
             event.followers,
             event.id,
             function (statuses) {
-              ap.broadcastDeleteMessage(
+              broadcastDeleteMessage(
                 jsonEventObject,
                 event.followers,
                 event.id,
@@ -274,7 +273,7 @@ router.get("/:eventID/featured", (req, res) => {
     "@context": "https://www.w3.org/ns/activitystreams",
     id: `https://${domain}/${eventID}/featured`,
     type: "OrderedCollection",
-    orderedItems: [ap.createFeaturedPost(eventID)],
+    orderedItems: [createFeaturedPost(eventID)],
   };
   if (
     req.headers.accept &&
@@ -367,11 +366,11 @@ router.get("/.well-known/webfinger", (req, res) => {
           ) {
             res
               .header("Content-Type", "application/activity+json")
-              .send(ap.createWebfinger(eventID, domain));
+              .send(createWebfinger(eventID, domain));
           } else {
             res
               .header("Content-Type", "application/json")
-              .send(ap.createWebfinger(eventID, domain));
+              .send(createWebfinger(eventID, domain));
           }
         }
       })
@@ -938,7 +937,7 @@ router.post("/newevent", async (req, res) => {
     usersCanComment: req.body.interactionCheckbox ? true : false,
     maxAttendees: req.body.maxAttendees,
     firstLoad: true,
-    activityPubActor: ap.createActivityPubActor(
+    activityPubActor: createActivityPubActor(
       eventID,
       domain,
       pair.public,
@@ -950,7 +949,7 @@ router.post("/newevent", async (req, res) => {
       endUTC,
       req.body.timezone
     ),
-    activityPubEvent: ap.createActivityPubEvent(
+    activityPubEvent: createActivityPubEvent(
       req.body.eventName,
       startUTC,
       endUTC,
@@ -962,7 +961,7 @@ router.post("/newevent", async (req, res) => {
       {
         id: `https://${domain}/${eventID}/m/featuredPost`,
         content: JSON.stringify(
-          ap.createFeaturedPost(
+          createFeaturedPost(
             eventID,
             req.body.eventName,
             startUTC,
@@ -1376,7 +1375,7 @@ router.post("/editevent/:eventID/:editToken", (req, res) => {
             : null,
           eventGroup: isPartOfEventGroup ? eventGroup._id : null,
           activityPubActor: event.activityPubActor
-            ? ap.updateActivityPubActor(
+            ? updateActivityPubActor(
                 JSON.parse(event.activityPubActor),
                 req.body.eventDescription,
                 req.body.eventName,
@@ -1388,7 +1387,7 @@ router.post("/editevent/:eventID/:editToken", (req, res) => {
               )
             : null,
           activityPubEvent: event.activityPubEvent
-            ? ap.updateActivityPubEvent(
+            ? updateActivityPubEvent(
                 JSON.parse(event.activityPubEvent),
                 req.body.eventName,
                 req.body.startUTC,
@@ -1463,17 +1462,17 @@ router.post("/editevent/:eventID/:editToken", (req, res) => {
                   cc: "https://www.w3.org/ns/activitystreams#Public",
                   content: `${diffText} See here: <a href="https://${domain}/${req.params.eventID}">https://${domain}/${req.params.eventID}</a>`,
                 };
-                ap.broadcastCreateMessage(jsonObject, event.followers, eventID);
+                broadcastCreateMessage(jsonObject, event.followers, eventID);
                 // also broadcast an Update profile message to all followers so that at least Mastodon servers will update the local profile information
                 const jsonUpdateObject = JSON.parse(event.activityPubActor);
-                ap.broadcastUpdateMessage(
+                broadcastUpdateMessage(
                   jsonUpdateObject,
                   event.followers,
                   eventID
                 );
                 // also broadcast an Update/Event for any calendar apps that are consuming our Events
                 const jsonEventObject = JSON.parse(event.activityPubEvent);
-                ap.broadcastUpdateMessage(
+                broadcastUpdateMessage(
                   jsonEventObject,
                   event.followers,
                   eventID
@@ -1495,7 +1494,7 @@ router.post("/editevent/:eventID/:editToken", (req, res) => {
                     ],
                   };
                   // send direct message to user
-                  ap.sendDirectMessage(jsonObject, attendee.id, eventID);
+                  sendDirectMessage(jsonObject, attendee.id, eventID);
                 }
               }
             });
@@ -1709,31 +1708,10 @@ router.post("/deleteimage/:eventID/:editToken", (req, res) => {
             "This event doesn't have a linked image. What are you even doing"
           );
       }
-      fs.unlink(global.appRoot + "/public/events/" + eventImage, (err) => {
-        if (err) {
-          res.status(500).send(err);
-          addToLog(
-            "deleteEventImage",
-            "error",
-            "Attempt to delete event image for event " +
-              req.params.eventID +
-              " failed with error: " +
-              err
-          );
-        }
-        // Image removed
-        addToLog(
-          "deleteEventImage",
-          "success",
-          "Image for event " + req.params.eventID + " deleted"
-        );
-        event.image = "";
-        event
-          .save()
-          .then((response) => {
-            res.status(200).send("Success");
-          })
-          .catch((err) => {
+      fs.unlink(
+        path.join(process.cwd(), "/public/events/" + eventImage),
+        (err) => {
+          if (err) {
             res.status(500).send(err);
             addToLog(
               "deleteEventImage",
@@ -1743,8 +1721,32 @@ router.post("/deleteimage/:eventID/:editToken", (req, res) => {
                 " failed with error: " +
                 err
             );
-          });
-      });
+          }
+          // Image removed
+          addToLog(
+            "deleteEventImage",
+            "success",
+            "Image for event " + req.params.eventID + " deleted"
+          );
+          event.image = "";
+          event
+            .save()
+            .then((response) => {
+              res.status(200).send("Success");
+            })
+            .catch((err) => {
+              res.status(500).send(err);
+              addToLog(
+                "deleteEventImage",
+                "error",
+                "Attempt to delete event image for event " +
+                  req.params.eventID +
+                  " failed with error: " +
+                  err
+              );
+            });
+        }
+      );
     }
   });
 });
@@ -1768,7 +1770,7 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
         const guidUpdateObject = crypto.randomBytes(16).toString("hex");
         const jsonUpdateObject = JSON.parse(event.activityPubActor);
         // first broadcast AP messages, THEN delete from DB
-        ap.broadcastDeleteMessage(
+        broadcastDeleteMessage(
           jsonUpdateObject,
           event.followers,
           req.params.eventID,
@@ -1790,7 +1792,7 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                 // Delete image
                 if (eventImage) {
                   fs.unlink(
-                    global.appRoot + "/public/events/" + eventImage,
+                    path.join(process.cwd(), "/public/events/" + eventImage),
                     (err) => {
                       if (err) {
                         res.send(err);
@@ -1943,7 +1945,7 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
             // Delete image
             if (eventGroupImage) {
               fs.unlink(
-                global.appRoot + "/public/events/" + eventGroupImage,
+                path.join(process.cwd(), "/public/events/" + eventGroupImage),
                 (err) => {
                   if (err) {
                     res.send(err);
@@ -2569,7 +2571,7 @@ router.post("/post/comment/:eventID", (req, res) => {
             cc: "https://www.w3.org/ns/activitystreams#Public",
             content: `<p>${req.body.commentAuthor} commented: ${req.body.commentContent}.</p><p><a href="https://${domain}/${req.params.eventID}/">See the full conversation here.</a></p>`,
           };
-          ap.broadcastCreateMessage(
+          broadcastCreateMessage(
             jsonObject,
             event.followers,
             req.params.eventID
@@ -2681,7 +2683,7 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
             cc: "https://www.w3.org/ns/activitystreams#Public",
             content: `<p>${req.body.replyAuthor} commented: ${req.body.replyContent}</p><p><a href="https://${domain}/${req.params.eventID}/">See the full conversation here.</a></p>`,
           };
-          ap.broadcastCreateMessage(
+          broadcastCreateMessage(
             jsonObject,
             event.followers,
             req.params.eventID
@@ -2877,7 +2879,7 @@ router.post("/activitypub/inbox", (req, res) => {
         const result = verifier.verify(publicKeyBuf, signatureBuf);
         if (result) {
           // actually process the ActivityPub message now that it's been verified
-          ap.processInbox(req, res);
+          processInbox(req, res);
         } else {
           return res.status(401).send("Signature could not be verified.");
         }
@@ -2896,4 +2898,4 @@ router.use(function (req, res, next) {
 
 addToLog("startup", "success", "Started up successfully");
 
-module.exports = router;
+export default router;

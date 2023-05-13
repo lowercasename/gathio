@@ -1,14 +1,14 @@
-const domain = require("./config/domain.js").domain;
-const siteName = require("./config/domain.js").sitename;
-
-const mongoose = require("mongoose");
-const Log = mongoose.model("Log");
-var moment = require("moment-timezone");
-const icalGenerator = require("ical-generator");
+import moment from "moment-timezone";
+import icalGenerator from "ical-generator";
+import Log from "./models/Log.js";
+import { getConfig } from "./lib/config.js";
+const config = getConfig();
+const domain = config.general.domain;
+const siteName = config.general.site_name;
 
 // LOGGING
 
-function addToLog(process, status, message) {
+export function addToLog(process, status, message) {
   let logEntry = new Log({
     status: status,
     process: process,
@@ -20,7 +20,7 @@ function addToLog(process, status, message) {
   });
 }
 
-function exportIcal(events, calendarName) {
+export function exportIcal(events, calendarName) {
   // Create a new icalGenerator... generator
   const cal = icalGenerator({
     name: calendarName || siteName,
@@ -52,8 +52,3 @@ function exportIcal(events, calendarName) {
   const string = cal.toString();
   return string;
 }
-
-module.exports = {
-  addToLog,
-  exportIcal,
-};

@@ -1,0 +1,33 @@
+[general]
+# Your domain goes here. If there is a port it should be 'domain.com:port', but
+# otherwise just 'domain.com'.
+domain = "localhost:3000"
+port = "3000"
+email = "contact@example.com"
+site_name = "gathio"
+is_federated = true
+# If left blank, this defaults to
+# https://yourdomain.com/images/gathio-email-logo.gif. Set a full URL here to
+# change it to your own logo (or just change the file itself).
+email_logo_url = ""
+# Show a Ko-Fi box to donate money to Raphael (Gathio's creator) on the front
+# page.
+show_kofi = false
+# Which mail service to use to send emails to hosts and attendees. Options are
+# 'nodemailer' or 'sendgrid'. Configure settings for this mail
+# service below.
+mail_service = "nodemailer"
+
+[database]
+# Set up for a locally running MongoDB connection. Change this to
+# 'mongodb://mongo:27017/gathio' for a Dockerised connection.
+mongodb_url = "mongodb://localhost:27017/gathio"
+
+[nodemailer]
+smtp_server = ""
+smtp_port = ""
+smtp_username = ""
+smtp_password = ""
+
+[sendgrid]
+api_key = ""
