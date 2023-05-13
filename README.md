@@ -1,6 +1,6 @@
 # gathio
 
-[![Build status](https://github.com/lowercasename/gathio/actions/workflows/ci.yaml/badge.svg)](https://github.com/lowercasename/gathio/actions/workflows/ci.yaml)
+[![Build status](https://github.com/lowercasename/gathio/actions/workflows/build-test.yaml/badge.svg)](https://github.com/lowercasename/gathio/actions/workflows/build-test.yaml)
 
 Self-destructing, shareable, no-registration event pages.
 
