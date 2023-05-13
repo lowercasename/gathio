@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const Subscriber = new mongoose.Schema({
   email: {
@@ -54,4 +54,4 @@ const EventGroupSchema = new mongoose.Schema({
   subscribers: [Subscriber],
 });
 
-module.exports = mongoose.model("EventGroup", EventGroupSchema);
+export default mongoose.model("EventGroup", EventGroupSchema);

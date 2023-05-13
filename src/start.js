@@ -1,13 +1,10 @@
-require("dotenv").config();
+import mongoose from "mongoose";
+import { getConfig } from "./lib/config.js";
+import app from "./app.js";
 
-const path = require("path");
+const config = getConfig();
 
-const mongoose = require("mongoose");
-
-const databaseCredentials = require("./config/database.js");
-const port = require("./config/domain.js").port;
-
-mongoose.connect(databaseCredentials.url, {
+mongoose.connect(config.database.mongodb_url, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -21,15 +18,7 @@ mongoose.connection
     console.log("Connection error: ${err.message}");
   });
 
-require("./models/Event");
-require("./models/Log");
-require("./models/EventGroup");
-
-const app = require("./app.js");
-
-global.appRoot = path.resolve(__dirname);
-
-const server = app.listen(port, () => {
+const server = app.listen(config.general.port, () => {
   console.log(
     `Welcome to gathio! The app is now running on http://localhost:${
       server.address().port

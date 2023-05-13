@@ -1,24 +1,24 @@
-const domain = require("./config/domain.js").domain;
-const contactEmail = require("./config/domain.js").email;
-const siteName = require("./config/domain.js").sitename;
-const isFederated = require("./config/domain.js").isFederated;
-const request = require("request");
-const addToLog = require("./helpers.js").addToLog;
-const crypto = require("crypto");
+import request from "request";
+import { addToLog } from "./helpers.js";
+import crypto from "crypto";
+import { customAlphabet } from "nanoid";
+import moment from "moment-timezone";
+import sanitizeHtml from "sanitize-html";
+import { getConfig } from "./lib/config.js";
+const config = getConfig();
+const domain = config.general.domain;
+const siteName = config.general.site_name;
+const isFederated = config.general.is_federated;
+import Event from "./models/Event.js";
+
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
 // because ActivityPub doesn't like it in IDs
-const { customAlphabet } = require("nanoid");
 const nanoid = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_",
   21
 );
-var moment = require("moment-timezone");
-const mongoose = require("mongoose");
-const Event = mongoose.model("Event");
-const EventGroup = mongoose.model("EventGroup");
-var sanitizeHtml = require("sanitize-html");
 
-function createActivityPubActor(
+export function createActivityPubActor(
   eventID,
   domain,
   pubkey,
@@ -70,7 +70,7 @@ function createActivityPubActor(
   return JSON.stringify(actor);
 }
 
-function createActivityPubEvent(
+export function createActivityPubEvent(
   name,
   startUTC,
   endUTC,
@@ -92,7 +92,7 @@ function createActivityPubEvent(
   return JSON.stringify(eventObject);
 }
 
-function createFeaturedPost(
+export function createFeaturedPost(
   eventID,
   name,
   startUTC,
@@ -113,7 +113,7 @@ function createFeaturedPost(
   return featured;
 }
 
-function updateActivityPubEvent(
+export function updateActivityPubEvent(
   oldEvent,
   name,
   startUTC,
@@ -137,7 +137,7 @@ function updateActivityPubEvent(
   return JSON.stringify(eventObject);
 }
 
-function updateActivityPubActor(
+export function updateActivityPubActor(
   actor,
   description,
   name,
@@ -168,7 +168,7 @@ function updateActivityPubActor(
   return JSON.stringify(actor);
 }
 
-function signAndSend(message, eventID, targetDomain, inbox, callback) {
+export function signAndSend(message, eventID, targetDomain, inbox, callback) {
   if (!isFederated) return;
   let inboxFragment = inbox.replace("https://" + targetDomain, "");
   // get the private key
@@ -264,7 +264,7 @@ function signAndSend(message, eventID, targetDomain, inbox, callback) {
 // this function sends something to the timeline of every follower in the followers array
 // it's also an unlisted public message, meaning non-followers can see the message if they look at
 // the profile but it doesn't spam federated timelines
-function broadcastCreateMessage(apObject, followers, eventID) {
+export function broadcastCreateMessage(apObject, followers, eventID) {
   if (!isFederated) return;
   let guidCreate = crypto.randomBytes(16).toString("hex");
   Event.findOne(
@@ -325,7 +325,7 @@ function broadcastCreateMessage(apObject, followers, eventID) {
 }
 
 // sends an Announce for the apObject
-function broadcastAnnounceMessage(apObject, followers, eventID) {
+export function broadcastAnnounceMessage(apObject, followers, eventID) {
   if (!isFederated) return;
   let guidUpdate = crypto.randomBytes(16).toString("hex");
   Event.findOne(
@@ -386,7 +386,7 @@ function broadcastAnnounceMessage(apObject, followers, eventID) {
 }
 
 // sends an Update for the apObject
-function broadcastUpdateMessage(apObject, followers, eventID) {
+export function broadcastUpdateMessage(apObject, followers, eventID) {
   if (!isFederated) return;
   let guidUpdate = crypto.randomBytes(16).toString("hex");
   // iterate over followers
@@ -440,7 +440,7 @@ function broadcastUpdateMessage(apObject, followers, eventID) {
   );
 }
 
-function broadcastDeleteMessage(apObject, followers, eventID, callback) {
+export function broadcastDeleteMessage(apObject, followers, eventID, callback) {
   callback = callback || function () {};
   if (!isFederated) {
     callback([]);
@@ -521,7 +521,7 @@ function broadcastDeleteMessage(apObject, followers, eventID, callback) {
 }
 
 // this sends a message "to:" an individual fediverse user
-function sendDirectMessage(apObject, actorId, eventID, callback) {
+export function sendDirectMessage(apObject, actorId, eventID, callback) {
   if (!isFederated) return;
   callback = callback || function () {};
   const guidCreate = crypto.randomBytes(16).toString("hex");
@@ -567,7 +567,7 @@ function sendDirectMessage(apObject, actorId, eventID, callback) {
   );
 }
 
-function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
+export function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
   if (!isFederated) return;
   callback = callback || function () {};
   const guid = crypto.randomBytes(16).toString("hex");
@@ -1185,7 +1185,7 @@ function _handleCreateNoteComment(req, res) {
   } // end public message
 }
 
-function processInbox(req, res) {
+export function processInbox(req, res) {
   if (!isFederated) return res.sendStatus(404);
   try {
     // if a Follow activity hits the inbox
@@ -1251,7 +1251,7 @@ function processInbox(req, res) {
   }
 }
 
-function createWebfinger(eventID, domain) {
+export function createWebfinger(eventID, domain) {
   return {
     subject: `acct:${eventID}@${domain}`,
 
@@ -1264,20 +1264,3 @@ function createWebfinger(eventID, domain) {
     ],
   };
 }
-
-module.exports = {
-  processInbox,
-  sendAcceptMessage,
-  sendDirectMessage,
-  broadcastAnnounceMessage,
-  broadcastUpdateMessage,
-  broadcastDeleteMessage,
-  broadcastCreateMessage,
-  signAndSend,
-  createActivityPubActor,
-  updateActivityPubActor,
-  createActivityPubEvent,
-  updateActivityPubEvent,
-  createFeaturedPost,
-  createWebfinger,
-};

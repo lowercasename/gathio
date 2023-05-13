@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const LogSchema = new mongoose.Schema({
   status: {
@@ -23,4 +23,4 @@ const LogSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Log", LogSchema);
+export default mongoose.model("Log", LogSchema);

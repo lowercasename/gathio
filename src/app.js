@@ -1,10 +1,7 @@
-const express = require("express");
-const path = require("path");
-const session = require("express-session");
-const cors = require("cors");
-const routes = require("./routes");
-const hbs = require("express-handlebars");
-const bodyParser = require("body-parser");
+import express from "express";
+import routes from "./routes.js";
+import hbs from "express-handlebars";
+import bodyParser from "body-parser";
 
 const app = express();
 
@@ -50,4 +47,4 @@ app.use(bodyParser.json({ type: "application/activity+json" })); // support json
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/", routes);
 
-module.exports = app;
+export default app;
