@@ -5,12 +5,6 @@ import bodyParser from "body-parser";
 
 const app = express();
 
-// Configuration //
-
-//app.use(cors());
-//app.use(bodyParser.json());
-//app.use(session({ secret: 'slartibartfast', cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false }));
-
 // View engine //
 const hbsInstance = hbs.create({
     defaultLayout: "main",
