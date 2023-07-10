@@ -9,7 +9,8 @@
         "start": "node dist/start.js",
         "dev": "nodemon -e ts,js --watch src --exec \"pnpm run build ; pnpm run start\"",
         "test:dev": "pnpm run dev & wait-on http://localhost:3000 && cypress open --e2e --browser chrome",
-        "test": "pnpm run build || true && pnpm run start & wait-on http://localhost:3000 && cypress run --e2e --browser chrome"
+        "test": "pnpm run build || true && pnpm run start & wait-on http://localhost:3000 && cypress run --e2e --browser chrome",
+        "deploy": "pm2 deploy ecosystem.config.cjs production"
     },
     "engines": {
         "node": ">=16.16.0"

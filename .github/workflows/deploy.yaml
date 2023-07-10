@@ -1,0 +1,34 @@
+name: CI / Deploy
+on:
+    pull_request:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v2
+              with:
+                  version: 8
+
+            - name: Set up known_hosts file
+              run: |
+                  mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
+                  ssh-keyscan -t rsa ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+            - uses: webfactory/ssh-agent@v0.7.0
+              with:
+                  ssh-private-key: ${{ secrets.SSH_KEY }}
+
+            - name: Install PM2
+              run: pnpm install -g pm2
+
+            - name: Deploy
+              run: pnpm run deploy
