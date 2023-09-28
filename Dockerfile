@@ -6,5 +6,5 @@ RUN npm install -g pnpm
 RUN pnpm install
 COPY . /app/
 RUN cp config/config.example.toml config/config.toml
-CMD pnpm run build
+RUN pnpm run build
 CMD pnpm run start
