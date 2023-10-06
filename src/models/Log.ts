@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 
+export interface ILog extends mongoose.Document {
+  status: string;
+  process: string;
+  message: string;
+  timestamp: Date;
+}
+
 const LogSchema = new mongoose.Schema({
   status: {
     type: String,
@@ -23,4 +30,4 @@ const LogSchema = new mongoose.Schema({
   },
 });
 
-export default mongoose.model("Log", LogSchema);
+export default mongoose.model<ILog>("Log", LogSchema);

@@ -1,5 +1,78 @@
 import mongoose from "mongoose";
 
+export interface IAttendee {
+  name?: string;
+  status?: string;
+  email?: string;
+  removalPassword?: string;
+  id?: string;
+  number?: number;
+  created?: Date;
+}
+
+export interface IReply {
+  id: string;
+  author: string;
+  content: string;
+  timestamp: Date;
+}
+
+export interface IComment {
+  id: string;
+  author: string;
+  content: string;
+  timestamp: Date;
+  activityJson?: string;
+  actorJson?: string;
+  activityId?: string;
+  actorId?: string;
+  replies?: IReply[];
+}
+
+export interface IFollower {
+  followId?: string;
+  actorId?: string;
+  actorJson?: string;
+  name?: string;
+}
+
+export interface IActivityPubMessage {
+  id?: string;
+  content?: string;
+}
+
+export interface IEvent extends mongoose.Document {
+  id: string;
+  type: string;
+  name: string;
+  location: string;
+  start: Date;
+  end: Date;
+  timezone: string;
+  description: string;
+  image?: string;
+  url?: string;
+  creatorEmail?: string;
+  hostName?: string;
+  viewPassword?: string;
+  editPassword?: string;
+  editToken?: string;
+  eventGroup?: mongoose.Types.ObjectId;
+  usersCanAttend?: boolean;
+  showUsersList?: boolean;
+  usersCanComment?: boolean;
+  firstLoad?: boolean;
+  attendees?: IAttendee[];
+  maxAttendees?: number;
+  comments?: IComment[];
+  activityPubActor?: string;
+  activityPubEvent?: string;
+  publicKey?: string;
+  privateKey?: string;
+  followers?: IFollower[];
+  activityPubMessages?: IActivityPubMessage[];
+}
+
 const Attendees = new mongoose.Schema({
   name: {
     type: String,
@@ -256,4 +329,4 @@ const EventSchema = new mongoose.Schema({
   activityPubMessages: [ActivityPubMessages],
 });
 
-export default mongoose.model("Event", EventSchema);
+export default mongoose.model<IEvent>("Event", EventSchema);

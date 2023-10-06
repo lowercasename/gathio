@@ -1,5 +1,23 @@
 import mongoose from "mongoose";
 
+export interface ISubscriber {
+  email?: string;
+}
+
+export interface IEventGroup extends mongoose.Document {
+  id: string;
+  name: string;
+  description: string;
+  image?: string;
+  url?: string;
+  creatorEmail?: string;
+  hostName?: string;
+  editToken?: string;
+  firstLoad?: boolean;
+  events?: mongoose.Types.ObjectId[];
+  subscribers?: ISubscriber[];
+}
+
 const Subscriber = new mongoose.Schema({
   email: {
     type: String,
@@ -54,4 +72,4 @@ const EventGroupSchema = new mongoose.Schema({
   subscribers: [Subscriber],
 });
 
-export default mongoose.model("EventGroup", EventGroupSchema);
+export default mongoose.model<IEventGroup>("EventGroup", EventGroupSchema);
