@@ -1,13 +1,14 @@
 import mongoose from "mongoose";
 
 export interface IAttendee {
-  name?: string;
+  name: string;
   status?: string;
   email?: string;
   removalPassword?: string;
   id?: string;
   number?: number;
   created?: Date;
+  _id: string;
 }
 
 export interface IReply {
