@@ -1,6 +1,8 @@
 import express from "express";
-import routes from "./routes.js";
 import hbs from "express-handlebars";
+
+import routes from "./routes.js";
+import frontend from "./routes/frontend.js";
 
 const app = express();
 
@@ -39,6 +41,7 @@ app.use(express.json({ type: "application/activity+json" })); // support json en
 app.use(express.urlencoded({ extended: true }));
 
 // Router //
+app.use("/", frontend);
 app.use("/", routes);
 
 export default app;

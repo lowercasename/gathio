@@ -51,47 +51,6 @@ const nanoid = customAlphabet(
 
 const router = express.Router();
 
-// Extra marked renderer (used to render plaintext event description for page metadata)
-// Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
-// &#63; to ? helper
-function htmlEscapeToText(text) {
-  return text.replace(/\&\#[0-9]*;|&amp;/g, function (escapeCode) {
-    if (escapeCode.match(/amp/)) {
-      return "&";
-    }
-    return String.fromCharCode(escapeCode.match(/[0-9]+/));
-  });
-}
-
-function render_plain() {
-  var render = new marked.Renderer();
-  // render just the text of a link, strong, em
-  render.link = function (href, title, text) {
-    return text;
-  };
-  render.strong = function (text) {
-    return text;
-  };
-  render.em = function (text) {
-    return text;
-  };
-  // render just the text of a paragraph
-  render.paragraph = function (text) {
-    return htmlEscapeToText(text) + "\r\n";
-  };
-  // render nothing for headings, images, and br
-  render.heading = function (text, level) {
-    return "";
-  };
-  render.image = function (href, title, text) {
-    return "";
-  };
-  render.br = function () {
-    return "";
-  };
-  return render;
-}
-
 let sendEmails = false;
 let nodemailerTransporter;
 if (config.general.mail_service) {
@@ -224,46 +183,6 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
   // old (they're not going to become active)
 });
 
-// FRONTEND ROUTES
-
-router.get("/", (req, res) => {
-  res.render("home", {
-    domain,
-    email: contactEmail,
-    siteName,
-    showKofi,
-  });
-});
-
-router.get("/new", (req, res) => {
-  res.render("home");
-});
-
-router.get("/new/event", (req, res) => {
-  res.render("newevent", {
-    domain: domain,
-    email: contactEmail,
-    siteName: siteName,
-  });
-});
-router.get("/new/event/public", (req, res) => {
-  let isPrivate = false;
-  let isPublic = true;
-  let isOrganisation = false;
-  let isUnknownType = false;
-  res.render("newevent", {
-    title: "New event",
-    isPrivate: isPrivate,
-    isPublic: isPublic,
-    isOrganisation: isOrganisation,
-    isUnknownType: isUnknownType,
-    eventType: "public",
-    domain: domain,
-    email: contactEmail,
-    siteName: siteName,
-  });
-});
-
 // return the JSON for the featured/pinned post for this event
 router.get("/:eventID/featured", (req, res) => {
   if (!isFederated) return res.sendStatus(404);
@@ -388,216 +307,6 @@ router.get("/.well-known/webfinger", (req, res) => {
         return;
       });
   }
-});
-
-router.get("/:eventID", (req, res) => {
-  Event.findOne({
-    id: req.params.eventID,
-  })
-    .lean() // Required, see: https://stackoverflow.com/questions/59690923/handlebars-access-has-been-denied-to-resolve-the-property-from-because-it-is
-    .populate("eventGroup")
-    .then((event) => {
-      if (event) {
-        const parsedLocation = event.location.replace(/\s+/g, "+");
-        let displayDate;
-        if (moment.tz(event.end, event.timezone).isSame(event.start, "day")) {
-          // Happening during one day
-          displayDate =
-            moment
-              .tz(event.start, event.timezone)
-              .format(
-                'dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a'
-              ) +
-            moment
-              .tz(event.end, event.timezone)
-              .format(
-                ' [<span class="text-muted">to</span>] h:mm a [<span class="text-muted">](z)[</span>]'
-              );
-        } else {
-          displayDate =
-            moment
-              .tz(event.start, event.timezone)
-              .format(
-                'dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a'
-              ) +
-            moment
-              .tz(event.end, event.timezone)
-              .format(
-                ' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a [<span class="text-muted">](z)[</span>]'
-              );
-        }
-        let eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
-        let eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
-        let parsedStart = moment
-          .tz(event.start, event.timezone)
-          .format("YYYYMMDD[T]HHmmss");
-        let parsedEnd = moment
-          .tz(event.end, event.timezone)
-          .format("YYYYMMDD[T]HHmmss");
-        let eventHasConcluded = false;
-        if (
-          moment
-            .tz(event.end, event.timezone)
-            .isBefore(moment.tz(event.timezone))
-        ) {
-          eventHasConcluded = true;
-        }
-        let eventHasBegun = false;
-        if (
-          moment
-            .tz(event.start, event.timezone)
-            .isBefore(moment.tz(event.timezone))
-        ) {
-          eventHasBegun = true;
-        }
-        let fromNow = moment.tz(event.start, event.timezone).fromNow();
-        let parsedDescription = marked.parse(event.description);
-        let eventEditToken = event.editToken;
-
-        let escapedName = event.name.replace(/\s+/g, "+");
-
-        let eventHasCoverImage = false;
-        if (event.image) {
-          eventHasCoverImage = true;
-        } else {
-          eventHasCoverImage = false;
-        }
-        let eventHasHost = false;
-        if (event.hostName) {
-          eventHasHost = true;
-        } else {
-          eventHasHost = false;
-        }
-        let firstLoad = false;
-        if (event.firstLoad === true) {
-          firstLoad = true;
-          Event.findOneAndUpdate(
-            { id: req.params.eventID },
-            { firstLoad: false },
-            function (err, raw) {
-              if (err) {
-                res.send(err);
-              }
-            }
-          );
-        }
-        let editingEnabled = false;
-        if (Object.keys(req.query).length !== 0) {
-          if (!req.query.e) {
-            editingEnabled = false;
-            console.log("No edit token set");
-          } else {
-            if (req.query.e === eventEditToken) {
-              editingEnabled = true;
-            } else {
-              editingEnabled = false;
-            }
-          }
-        }
-        let eventAttendees = event.attendees
-          .sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
-          .map((el) => {
-            if (!el.id) {
-              el.id = el._id;
-            }
-            if (el.number > 1) {
-              el.name = `${el.name} (${el.number} people)`;
-            }
-            return el;
-          })
-          .filter((obj, pos, arr) => {
-            return (
-              obj.status === "attending" &&
-              arr.map((mapObj) => mapObj.id).indexOf(obj.id) === pos
-            );
-          });
-
-        let spotsRemaining, noMoreSpots;
-        let numberOfAttendees = eventAttendees.reduce((acc, attendee) => {
-          if (attendee.status === "attending") {
-            return acc + attendee.number || 1;
-          }
-          return acc;
-        }, 0);
-        if (event.maxAttendees) {
-          spotsRemaining = event.maxAttendees - numberOfAttendees;
-          if (spotsRemaining <= 0) {
-            noMoreSpots = true;
-          }
-        }
-        let metadata = {
-          title: event.name,
-          description: marked
-            .parse(event.description, { renderer: render_plain() })
-            .split(" ")
-            .splice(0, 40)
-            .join(" ")
-            .trim(),
-          image: eventHasCoverImage
-            ? `https://${domain}/events/` + event.image
-            : null,
-          url: `https://${domain}/` + req.params.eventID,
-        };
-        if (
-          req.headers.accept &&
-          (req.headers.accept.includes("application/activity+json") ||
-            req.headers.accept.includes("application/json") ||
-            req.headers.accept.includes("application/json+ld"))
-        ) {
-          res
-            .header("Content-Type", "application/activity+json")
-            .send(JSON.parse(event.activityPubActor));
-        } else {
-          res.set("X-Robots-Tag", "noindex");
-          res.render("event", {
-            domain: domain,
-            isFederated: isFederated,
-            email: contactEmail,
-            title: event.name,
-            escapedName: escapedName,
-            eventData: event,
-            eventAttendees: eventAttendees,
-            numberOfAttendees,
-            spotsRemaining: spotsRemaining,
-            noMoreSpots: noMoreSpots,
-            eventStartISO: eventStartISO,
-            eventEndISO: eventEndISO,
-            parsedLocation: parsedLocation,
-            parsedStart: parsedStart,
-            parsedEnd: parsedEnd,
-            displayDate: displayDate,
-            fromNow: fromNow,
-            timezone: event.timezone,
-            parsedDescription: parsedDescription,
-            editingEnabled: editingEnabled,
-            eventHasCoverImage: eventHasCoverImage,
-            eventHasHost: eventHasHost,
-            firstLoad: firstLoad,
-            eventHasConcluded: eventHasConcluded,
-            eventHasBegun: eventHasBegun,
-            metadata: metadata,
-            siteName: siteName,
-          });
-        }
-      } else {
-        res.status(404);
-        res.render("404", { url: req.url });
-      }
-    })
-    .catch((err) => {
-      addToLog(
-        "displayEvent",
-        "error",
-        "Attempt to display event " +
-          req.params.eventID +
-          " failed with error: " +
-          err
-      );
-      console.log(err);
-      res.status(404);
-      res.render("404", { url: req.url });
-      return;
-    });
 });
 
 router.get("/:eventID/followers", (req, res) => {
@@ -917,7 +626,7 @@ router.post("/newevent", async (req, res) => {
 
   const event = new Event({
     id: eventID,
-    type: req.body.eventType,
+    type: "public", // This is for backwards compatibility
     name: req.body.eventName,
     location: req.body.eventLocation,
     start: startUTC,
@@ -1082,6 +791,7 @@ router.post("/newevent", async (req, res) => {
       res.end();
     })
     .catch((err) => {
+      console.error(err);
       res.status(500).send("Database error, please try again :( - " + err);
       addToLog(
         "createEvent",
