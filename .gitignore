@@ -7,6 +7,9 @@ dist
 public/events/*
 !public/events/.gitkeep
 
+# CI files
+dist.zip
+
 # Logs
 logs
 *.log
