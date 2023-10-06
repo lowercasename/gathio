@@ -40,7 +40,7 @@
             </span>
           </li>
           {{#if eventHasHost}}
-            <li>
+            <li id="hosted-by">
               <span class="fa-li">
                 <i class="fas fa-fw fa-user-circle"></i>
               </span>
@@ -118,7 +118,7 @@
     <span aria-hidden="true">&times;</span>
   </button>
   <p>Welcome to your event!</p>
-  <p>Your secret editing password for this event is: <strong>{{eventData.editToken}}</strong>. It's been saved in your browser storage, and if you supplied your email, it's also been sent to you. If you didn't supply your email, you <strong>must save it somewhere safe</strong>, because it won't be shown again!</p>
+  <p>Your secret editing password for this event is: <strong id="eventEditToken">{{eventData.editToken}}</strong>. It's been saved in your browser storage, and if you supplied your email, it's also been sent to you. If you didn't supply your email, you <strong>must save it somewhere safe</strong>, because it won't be shown again!</p>
   <p>To share your event, use the link you can see just above this message - that way your attendees won't be able to edit or delete your event!</p>
 </div>
 {{/if}}
@@ -136,15 +136,15 @@
       {{#unless noMoreSpots}}
         <button type="button" id="attendEvent" class="btn btn-success" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> Add me</button>
       {{/unless}}
-      <button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
+      <button type="button" id="unattendEvent" class="btn btn-seco.split("?")[0];dary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
     </div>
   </h5>
   <div class="card-body">
     {{#if eventData.maxAttendees}}
       {{#if noMoreSpots}}
-        <div class="alert alert-warning text-center">This event is at capacity.</div>
+        <div class="alert alert-warning text-center" id="attendees-alert">This event is at capacity.</div>
       {{else}}
-        <div class="alert alert-warning text-center">{{spotsRemaining}} {{plural spotsRemaining "spot(s)"}} remaining - add yourself now!</div>
+        <div class="alert alert-warning text-center" id="attendees-alert">{{spotsRemaining}} {{plural spotsRemaining "spot(s)"}} remaining - add yourself now!</div>
       {{/if}}
     {{/if}}
     {{#if eventAttendees}}

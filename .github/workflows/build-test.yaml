@@ -1,4 +1,4 @@
-name: Build test
+name: Build and test
 on:
   pull_request:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -31,3 +31,24 @@ jobs:
           pnpm start &
           sleep 5
           curl -sSf http://localhost:3000
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: |
+            dist
+            node_modules
+  cypress:
+    needs: build_and_test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artefacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          start: pnpm start
+          browser: chrome
+
