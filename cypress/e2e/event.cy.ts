@@ -22,7 +22,7 @@ describe("Events", () => {
   beforeEach(() => {
     cy.clearLocalStorage();
 
-    cy.visit("/new/event/public");
+    cy.visit("/new");
     cy.get("#showNewEventFormButton").click();
 
     cy.get("#eventName").type(eventData.eventName);
@@ -94,5 +94,22 @@ describe("Events", () => {
     cy.get(".dt-duration").should("contain.text", endDate);
     cy.get(".dt-duration").should("contain.text", startTime);
     cy.get(".dt-duration").should("contain.text", endTime);
+  });
+
+  it("allows you to attend an event", function () {
+    cy.get("button#attendEvent").click();
+    cy.get("#attendeeName").type("Test Attendee");
+    cy.get("#attendeeNumber").clear().type("2");
+    cy.get("form#attendEventForm").submit();
+    cy.get("#attendees-alert").should("contain.text", "8 spots remaining");
+    cy.get(".attendeesList").should("contain.text", "Test Attendee (2 people)");
+  });
+
+  it("allows you to comment on an event", function () {
+    cy.get("#commentAuthor").type("Test Author");
+    cy.get("#commentContent").type("Test Comment");
+    cy.get("#postComment").click();
+    cy.get(".comment").should("contain.text", "Test Author");
+    cy.get(".comment").should("contain.text", "Test Comment");
   });
 });
