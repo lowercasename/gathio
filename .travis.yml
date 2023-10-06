@@ -2,7 +2,7 @@ language: shell
 os: linux
 
 services:
-  - docker
+    - docker
 
 script:
-  - ./test.sh
+    - ./test.sh

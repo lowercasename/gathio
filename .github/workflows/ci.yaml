@@ -1,67 +1,67 @@
 name: CI / Build and test
 on:
-  pull_request:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+    pull_request:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
 
 jobs:
-  install:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    install:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
+            - name: Install pnpm
+              uses: pnpm/action-setup@v2
+              with:
+                  version: 8
 
-      - name: Set up config files
-        run: cp config/config.example.toml config/config.toml
+            - name: Set up config files
+              run: cp config/config.example.toml config/config.toml
 
-      - name: Cypress install
-        uses: cypress-io/github-action@v6
-        with:
-          # Disable running of tests within install job
-          runTests: false
-          build: pnpm run build
-        continue-on-error: true
+            - name: Cypress install
+              uses: cypress-io/github-action@v6
+              with:
+                  # Disable running of tests within install job
+                  runTests: false
+                  build: pnpm run build
+              continue-on-error: true
 
-      - name: Save build folder
-        uses: actions/upload-artifact@v3
-        with:
-          name: dist
-          if-no-files-found: error
-          path: dist
+            - name: Save build folder
+              uses: actions/upload-artifact@v3
+              with:
+                  name: dist
+                  if-no-files-found: error
+                  path: dist
 
-  cypress-run:
-    runs-on: ubuntu-latest
-    needs: install
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    cypress-run:
+        runs-on: ubuntu-latest
+        needs: install
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
+            - name: Install pnpm
+              uses: pnpm/action-setup@v2
+              with:
+                  version: 8
 
-      - name: Set up config files
-        run: cp config/config.example.toml config/config.toml
+            - name: Set up config files
+              run: cp config/config.example.toml config/config.toml
 
-      - name: Download the build folder
-        uses: actions/download-artifact@v3
-        with:
-          name: dist
-          path: dist
+            - name: Download the build folder
+              uses: actions/download-artifact@v3
+              with:
+                  name: dist
+                  path: dist
 
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.10.0
+            - name: Start MongoDB
+              uses: supercharge/mongodb-github-action@1.10.0
 
-      - name: Cypress run
-        uses: cypress-io/github-action@v6
-        with:
-          start: pnpm start
-          browser: chrome
+            - name: Cypress run
+              uses: cypress-io/github-action@v6
+              with:
+                  start: pnpm start
+                  browser: chrome
