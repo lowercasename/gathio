@@ -14,14 +14,12 @@ mongoose.connection
   .on("connected", () => {
     console.log("Mongoose connection open!");
   })
-  .on("error", (err) => {
-    console.log("Connection error: ${err.message}");
+  .on("error", (err: any) => {
+    console.log(`Connection error: ${err.message}`);
   });
 
 const server = app.listen(config.general.port, () => {
   console.log(
-    `Welcome to gathio! The app is now running on http://localhost:${
-      server.address().port
-    }`
+    `Welcome to gathio! The app is now running on http://localhost:${config.general.port}`
   );
 });

@@ -1,15 +1,8 @@
 import express from "express";
 import routes from "./routes.js";
 import hbs from "express-handlebars";
-import bodyParser from "body-parser";
 
 const app = express();
-
-// Configuration //
-
-//app.use(cors());
-//app.use(bodyParser.json());
-//app.use(session({ secret: 'slartibartfast', cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false }));
 
 // View engine //
 const hbsInstance = hbs.create({
@@ -17,7 +10,7 @@ const hbsInstance = hbs.create({
   partialsDir: ["views/partials/"],
   layoutsDir: "views/layouts/",
   helpers: {
-    plural: function (number, text) {
+    plural: function (number: number, text: string) {
       var singular = number === 1;
       // If no text parameter was given, just return a conditional s.
       if (typeof text !== "string") return singular ? "" : "s";
@@ -39,12 +32,13 @@ app.set("view engine", "handlebars");
 app.set("hbsInstance", hbsInstance);
 
 // Static files //
-
 app.use(express.static("public"));
 
+// Body parser //
+app.use(express.json({ type: "application/activity+json" })); // support json encoded bodies
+app.use(express.urlencoded({ extended: true }));
+
 // Router //
-app.use(bodyParser.json({ type: "application/activity+json" })); // support json encoded bodies
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/", routes);
 
 export default app;
