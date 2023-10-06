@@ -82,7 +82,7 @@ describe("Events", () => {
         cy.get(".p-summary").should("contain.text", eventData.eventDescription);
         cy.get("#hosted-by").should(
             "contain.text",
-            `Hosted by ${eventData.hostName}`,
+            `Hosted by ${eventData.hostName}`
         );
         cy.get("#attendees-alert").should("contain.text", "10 spots remaining");
         let [startDate, startTime] = this.eventStart.split(", ");
@@ -99,12 +99,13 @@ describe("Events", () => {
     it("allows you to attend an event", function () {
         cy.get("button#attendEvent").click();
         cy.get("#attendeeName").type("Test Attendee");
-        cy.get("#attendeeNumber").clear().type("2");
+        cy.get("#attendeeNumber").clear();
+        cy.get("#attendeeNumber").type("2");
         cy.get("form#attendEventForm").submit();
         cy.get("#attendees-alert").should("contain.text", "8 spots remaining");
         cy.get(".attendeesList").should(
             "contain.text",
-            "Test Attendee (2 people)",
+            "Test Attendee (2 people)"
         );
     });
 
