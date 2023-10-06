@@ -1,6 +1,5 @@
 <h4 class="mb-2">Create an event</h4>
 <form id="newEventForm" action="/newevent" method="post" enctype="multipart/form-data">
-   <input type="text" hidden class="form-control" id="eventType" name="eventType" value="{{eventType}}">
   <div class="form-group row">
     <label for="eventName" class="col-sm-2 col-form-label">Event name</label>
     <div class="form-group col-sm-10">
@@ -54,17 +53,6 @@
       <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
     </div>
   </div>
-  {{#unless isPublic}}
-  <div class="form-group row">
-    <label for="eventPassword" class="col-sm-2 col-form-label">Event password</label>
-    <div class="form-group col-sm-10">
-      <input type="password" class="form-control" id="eventPassword" name="eventPassword" placeholder="Don't forget it!" data-validation="required">
-    </div>
-    <div class="form-group col-sm-10 offset-sm-2">
-      <div class="" id="passwordStrengthBar"></div>
-    </div>
-  </div>
-  {{/unless}}
   <div class="form-group row">
     <label for="hostName" class="col-sm-2 col-form-label">Host name</label>
     <div class="form-group col-sm-10">

@@ -15,6 +15,6 @@ trap cleanup 0
 docker-compose up --build &
 
 while [[ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/)" -ne "200" ]]; do sleep 5; done
-curl -v http://localhost:3000/new/event/public
+curl -v http://localhost:3000/new
 
 cleanup
