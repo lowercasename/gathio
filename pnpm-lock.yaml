@@ -39,8 +39,8 @@ dependencies:
     specifier: ^0.16.13
     version: 0.16.13
   marked:
-    specifier: ^4.3.0
-    version: 4.3.0
+    specifier: ^9.1.0
+    version: 9.1.0
   moment-timezone:
     specifier: ^0.5.43
     version: 0.5.43
@@ -2434,9 +2434,9 @@ packages:
     dev: false
     optional: true
 
-  /marked@4.3.0:
-    resolution: {integrity: sha512-PRsaiG84bK+AMvxziE/lCFss8juXjNaWzVbN5tXAm4XjeaS9NAHhop+PjQxz2A9h8Q4M/xGmzP8vqNwy6JeK0A==}
-    engines: {node: '>= 12'}
+  /marked@9.1.0:
+    resolution: {integrity: sha512-VZjm0PM5DMv7WodqOUps3g6Q7dmxs9YGiFUZ7a2majzQTTCgX+6S6NAJHPvOhgFBzYz8s4QZKWWMfZKFmsfOgA==}
+    engines: {node: '>= 16'}
     hasBin: true
     dev: false
 
