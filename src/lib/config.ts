@@ -49,7 +49,7 @@ export const getConfig = (): GathioConfig => {
     console.error(
       "\x1b[31mConfiguration file not found! Have you renamed './config/config-example.toml' to './config/config.toml'?"
     );
-    process.exit(1);
+    return process.exit(1);
   }
 };
 
