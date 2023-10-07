@@ -1,6 +1,6 @@
 import crypto from "crypto";
-
 import { customAlphabet } from "nanoid";
+
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
 // because ActivityPub doesn't like it in IDs
 const nanoid = customAlphabet(
