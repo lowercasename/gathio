@@ -1,7 +1,7 @@
 const eventData = {
     eventName: "Your Event Name",
     eventLocation: "Event Location",
-    timezone: "Europe/London",
+    timezone: "America/New York",
     eventDescription: "Event Description",
     eventURL: "https://example.com",
     hostName: "Your Name",
@@ -27,8 +27,11 @@ describe("Events", () => {
         // These are datetime-local inputs
         cy.get("#eventStart").type(eventData.eventStart);
         cy.get("#eventEnd").type(eventData.eventEnd);
-        // #timezone is a Select2 dropdown, so select the option you want
-        cy.get("#timezone").select(eventData.timezone, { force: true });
+
+        cy.get(".select2-container").click();
+        cy.get(".select2-results__option")
+            .contains(eventData.timezone)
+            .click({ force: true });
 
         cy.get("#eventDescription").type(eventData.eventDescription);
         cy.get("#eventURL").type(eventData.eventURL);
@@ -81,7 +84,7 @@ describe("Events", () => {
         cy.get("#attendees-alert").should("contain.text", "10 spots remaining");
         cy.get(".dt-duration").should(
             "contain.text",
-            "Tuesday 1 January 2030 from 12:00 am to 1:00 am (GMT)",
+            "Tuesday 1 January 2030 from 12:00 am to 1:00 am (EST)",
         );
     });
 
@@ -173,10 +176,12 @@ describe("Events", () => {
         // These are datetime-local inputs
         cy.get("#editEventForm #eventStart").type("2030-12-01T00:00");
         cy.get("#editEventForm #eventEnd").type("2030-12-01T01:00");
-        // #timezone is a Select2 dropdown, so select the option you want
-        cy.get("#editEventForm #timezone").select("Australia/Sydney", {
-            force: true,
-        });
+
+        cy.get("#editEventForm .select2-container").click();
+        cy.get(".select2-results__option")
+            .contains("Australia/Sydney")
+            .click({ force: true });
+
         cy.get("#editEventForm #eventDescription").type(
             "Edited Event Description",
         );
@@ -205,6 +210,9 @@ describe("Events", () => {
             "contain.text",
             "Sunday 1 December 2030 from 12:00 am to 1:00 am",
         );
+        cy.get(".dt-duration")
+            .invoke("text")
+            .should("match", /AE(D|S)T/);
         // Check that the comment form is not visible
         cy.get("#postComment").should("not.exist");
         // Check that the attendee form is not visible
