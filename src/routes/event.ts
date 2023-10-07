@@ -1,10 +1,13 @@
 import { Router, Response, Request } from "express";
-import { customAlphabet } from "nanoid";
 import multer from "multer";
 import Jimp from "jimp";
 import moment from "moment-timezone";
 import { marked } from "marked";
-import { generateEditToken, generateRSAKeypair } from "../util/generator.js";
+import {
+    generateEditToken,
+    generateEventID,
+    generateRSAKeypair,
+} from "../util/generator.js";
 import { validateEventData } from "../util/validation.js";
 import { addToLog } from "../helpers.js";
 import Event from "../models/Event.js";
@@ -24,13 +27,6 @@ import { sendEmailFromTemplate } from "../lib/email.js";
 import crypto from "crypto";
 
 const config = getConfig();
-
-// This alphabet (used to generate all event, group, etc. IDs) is missing '-'
-// because ActivityPub doesn't like it in IDs
-const nanoid = customAlphabet(
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_",
-    21,
-);
 
 const storage = multer.memoryStorage();
 // Accept only JPEG, GIF or PNG images, up to 10MB
@@ -67,7 +63,7 @@ router.post(
             });
         }
 
-        let eventID = nanoid();
+        let eventID = generateEventID();
         let editToken = generateEditToken();
         let eventImageFilename;
         let isPartOfEventGroup = false;
