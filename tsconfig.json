@@ -10,7 +10,7 @@
         "sourceMap": true,
         "outDir": "dist",
         "strict": true,
-        "baseUrl": ".",
+        "baseUrl": "./",
         "forceConsistentCasingInFileNames": true,
         "esModuleInterop": true,
         "experimentalDecorators": true,
@@ -18,5 +18,5 @@
         "moduleResolution": "nodenext",
         "skipLibCheck": true
     },
-    "include": ["src/**/*"]
+    "include": ["./src/**/*"]
 }
