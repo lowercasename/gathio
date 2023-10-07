@@ -1,11 +1,12 @@
 import { Router, Request, Response } from "express";
-import Event from "../models/Event.js";
 import moment from "moment-timezone";
 import { marked } from "marked";
 import { frontendConfig } from "../util/config.js";
 import { renderPlain } from "../util/markdown.js";
 import getConfig from "../lib/config.js";
-import { addToLog } from "../helpers.js";
+import { addToLog, exportICal } from "../helpers.js";
+import Event from "../models/Event.js";
+import EventGroup from "../models/EventGroup.js";
 
 const config = getConfig();
 
@@ -229,5 +230,183 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         res.status(404).render("404", { url: req.url });
     }
 });
+
+router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
+    try {
+        const eventGroup = await EventGroup.findOne({
+            id: req.params.eventGroupID,
+        }).lean();
+
+        if (!eventGroup) {
+            return res.status(404).render("404", { url: req.url });
+        }
+        const parsedDescription = marked.parse(eventGroup.description);
+        const eventGroupEditToken = eventGroup.editToken;
+        const escapedName = eventGroup.name.replace(/\s+/g, "+");
+        const eventGroupHasCoverImage = !!eventGroup.image;
+        const eventGroupHasHost = !!eventGroup.hostName;
+
+        const events = await Event.find({ eventGroup: eventGroup._id })
+            .lean()
+            .sort("start");
+
+        const updatedEvents = events.map((event) => {
+            const startMoment = moment.tz(event.start, event.timezone);
+            const endMoment = moment.tz(event.end, event.timezone);
+            const isSameDay = startMoment.isSame(endMoment, "day");
+
+            return {
+                id: event.id,
+                name: event.name,
+                displayDate: isSameDay
+                    ? startMoment.format("D MMM YYYY")
+                    : `${startMoment.format("D MMM YYYY")} - ${endMoment.format(
+                          "D MMM YYYY",
+                      )}`,
+                eventHasConcluded: endMoment.isBefore(
+                    moment.tz(event.timezone),
+                ),
+            };
+        });
+
+        const upcomingEventsExist = updatedEvents.some(
+            (e) => !e.eventHasConcluded,
+        );
+
+        let firstLoad = false;
+        if (eventGroup.firstLoad === true) {
+            firstLoad = true;
+            await EventGroup.findOneAndUpdate(
+                { id: req.params.eventGroupID },
+                { firstLoad: false },
+            );
+        }
+
+        let editingEnabled = false;
+        if (Object.keys(req.query).length !== 0) {
+            if (!req.query.e) {
+                editingEnabled = false;
+            } else {
+                editingEnabled = req.query.e === eventGroupEditToken;
+            }
+        }
+
+        const metadata = {
+            title: eventGroup.name,
+            description: marked
+                .parse(eventGroup.description, {
+                    renderer: renderPlain(),
+                })
+                .split(" ")
+                .splice(0, 40)
+                .join(" ")
+                .trim(),
+            image: eventGroupHasCoverImage
+                ? `https://${config.general.domain}/events/` + eventGroup.image
+                : null,
+            url: `https://${config.general.domain}/` + req.params.eventID,
+        };
+
+        res.set("X-Robots-Tag", "noindex");
+        res.render("eventgroup", {
+            domain: config.general.domain,
+            title: eventGroup.name,
+            eventGroupData: eventGroup,
+            escapedName: escapedName,
+            events: updatedEvents,
+            upcomingEventsExist: upcomingEventsExist,
+            parsedDescription: parsedDescription,
+            editingEnabled: editingEnabled,
+            eventGroupHasCoverImage: eventGroupHasCoverImage,
+            eventGroupHasHost: eventGroupHasHost,
+            firstLoad: firstLoad,
+            metadata: metadata,
+        });
+    } catch (err) {
+        addToLog(
+            "displayEventGroup",
+            "error",
+            `Attempt to display event group ${req.params.eventGroupID} failed with error: ${err}`,
+        );
+        console.log(err);
+        return res.status(404).render("404", { url: req.url });
+    }
+});
+
+router.get(
+    "/group/:eventGroupID/feed.ics",
+    async (req: Request, res: Response) => {
+        try {
+            const eventGroup = await EventGroup.findOne({
+                id: req.params.eventGroupID,
+            }).lean();
+
+            if (eventGroup) {
+                const events = await Event.find({
+                    eventGroup: eventGroup._id,
+                }).sort("start");
+                const string = exportICal(events, eventGroup.name);
+                res.set("Content-Type", "text/calendar");
+                res.send(string);
+            }
+        } catch (err) {
+            addToLog(
+                "eventGroupFeed",
+                "error",
+                `Attempt to display event group feed for ${req.params.eventGroupID} failed with error: ${err}`,
+            );
+            console.log(err);
+            res.status(404).render("404", { url: req.url });
+        }
+    },
+);
+
+router.get("/export/event/:eventID", async (req: Request, res: Response) => {
+    try {
+        const event = await Event.findOne({
+            id: req.params.eventID,
+        }).populate("eventGroup");
+
+        if (event) {
+            const string = exportICal([event], event.name);
+            res.send(string);
+        }
+    } catch (err) {
+        addToLog(
+            "exportEvent",
+            "error",
+            `Attempt to export event ${req.params.eventID} failed with error: ${err}`,
+        );
+        console.log(err);
+        res.status(404).render("404", { url: req.url });
+    }
+});
+
+router.get(
+    "/export/group/:eventGroupID",
+    async (req: Request, res: Response) => {
+        try {
+            const eventGroup = await EventGroup.findOne({
+                id: req.params.eventGroupID,
+            }).lean();
+
+            if (eventGroup) {
+                const events = await Event.find({
+                    eventGroup: eventGroup._id,
+                }).sort("start");
+                const string = exportICal(events, eventGroup.name);
+                res.send(string);
+            }
+        } catch (err) {
+            addToLog(
+                "exportEvent",
+                "error",
+                `Attempt to export event group ${req.params.eventGroupID} failed with error: ${err}`,
+            );
+            console.log(err);
+            res.status(404).render("404", { url: req.url });
+        }
+    },
+);
 
 export default router;

@@ -21,7 +21,7 @@ export function addToLog(process: string, status: string, message: string) {
     });
 }
 
-export function exportIcal(events: IEvent[], calendarName: string) {
+export function exportICal(events: IEvent[], calendarName: string) {
     if (!events || events.length < 1) return;
 
     // Create a new icalGenerator... generator

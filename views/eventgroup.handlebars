@@ -289,7 +289,7 @@
     autosize($('textarea'));
     $("#exportICS").click(function(){
       let eventGroupID = $(this).attr('data-event-id');
-      $.get('/exportgroup/' + eventGroupID, function(response) {
+      $.get('/export/group/' + eventGroupID, function(response) {
         downloadFile(response, eventGroupID + '.ics');
       })
     })

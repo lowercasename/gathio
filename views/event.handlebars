@@ -486,7 +486,7 @@
     new ClipboardJS('#copyEventLink');
     $("#exportICS").click(function(){
       let eventID = $(this).attr('data-event-id');
-      $.get('/exportevent/' + eventID, function(response) {
+      $.get('/export/event/' + eventID, function(response) {
         downloadFile(response, eventID + '.ics');
       })
     })
