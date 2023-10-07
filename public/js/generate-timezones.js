@@ -374,5 +374,3 @@ const timezones = [
   
   document.querySelector("#timezone").value = moment.tz.guess();
   
-  $("#timezone").select2();
-  

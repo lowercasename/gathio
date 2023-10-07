@@ -24,7 +24,20 @@
 </div>
 
 <div id="newEventFormContainer">
-  {{>neweventform}}
+  <h4 class="mb-2">Create an event</h4>
+  <form id="newEventForm" enctype="multipart/form-data" x-data="newEventForm()" x-init="init()" @submit.prevent="submitForm">
+    {{>eventForm}}
+    <div class="form-group row">
+      <div class="col-sm-12 pt-3 pb-3 text-center">
+        <button
+          id="newEventFormSubmit"
+          type="submit"
+          class="btn btn-primary w-50"
+          x-bind:disabled="submitting"
+        >Create</button>
+      </div>
+    </div>
+  </form>
 </div>
 
 <div id="importEventFormContainer">
@@ -36,34 +49,11 @@
 </div>
 
   <script>
-  $.validate({
-    lang: 'en',
-    errorElementClass: "is-invalid",
-    errorMessageClass: "text-danger",
-    successElementClass: "is-valid"
-  });
   $(document).ready(function(){
     if ($('#icsImportControl')[0].files[0] != null){
       var file = $('#icsImportControl')[0].files[0].name;
       $('#icsImportControl').next('label').html('<i class="far fa-file-alt"></i> ' + file);
     }
-    $('#eventStart').datepicker({
-      language: 'en',
-      minDate: new Date(),
-      timepicker: true,
-      dateFormat: 'd MM yyyy',
-      dateTimeSeparator: ', ',
-      onSelect: function(formattedDate, rawDate){
-        $('#eventEnd').datepicker().data('datepicker').update('minDate', rawDate).clear();
-      }
-    });
-    $('#eventEnd').datepicker({
-      language: 'en',
-      minDate: new Date(),
-      timepicker: true,
-      dateFormat: 'd MM yyyy',
-      dateTimeSeparator: ', '
-    });
     $("#showNewEventFormButton").click(function(){
       $("button").removeClass("active");
       $("#showImportEventFormButton #showNewEventGroupFormButton").removeClass("active");
@@ -109,3 +99,102 @@
     });
   })
   </script>
+
+<script type="text/javascript" src="/js/generate-timezones.js"></script>
+
+<script>
+  $(document).ready(function() {
+    $.uploadPreview({
+      input_field: "#image-upload",
+      preview_box: "#image-preview",
+      label_field: "#image-label",
+      label_default: "Choose file",
+      label_selected: "Change file",
+      no_label: false
+    });
+    autosize($('textarea'));
+  });
+
+  function newEventForm() {
+    return {
+      data: {
+        eventName: '',
+        eventLocation: '',
+        eventStart: '',
+        eventEnd: '',
+        timezone: '',
+        eventDescription: '',
+        eventURL: '',
+        hostName: '',
+        creatorEmail: '',
+        eventGroupID: '',
+        eventGroupEditToken: '',
+        interactionCheckbox: false,
+        joinCheckbox: false,
+        maxAttendeesCheckbox: false,
+        maxAttendees: '',
+      },
+      errors: [],
+      submitting: false,
+      init() {
+        // Set up Select2
+        this.select2 = $(this.$refs.timezone).select2();
+        this.select2.on("select2:select", (event) => {
+          this.data.timezone = event.target.value;
+        });
+        this.data.timezone = this.select2.val();
+        // Reset checkboxes
+        this.data.eventGroupCheckbox = false;
+        this.data.interactionCheckbox = false;
+        this.data.joinCheckbox = false;
+        this.data.maxAttendeesCheckbox = false;
+      },
+      async submitForm() {
+        this.submitting = true;
+        this.errors = [];
+        const formData = new FormData();
+        for (const key in this.data) {
+          if (this.data.hasOwnProperty(key)) {
+            formData.append(key, this.data[key]);
+          }
+        }
+        formData.append("imageUpload", this.$refs.eventImageUpload.files[0]);
+        try {
+          const response = await fetch("/event", {
+            method: "POST",
+            body: formData,
+          });
+          this.submitting = false;
+          if (!response.ok) {
+            if (response.status !== 400) {
+              this.errors = [
+                {
+                  message: "An unexpected error has occurred. Please try again later.",
+                }
+              ];
+              return;
+            }
+            const json = await response.json();
+            this.errors = json.errors;
+            // Set Bootstrap validation classes using 'field' property
+            $("input, textarea").removeClass("is-invalid");
+            this.errors.forEach((error) => {
+              $(`#${error.field}`).addClass("is-invalid");
+            });
+            return;
+          }
+          const json = await response.json();
+          window.location.assign(json.url);
+        } catch (error) {
+          console.log(error);
+          this.errors = [
+            {
+              message: "An unexpected error has occurred. Please try again later.",
+            }
+          ];
+          this.submitting = false;
+        }
+      },
+    }
+  }
+</script>

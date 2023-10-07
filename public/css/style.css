@@ -305,17 +305,6 @@ body, html {
   margin-top: 0.5rem;
 }
 
-#maxAttendeesContainer {
-  display: none;
-}
-/* #maxAttendeesCheckboxContainer {
-  display: none;
-} */
-
-#eventGroupData {
-  display: none;
-}
-
 .edit-buttons {
   text-align: right;
 }

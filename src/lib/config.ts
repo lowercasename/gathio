@@ -1,5 +1,6 @@
 import fs from "fs";
 import toml from "toml";
+import { exitWithError } from "./process.js";
 
 interface GathioConfig {
     general: {
@@ -46,8 +47,8 @@ export const getConfig = (): GathioConfig => {
         ) as GathioConfig;
         return config;
     } catch {
-        console.error(
-            "\x1b[31mConfiguration file not found! Have you renamed './config/config-example.toml' to './config/config.toml'?",
+        exitWithError(
+            "Configuration file not found! Have you renamed './config/config-example.toml' to './config/config.toml'?",
         );
         return process.exit(1);
     }

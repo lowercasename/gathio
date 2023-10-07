@@ -69,6 +69,13 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         let parsedEnd = moment
             .tz(event.end, event.timezone)
             .format("YYYYMMDD[T]HHmmss");
+        // See: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/datetime-local
+        const parsedStartForDateInput = moment
+            .tz(event.start, event.timezone)
+            .format("YYYY-MM-DDTHH:mm");
+        const parsedEndForDateInput = moment
+            .tz(event.end, event.timezone)
+            .format("YYYY-MM-DDTHH:mm");
         let eventHasConcluded = false;
         if (
             moment
@@ -194,6 +201,8 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 parsedLocation: parsedLocation,
                 parsedStart: parsedStart,
                 parsedEnd: parsedEnd,
+                parsedStartForDateInput,
+                parsedEndForDateInput,
                 displayDate: displayDate,
                 fromNow: fromNow,
                 timezone: event.timezone,
