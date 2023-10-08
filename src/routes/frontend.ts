@@ -6,7 +6,7 @@ import { renderPlain } from "../util/markdown.js";
 import getConfig from "../lib/config.js";
 import { addToLog, exportICal } from "../helpers.js";
 import Event from "../models/Event.js";
-import EventGroup from "../models/EventGroup.js";
+import EventGroup, { IEventGroup } from "../models/EventGroup.js";
 
 const config = getConfig();
 
@@ -215,6 +215,31 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 eventHasConcluded: eventHasConcluded,
                 eventHasBegun: eventHasBegun,
                 metadata: metadata,
+                jsonData: {
+                    name: event.name,
+                    id: event.id,
+                    description: event.description,
+                    location: event.location,
+                    timezone: event.timezone,
+                    url: event.url,
+                    hostName: event.hostName,
+                    creatorEmail: event.creatorEmail,
+                    eventGroupID: event.eventGroup
+                        ? (event.eventGroup as unknown as IEventGroup).id
+                        : null,
+                    eventGroupEditToken: event.eventGroup
+                        ? (event.eventGroup as unknown as IEventGroup).editToken
+                        : null,
+                    usersCanAttend: event.usersCanAttend,
+                    usersCanComment: event.usersCanComment,
+                    maxAttendees: event.maxAttendees,
+                    startISO: eventStartISO,
+                    endISO: eventEndISO,
+                    startForDateInput: parsedStartForDateInput,
+                    endForDateInput: parsedEndForDateInput,
+                    image: event.image,
+                    editToken: editingEnabled ? eventEditToken : null,
+                },
             });
         }
     } catch (err) {
@@ -321,6 +346,16 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
             eventGroupHasHost: eventGroupHasHost,
             firstLoad: firstLoad,
             metadata: metadata,
+            jsonData: {
+                name: eventGroup.name,
+                id: eventGroup.id,
+                description: eventGroup.description,
+                url: eventGroup.url,
+                hostName: eventGroup.hostName,
+                creatorEmail: eventGroup.creatorEmail,
+                image: eventGroup.image,
+                editToken: editingEnabled ? eventGroupEditToken : null,
+            },
         });
     } catch (err) {
         addToLog(

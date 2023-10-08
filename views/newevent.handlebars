@@ -1,26 +1,19 @@
-<h2>New event</h2>
-<hr>
-<div class="alert alert-info mb-4 text-center" role="alert">
-  <i class="fas fa-exclamation-circle"></i> Events are visible to anyone who knows the link.
-</div>
-
-
-{{#each errors}}
-  <div class="alert alert-danger" role="alert">{{this.msg}}</div>
-{{/each}}
-
 <div class="container mb-4">
   <div class="row">
     <div class="col-sm-4 p-2">
-      <button type="button" id="showNewEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-file"></i> Create a new event</button>
+      <button type="button" id="showNewEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-calendar-day"></i> Create a new event</button>
     </div>
     <div class="col-sm-4 p-2">
       <button type="button" id="showImportEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-file-import"></i> Import an existing event</button>
     </div>
     <div class="col-sm-4 p-2">
-      <button type="button" id="showNewEventGroupFormButton" class="btn btn-secondary w-100"><i class="fas fa-folder-open"></i> Create a new event group </button>
+      <button type="button" id="showNewEventGroupFormButton" class="btn btn-secondary w-100"><i class="fas fa-calendar-alt"></i> Create a new event group </button>
     </div>
   </div>
+</div>
+
+<div class="alert alert-info mb-4 text-center" role="alert">
+  <i class="fas fa-exclamation-circle"></i> Events are visible to anyone who knows the link.
 </div>
 
 <div id="newEventFormContainer">
@@ -45,156 +38,18 @@
 </div>
 
 <div id="newEventGroupFormContainer">
-  {{>neweventgroupform}}
+  <h4 class="mb-2">Create an event group</h4>
+  <p class="text-muted">An event group is a holding area for a set of linked events, like a recurring game night, a festival, or a band tour. You can share a public link to your event group just like an individual event link, and people who know the secret editing code will be able to add future events to the group.</p>
+  <p class="text-muted">Event groups do not get automatically removed like events do, but events which have been removed from {{siteName}} will of course not show up in an event group.</p>
+  <form id="newEventGroupForm" enctype="multipart/form-data" x-data="newEventGroupForm()" @submit.prevent="submitForm">
+    {{> eventGroupForm }}
+    <div class="form-group row">
+      <div class="col-sm-12 pt-3 pb-3 text-center">
+        <button type="submit" class="btn btn-primary w-50" x-bind:disabled="submitting">Create</button>
+      </div>
+    </div>
+  </form>
 </div>
 
-  <script>
-  $(document).ready(function(){
-    if ($('#icsImportControl')[0].files[0] != null){
-      var file = $('#icsImportControl')[0].files[0].name;
-      $('#icsImportControl').next('label').html('<i class="far fa-file-alt"></i> ' + file);
-    }
-    $("#showNewEventFormButton").click(function(){
-      $("button").removeClass("active");
-      $("#showImportEventFormButton #showNewEventGroupFormButton").removeClass("active");
-      if ($("#newEventFormContainer").is(":visible")){
-        $("#newEventFormContainer").slideUp("fast");
-      }
-      else {
-        $("#newEventFormContainer").slideDown("fast");
-        $("#importEventFormContainer").slideUp("fast");
-        $("#newEventGroupFormContainer").slideUp("fast");
-        $(this).addClass("active");
-      }
-    })
-    $("#showImportEventFormButton").click(function(){
-      $("button").removeClass("active");
-      $("#showNewEventFormButton #showNewEventGroupFormButton").removeClass("active");
-      if ($("#importEventFormContainer").is(":visible")){
-        $("#importEventFormContainer").slideUp("fast");
-      }
-      else {
-        $("#importEventFormContainer").slideDown("fast");
-        $("#newEventFormContainer").slideUp("fast");
-        $("#newEventGroupFormContainer").slideUp("fast");
-        $(this).addClass("active");
-      }
-    })
-    $("#showNewEventGroupFormButton").click(function(){
-      $("button").removeClass("active");
-      $("#showNewEventFormButton #showImportEventFormButton").removeClass("active");
-      if ($("#newEventGroupFormContainer").is(":visible")){
-        $("#newEventGroupFormContainer").slideUp("fast");
-      }
-      else {
-        $("#newEventGroupFormContainer").slideDown("fast");
-        $("#newEventFormContainer").slideUp("fast");
-        $("#importEventFormContainer").slideUp("fast");
-        $(this).addClass("active");
-      }
-    })
-    $('#icsImportControl').change(function(){
-      var file = $('#icsImportControl')[0].files[0].name;
-      $(this).next('label').html('<i class="far fa-file-alt"></i> ' + file);
-    });
-  })
-  </script>
-
-<script type="text/javascript" src="/js/generate-timezones.js"></script>
-
-<script>
-  $(document).ready(function() {
-    $.uploadPreview({
-      input_field: "#image-upload",
-      preview_box: "#image-preview",
-      label_field: "#image-label",
-      label_default: "Choose file",
-      label_selected: "Change file",
-      no_label: false
-    });
-    autosize($('textarea'));
-  });
-
-  function newEventForm() {
-    return {
-      data: {
-        eventName: '',
-        eventLocation: '',
-        eventStart: '',
-        eventEnd: '',
-        timezone: '',
-        eventDescription: '',
-        eventURL: '',
-        hostName: '',
-        creatorEmail: '',
-        eventGroupID: '',
-        eventGroupEditToken: '',
-        interactionCheckbox: false,
-        joinCheckbox: false,
-        maxAttendeesCheckbox: false,
-        maxAttendees: '',
-      },
-      errors: [],
-      submitting: false,
-      init() {
-        // Set up Select2
-        this.select2 = $(this.$refs.timezone).select2();
-        this.select2.on("select2:select", (event) => {
-          this.data.timezone = event.target.value;
-        });
-        this.data.timezone = this.select2.val();
-        // Reset checkboxes
-        this.data.eventGroupCheckbox = false;
-        this.data.interactionCheckbox = false;
-        this.data.joinCheckbox = false;
-        this.data.maxAttendeesCheckbox = false;
-      },
-      async submitForm() {
-        this.submitting = true;
-        this.errors = [];
-        const formData = new FormData();
-        for (const key in this.data) {
-          if (this.data.hasOwnProperty(key)) {
-            formData.append(key, this.data[key]);
-          }
-        }
-        formData.append("imageUpload", this.$refs.eventImageUpload.files[0]);
-        try {
-          const response = await fetch("/event", {
-            method: "POST",
-            body: formData,
-          });
-          this.submitting = false;
-          if (!response.ok) {
-            if (response.status !== 400) {
-              this.errors = [
-                {
-                  message: "An unexpected error has occurred. Please try again later.",
-                }
-              ];
-              return;
-            }
-            const json = await response.json();
-            this.errors = json.errors;
-            // Set Bootstrap validation classes using 'field' property
-            $("input, textarea").removeClass("is-invalid");
-            this.errors.forEach((error) => {
-              $(`#${error.field}`).addClass("is-invalid");
-            });
-            return;
-          }
-          const json = await response.json();
-          window.location.assign(json.url);
-        } catch (error) {
-          console.log(error);
-          this.errors = [
-            {
-              message: "An unexpected error has occurred. Please try again later.",
-            }
-          ];
-          this.submitting = false;
-        }
-      },
-    }
-  }
-</script>
+<script src="/js/generate-timezones.js"></script>
+<script src="/js/modules/new.js"></script>

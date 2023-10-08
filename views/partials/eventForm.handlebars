@@ -1,52 +1,52 @@
-<div class="form-group row">
-  <label for="eventName" class="col-sm-2 col-form-label">Event name</label>
-  <div class="form-group col-sm-10">
+<div class="form-group">
+  <label for="eventName" >Event name</label>
+  <div class="form-group ">
     <input type="text" class="form-control" id="eventName" name="eventName" placeholder="Make it snappy." x-model="data.eventName" >
   </div>
 </div>
-<div class="form-group row">
-  <label for="eventLocation" class="col-sm-2 col-form-label">Location</label>
-  <div class="form-group col-sm-10">
+<div class="form-group">
+  <label for="eventLocation" >Location</label>
+  <div class="form-group ">
     <input type="text" class="form-control" id="eventLocation" name="eventLocation" placeholder="Be specific." x-model="data.eventLocation">
   </div>
 </div>
-<div class="form-group row">
-  <label for="eventStart" class="col-sm-2 col-form-label">Starts</label>
-  <div class="form-group col-sm-4">
+<div class="form-group">
+  <label for="eventStart" >Starts</label>
+  <div class="form-group">
     <input type="datetime-local" class="form-control" id="eventStart" name="eventStart"  x-model="data.eventStart">
   </div>
 </div>
-<div class="form-group row">
-  <label for="eventEnd" class="col-sm-2 col-form-label">Ends</label>
-  <div class="form-group col-sm-4">
+<div class="form-group">
+  <label for="eventEnd" >Ends</label>
+  <div class="form-group ">
     <input type="datetime-local" class="form-control" id="eventEnd" name="eventEnd"  x-model="data.eventEnd">
   </div>
 </div>
-<div class="form-group row">
-  <label for="timezone" class="col-sm-2 col-form-label">Timezone</label>
-  <div class="form-group col-sm-10">
+<div class="form-group">
+  <label for="timezone" >Timezone</label>
+  <div class="form-group ">
     <select class="select2" id="timezone" name="timezone" x-ref="timezone"></select>
   </div>
 </div>
-<div class="form-group row">
-  <label for="eventDescription" class="col-sm-2 col-form-label">Description</label>
-  <div class="form-group col-sm-10">
+<div class="form-group">
+  <label for="eventDescription" >Description</label>
+  <div class="form-group ">
     <textarea class="form-control expand" id="eventDescription" name="eventDescription" placeholder="You can always edit it later." x-model="data.eventDescription" ></textarea>
     <small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting supported.</small>
   </div>
 </div>
-<div class="form-group row">
-  <label for="eventURL" class="col-sm-2 col-form-label">Link</label>
-  <div class="form-group col-sm-10">
+<div class="form-group">
+  <label for="eventURL" >Link</label>
+  <div class="form-group ">
     <input type="url" class="form-control" id="eventURL" name="eventURL" placeholder="For tickets or another event page (optional)." x-model="data.eventURL" >
   </div>
 </div>
-<div class="form-group row">
-  <label for="eventImage" class="col-sm-2 col-form-label">Cover image</label>
-  <div class="form-group col-sm-10">
-    <div class="image-preview" id="image-preview">
-      <label for="image-upload" id="image-label">Choose file</label>
-      <input type="file" name="imageUpload" id="image-upload" accept="image/jpeg,image/gif,image/png" x-ref="eventImageUpload" />
+<div class="form-group">
+  <label for="eventImage" >Cover image</label>
+  <div class="form-group ">
+    <div class="image-preview" id="event-image-preview">
+      <label for="image-upload" id="event-image-label">Choose file</label>
+      <input type="file" name="imageUpload" id="event-image-upload" accept="image/jpeg,image/gif,image/png" x-ref="eventImageUpload" />
     </div>
     <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
     {{#if eventData.image}}
@@ -54,22 +54,22 @@
     {{/if}}
   </div>
 </div>
-<div class="form-group row">
-  <label for="hostName" class="col-sm-2 col-form-label">Host name</label>
-  <div class="form-group col-sm-10">
+<div class="form-group">
+  <label for="hostName" >Host name</label>
+  <div class="form-group ">
     <input type="text" class="form-control" id="hostName" name="hostName" placeholder="Will be shown on the event page (optional)." x-model="data.hostName" >
   </div>
 </div>
-<div class="form-group row">
-  <label for="creatorEmail" class="col-sm-2 col-form-label">Your email</label>
-  <div class="form-group col-sm-10">
-    <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="Will not be shown anywhere (optional)" x-model="data.creatorEmail" >
+<div class="form-group">
+  <label for="creatorEmail" >Your email</label>
+  <div class="form-group ">
+    <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="Will not be shown anywhere (optional)." x-model="data.creatorEmail" >
     <small class="form-text">If you provide your email, we will send your secret editing password here, and use it to notify you of updates to the event.</small>
   </div>
 </div>
-<div class="form-group row">
-  <div class="col-sm-2">Options</div>
-  <div class="col-sm-10">
+<div class="form-group">
+  <label>Options</label>
+  <div >
     <div class="form-check">
       <input class="form-check-input" type="checkbox" id="eventGroupCheckbox" name="eventGroupCheckbox" x-model="data.eventGroupCheckbox">
       <label class="form-check-label" for="eventGroupCheckbox">
@@ -81,14 +81,14 @@
         <strong>Link this event to an event group</strong>
       </div>
       <div class="card-body">
-        <div class="form-group row">
+        <div class="form-group">
           <label for="eventGroupID" class="col-12">Event group ID</label>
           <div class="form-group col-12">
             <input type="text" class="form-control" id="eventGroupID" name="eventGroupID" placeholder="" x-model="data.eventGroupID" >
             <small class="form-text">You can find this short string of characters in the event group's link, in your confirmation email, or on the event group's page.</small>
           </div>
         </div>
-        <div class="form-group row">
+        <div class="form-group">
           <label for="eventGroupEditToken" class="col-12">Event group secret editing code</label>
           <div class="form-group col-12">
             <input type="text" class="form-control" id="eventGroupEditToken" name="eventGroupEditToken" placeholder="" x-model="data.eventGroupEditToken" >
@@ -117,13 +117,13 @@
     </div>
   </div>
 </div>
-<div class="form-group row" id="maxAttendeesContainer" x-show="data.maxAttendeesCheckbox && data.joinCheckbox">
-  <label for="maxAttendees" class="col-sm-2 col-form-label">Attendee limit</label>
-  <div class="form-group col-sm-10">
+<div class="form-group" id="maxAttendeesContainer" x-show="data.maxAttendeesCheckbox && data.joinCheckbox">
+  <label for="maxAttendees" >Attendee limit</label>
+  <div class="form-group ">
     <input type="number" class="form-control" id="maxAttendees" name="maxAttendees" placeholder="Enter a number." x-model="data.maxAttendees" >
   </div>
 </div>
-<div class="form-group row">
+<div class="form-group">
   <div class="col-12">
     <div
       class="alert alert-danger"

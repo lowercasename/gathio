@@ -1,0 +1,47 @@
+<div class="form-group">
+    <label for="eventGroupName">Name</label>
+    <input type="text" class="form-control" id="eventGroupName" name="eventGroupName" placeholder="Make it snappy." x-model="data.eventGroupName">
+</div>
+<div class="form-group">
+    <label for="eventGroupDescription">Description</label>
+    <textarea class="form-control" id="eventGroupDescription" name="eventGroupDescription" x-model="data.eventGroupDescription">{{eventGroupData.description}}</textarea>
+    <small class="form-text"><a href="https://commonmark.org/help/">Markdown</a> formatting supported.</small>
+</div>
+<div class="form-group">
+    <label for="eventGroupURL">Link</label>
+    <input type="url" class="form-control" id="eventGroupURL" name="eventGroupURL" placeholder="For tickets or a page with more information (optional)." x-model="data.eventGroupURL">
+</div>
+<div class="form-group">
+    <label for="hostName">Host or organisation name</label>
+    <input type="text" class="form-control" id="eventGroupHostName" name="hostName" placeholder="Will be shown on the event group page (optional)."  x-model="data.hostName">
+</div>
+<div class="form-group">
+    <label for="creatorEmail">Your email</label>
+    <div class="form-group">
+        <input type="email" class="form-control" id="eventGroupCreatorEmail" name="creatorEmail" placeholder="Will not be shown anywhere (optional)." x-model="data.creatorEmail">
+        <small class="form-text">If you provide your email, we will send your secret editing password here, and use it to notify you of updates to the event.</small>
+    </div>
+</div>
+<div class="form-group">
+    <label>Cover image</label>
+    <div class="image-preview" id="group-image-preview">
+        <label for="eventGroupImageUpload" id="group-image-label">Choose file</label>
+        <input type="file" name="imageUpload" id="group-image-upload" accept="image/jpeg,image/gif,image/png" x-ref="eventGroupImageUpload"/>
+    </div>
+    <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
+</div>
+<div class="form-group">
+  <div class="col-12">
+    <div
+      class="alert alert-danger"
+      role="alert"
+      x-show="errors.length > 0"
+    >
+      <p><i class="fas fa-exclamation-triangle"></i> Please fix these errors:</p>
+      <ul>
+        <template x-for="error in errors">
+          <li x-text="error.message"></li>
+        </template>
+      </ul>
+    </div>
+  </div>

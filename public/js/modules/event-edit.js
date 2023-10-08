@@ -1,0 +1,91 @@
+$(document).ready(function () {
+    $.uploadPreview({
+        input_field: "#event-image-upload",
+        preview_box: "#event-image-preview",
+        label_field: "#event-image-label",
+        label_default: "Choose file",
+        label_selected: "Change file",
+        no_label: false,
+    });
+    autosize($("textarea"));
+    if (window.eventData.image) {
+        $("#event-image-preview").css(
+            "background-image",
+            `url('/events/${window.eventData.image}')`,
+        );
+        $("#event-image-preview").css("background-size", "cover");
+        $("#event-image-preview").css("background-position", "center center");
+    }
+    $("#timezone").val(window.eventData.timezone).trigger("change");
+});
+
+function editEventForm() {
+    return {
+        data: {
+            eventName: window.eventData.name,
+            eventLocation: window.eventData.location,
+            eventStart: window.eventData.startForDateInput,
+            eventEnd: window.eventData.endForDateInput,
+            timezone: window.eventData.timezone,
+            eventDescription: window.eventData.description,
+            eventURL: window.eventData.url,
+            hostName: window.eventData.hostName,
+            creatorEmail: window.eventData.creatorEmail,
+            eventGroupID: window.eventData.eventGroupID,
+            eventGroupEditToken: window.eventData.eventGroupEditToken,
+            interactionCheckbox: window.eventData.usersCanComment,
+            joinCheckbox: window.eventData.usersCanAttend,
+            maxAttendeesCheckbox: window.eventData.maxAttendees !== null,
+            maxAttendees: window.eventData.maxAttendees,
+        },
+        errors: [],
+        submitting: false,
+        init() {
+            // Set up Select2
+            this.select2 = $(this.$refs.timezone).select2();
+            this.select2.on("select2:select", (event) => {
+                this.data.timezone = event.target.value;
+            });
+            this.data.timezone = this.select2.val();
+        },
+        async submitForm() {
+            this.submitting = true;
+            this.errors = [];
+            const formData = new FormData();
+            for (const [key, value] of Object.entries(this.data)) {
+                formData.append(key, value);
+            }
+            formData.append(
+                "imageUpload",
+                this.$refs.eventImageUpload.files[0],
+            );
+            formData.append("editToken", window.eventData.editToken);
+            try {
+                const response = await fetch(`/event/${window.eventData.id}`, {
+                    method: "PUT",
+                    body: formData,
+                });
+                this.submitting = false;
+                if (!response.ok) {
+                    if (response.status !== 400) {
+                        this.errors = unexpectedError;
+                        return;
+                    }
+                    const json = await response.json();
+                    this.errors = json.errors;
+                    // Set Bootstrap validation classes using 'field' property
+                    $("input, textarea").removeClass("is-invalid");
+                    this.errors.forEach((error) => {
+                        $(`#${error.field}`).addClass("is-invalid");
+                    });
+                    return;
+                }
+                window.location.reload();
+            } catch (error) {
+                console.log(error);
+                this.errors = unexpectedError;
+                this.submitting = false;
+            }
+        },
+    };
+}

@@ -44,6 +44,14 @@ export type ValidatedEventData = Omit<
     maxAttendeesBoolean: boolean;
 };
 
+interface EventGroupData {
+    eventGroupName: string;
+    eventGroupDescription: string;
+    eventGroupURL: string;
+    hostName: string;
+    creatorEmail: string;
+}
+
 const validateEmail = (email: string) => {
     if (!email || email.length === 0 || typeof email !== "string") {
         return false;
@@ -83,23 +91,11 @@ export const validateEventTime = (start: Date, end: Date): Error | boolean => {
 
 export const validateEventData = (eventData: EventData): ValidationResponse => {
     const validatedData: ValidatedEventData = {
-        eventName: eventData.eventName,
-        eventLocation: eventData.eventLocation,
-        eventStart: eventData.eventStart,
-        eventEnd: eventData.eventEnd,
-        timezone: eventData.timezone,
-        eventDescription: eventData.eventDescription,
-        eventURL: eventData.eventURL,
-        imagePath: eventData.imagePath,
-        hostName: eventData.hostName,
-        creatorEmail: eventData.creatorEmail,
+        ...eventData,
         eventGroupBoolean: eventData.eventGroupCheckbox === "true",
         interactionBoolean: eventData.interactionCheckbox === "true",
         joinBoolean: eventData.joinCheckbox === "true",
         maxAttendeesBoolean: eventData.maxAttendeesCheckbox === "true",
-        eventGroupID: eventData.eventGroupID,
-        eventGroupEditToken: eventData.eventGroupEditToken,
-        maxAttendees: eventData.maxAttendees,
     };
     const errors: Error[] = [];
     if (!validatedData.eventName) {
@@ -186,6 +182,35 @@ export const validateEventData = (eventData: EventData): ValidationResponse => {
 
     return {
         data: validatedData,
+        errors: errors,
+    };
+};
+
+export const validateGroupData = (groupData: EventGroupData) => {
+    const errors: Error[] = [];
+    if (!groupData.eventGroupName) {
+        errors.push({
+            message: "Event group name is required.",
+            field: "eventGroupName",
+        });
+    }
+    if (!groupData.eventGroupDescription) {
+        errors.push({
+            message: "Event group description is required.",
+            field: "eventGroupDescription",
+        });
+    }
+    if (groupData.creatorEmail) {
+        if (!validateEmail(groupData.creatorEmail)) {
+            errors.push({
+                message: "Email address is invalid.",
+                field: "creatorEmail",
+            });
+        }
+    }
+
+    return {
+        data: groupData,
         errors: errors,
     };
 };

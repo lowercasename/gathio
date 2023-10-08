@@ -74,8 +74,7 @@ router.post(
                     img.resize(920, Jimp.AUTO) // resize
                         .quality(80) // set JPEG quality
                         .write("./public/events/" + eventID + ".jpg"); // save
-                    const filename = eventID + ".jpg";
-                    return filename;
+                    return eventID + ".jpg";
                 })
                 .catch((err) => {
                     addToLog(
@@ -280,8 +279,8 @@ router.put(
             });
         }
 
-        let submittedEditToken = req.body.editToken;
         try {
+            const submittedEditToken = req.body.editToken;
             const event = await Event.findOne({
                 id: req.params.eventID,
             });
