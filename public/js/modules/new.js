@@ -199,3 +199,47 @@ function newEventGroupForm() {
         },
     };
 }
+
+function importEventForm() {
+    return {
+        data: {
+            creatorEmail: "",
+        },
+        errors: [],
+        submitting: false,
+        async submitForm() {
+            this.submitting = true;
+            this.errors = [];
+            const formData = new FormData();
+            for (const [key, value] of Object.entries(this.data)) {
+                formData.append(key, value);
+            }
+            formData.append(
+                "icsImportControl",
+                this.$refs.icsImportControl.files[0],
+            );
+            try {
+                const response = await fetch("/import/event", {
+                    method: "POST",
+                    body: formData,
+                });
+                this.submitting = false;
+                if (!response.ok) {
+                    if (response.status !== 400) {
+                        this.errors = unexpectedError;
+                        return;
+                    }
+                    const json = await response.json();
+                    this.errors = json.errors;
+                    return;
+                }
+                const json = await response.json();
+                window.location.assign(json.url);
+            } catch (error) {
+                console.log(error);
+                this.errors = unexpectedError;
+                this.submitting = false;
+            }
+        },
+    };
+}

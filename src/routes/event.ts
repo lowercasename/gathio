@@ -25,6 +25,7 @@ import {
 import getConfig from "../lib/config.js";
 import { sendEmailFromTemplate } from "../lib/email.js";
 import crypto from "crypto";
+import ical from "ical";
 
 const config = getConfig();
 
@@ -38,6 +39,17 @@ const upload = multer({
         const mimetype = filetypes.test(file.mimetype);
         if (!mimetype) {
             return cb(new Error("Only JPEG, PNG and GIF images are allowed."));
+        }
+        cb(null, true);
+    },
+});
+const icsUpload = multer({
+    storage: storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: function (_, file, cb) {
+        const filetype = "text/calendar";
+        if (file.mimetype !== filetype) {
+            return cb(new Error("Only ICS files are allowed."));
         }
         cb(null, true);
     },
@@ -84,6 +96,7 @@ router.post(
                     );
                 });
         }
+
         const startUTC = moment.tz(eventData.eventStart, eventData.timezone);
         const endUTC = moment.tz(eventData.eventEnd, eventData.timezone);
         let eventGroup;
@@ -499,6 +512,119 @@ router.put(
                     req.params.eventID +
                     " failed with error: " +
                     err,
+            );
+            return res.status(500).json({
+                errors: [
+                    {
+                        message: err,
+                    },
+                ],
+            });
+        }
+    },
+);
+
+router.post(
+    "/import/event",
+    icsUpload.single("icsImportControl"),
+    async (req: Request, res: Response) => {
+        if (!req.file) {
+            return res.status(400).json({
+                errors: [
+                    {
+                        message: "No file was provided.",
+                    },
+                ],
+            });
+        }
+
+        let eventID = generateEventID();
+        let editToken = generateEditToken();
+
+        let iCalObject = ical.parseICS(req.file.buffer.toString("utf8"));
+
+        let importedEventData = iCalObject[Object.keys(iCalObject)[0]];
+
+        let creatorEmail: string | undefined;
+        if (req.body.creatorEmail) {
+            creatorEmail = req.body.creatorEmail;
+        } else if (importedEventData.organizer) {
+            if (typeof importedEventData.organizer === "string") {
+                creatorEmail = importedEventData.organizer.replace(
+                    "MAILTO:",
+                    "",
+                );
+            } else {
+                creatorEmail = importedEventData.organizer.val.replace(
+                    "MAILTO:",
+                    "",
+                );
+            }
+        }
+
+        let hostName: string | undefined;
+        if (importedEventData.organizer) {
+            if (typeof importedEventData.organizer === "string") {
+                hostName = importedEventData.organizer.replace(/["]+/g, "");
+            } else {
+                hostName = importedEventData.organizer.params.CN.replace(
+                    /["]+/g,
+                    "",
+                );
+            }
+        }
+
+        const event = new Event({
+            id: eventID,
+            type: "public",
+            name: importedEventData.summary,
+            location: importedEventData.location,
+            start: importedEventData.start,
+            end: importedEventData.end,
+            timezone: "Etc/UTC", // TODO: get timezone from ics file
+            description: importedEventData.description,
+            image: "",
+            creatorEmail,
+            url: "",
+            hostName,
+            viewPassword: "",
+            editPassword: "",
+            editToken: editToken,
+            usersCanAttend: false,
+            showUsersList: false,
+            usersCanComment: false,
+            firstLoad: true,
+        });
+        try {
+            await event.save();
+            addToLog("createEvent", "success", `Event ${eventID} created`);
+            // Send email with edit link
+            if (creatorEmail && req.app.locals.sendEmails) {
+                sendEmailFromTemplate(
+                    creatorEmail,
+                    `${importedEventData.summary}`,
+                    "createEvent",
+                    {
+                        eventID,
+                        editToken,
+                        siteName: config.general.site_name,
+                        siteLogo: config.general.email_logo_url,
+                        domain: config.general.domain,
+                    },
+                    req,
+                );
+            }
+            return res.json({
+                eventID: eventID,
+                editToken: editToken,
+                url: `/${eventID}?e=${editToken}`,
+            });
+        } catch (err) {
+            console.error(err);
+            addToLog(
+                "createEvent",
+                "error",
+                "Attempt to create event failed with error: " + err,
             );
             return res.status(500).json({
                 errors: [

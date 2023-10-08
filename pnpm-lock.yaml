@@ -82,6 +82,9 @@ devDependencies:
   '@types/express':
     specifier: ^4.17.18
     version: 4.17.18
+  '@types/ical':
+    specifier: ^0.8.1
+    version: 0.8.1
   '@types/multer':
     specifier: ^1.4.8
     version: 1.4.8
@@ -710,6 +713,12 @@ packages:
 
   /@types/http-errors@2.0.2:
     resolution: {integrity: sha512-lPG6KlZs88gef6aD85z3HNkztpj7w2R7HmR3gygjfXCQmsLloWNARFkMuzKiiY8FGdh1XDpgBdrSf4aKDiA7Kg==}
+    dev: true
+
+  /@types/ical@0.8.1:
+    resolution: {integrity: sha512-JQyqcdMGEa0aUaZPablO5okXvrAspGMzQYriYUV0C5RjDOk/7dqFklvl9yA1uidc0qtrZu4VBFgF0LXhPGPAJw==}
+    dependencies:
+      rrule: 2.6.4
     dev: true
 
   /@types/mime@1.3.3:
@@ -2470,7 +2479,6 @@ packages:
   /luxon@1.28.1:
     resolution: {integrity: sha512-gYHAa180mKrNIUJCbwpmD0aTu9kV0dREDrwNnuyFAsO1Wt0EVYSZelPnJlbj9HplzXX/YWXHFTL45kvZ53M0pw==}
     requiresBuild: true
-    dev: false
     optional: true
 
   /marked@9.1.0:
@@ -3192,6 +3200,14 @@ packages:
       luxon: 1.28.1
     dev: false
 
+  /rrule@2.6.4:
+    resolution: {integrity: sha512-sLdnh4lmjUqq8liFiOUXD5kWp/FcnbDLPwq5YAc/RrN6120XOPb86Ae5zxF7ttBVq8O3LxjjORMEit1baluahA==}
+    dependencies:
+      tslib: 1.14.1
+    optionalDependencies:
+      luxon: 1.28.1
+    dev: true
+
   /run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
     dependencies:
@@ -3534,6 +3550,10 @@ packages:
       punycode: 2.3.0
       universalify: 0.2.0
       url-parse: 1.5.10
+    dev: true
+
+  /tslib@1.14.1:
+    resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
     dev: true
 
   /tslib@2.6.2:
