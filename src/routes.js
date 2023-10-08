@@ -352,7 +352,7 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                                 attendeeEmails,
                                         );
                                         req.app.get("hbsInstance").renderView(
-                                            "./views/emails/deleteevent.handlebars",
+                                            "./views/emails/deleteEvent/deleteEventHtml.handlebars",
                                             {
                                                 siteName,
                                                 siteLogo,
@@ -699,7 +699,7 @@ router.post("/attendevent/:eventID", async (req, res) => {
             if (sendEmails) {
                 if (req.body.attendeeEmail) {
                     req.app.get("hbsInstance").renderView(
-                        "./views/emails/addeventattendee.handlebars",
+                        "./views/emails/addEventAttendee/addEventAttendeeHtml.handlebars",
                         {
                             eventID: req.params.eventID,
                             siteName,
@@ -775,7 +775,7 @@ router.post("/unattendevent/:eventID", (req, res) => {
             if (sendEmails) {
                 if (req.body.attendeeEmail) {
                     req.app.get("hbsInstance").renderView(
-                        "./views/emails/unattendevent.handlebars",
+                        "./views/emails/unattendEvent/unattendEventHtml.handlebars",
                         {
                             eventID: req.params.eventID,
                             siteName,
@@ -857,7 +857,7 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
                 // currently this is never called because we don't have the email address
                 if (req.body.attendeeEmail) {
                     req.app.get("hbsInstance").renderView(
-                        "./views/emails/removeeventattendee.handlebars",
+                        "./views/emails/removeEventAttendee/removeEventAttendeeHtml.handlebars",
                         {
                             eventName: req.params.eventName,
                             siteName,
@@ -929,7 +929,7 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
                 // currently this is never called because we don't have the email address
                 if (req.body.attendeeEmail) {
                     req.app.get("hbsInstance").renderView(
-                        "./views/emails/removeeventattendee.handlebars",
+                        "./views/emails/removeEventAttendee/removeEventAttendeeHtml.handlebars",
                         {
                             eventName: req.params.eventName,
                             siteName,
@@ -1008,7 +1008,7 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
             eventGroup.save();
             if (sendEmails) {
                 req.app.get("hbsInstance").renderView(
-                    "./views/emails/subscribed.handlebars",
+                    "./views/emails/subscribed/subscribedHtml.handlebars",
                     {
                         eventGroupName: eventGroup.name,
                         eventGroupID: eventGroup.id,
@@ -1151,7 +1151,7 @@ router.post("/post/comment/:eventID", (req, res) => {
                                         "Sending emails to: " + attendeeEmails,
                                     );
                                     req.app.get("hbsInstance").renderView(
-                                        "./views/emails/addeventcomment.handlebars",
+                                        "./views/emails/addEventComment/addEventCommentHtml.handlebars",
                                         {
                                             siteName,
                                             siteLogo,
@@ -1283,7 +1283,7 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                                         "Sending emails to: " + attendeeEmails,
                                     );
                                     req.app.get("hbsInstance").renderView(
-                                        "./views/emails/addeventcomment.handlebars",
+                                        "./views/emails/addEventComment/addEventCommentHtml.handlebars",
                                         {
                                             siteName,
                                             siteLogo,
