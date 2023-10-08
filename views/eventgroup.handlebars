@@ -5,7 +5,7 @@
 {{/if}}
 <div class="row">
   <div class="col-lg">
-    <h3 id="eventName" data-event-id="{{eventGroupData.id}}">{{eventGroupData.name}}</h3>
+    <h3 id="eventGroupName" data-event-id="{{eventGroupData.id}}">{{eventGroupData.name}}</h3>
   </div>
   <div class="col-lg-2 ml-2 edit-buttons">
     {{#if editingEnabled}}
@@ -16,7 +16,7 @@
   </div>
 </div>
 {{#if firstLoad}}
-<div class="alert alert-success alert-dismissible fade show" role="alert">
+<div class="alert alert-success alert-dismissible fade show mt-4" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
@@ -30,7 +30,7 @@
         <div class="card-body">
           <ul class="fa-ul eventInformation">
             {{#if eventGroupHasHost}}
-              <li>
+              <li id="hostName">
                 <span class="fa-li">
                   <i class="fas fa-fw fa-user-circle"></i>
                 </span>
@@ -38,7 +38,7 @@
               </li>
             {{/if}}
             {{#if eventGroupData.url}}
-              <li>
+              <li id="eventGroupURL">
                 <span class="fa-li">
                   <i class="fas fa-link"></i>
                 </span>
@@ -91,17 +91,17 @@
 </div>
 
 {{#if editingEnabled}}
-  <div class="alert alert-success">
+  <div class="alert alert-info">
     <p>To add an event to this group, copy and paste the two codes below into the 'Event Group' box when creating a new event or editing an existing event.</p>
     <div class="table-responsive">
       <table style="width:100%">
         <tr style="border-bottom:1px solid rgba(0,0,0,0.2)">
           <td><strong>Event group ID</strong></td>
-          <td><span class="code">{{eventGroupData.id}}</span></td>
+          <td><span class="code" id="eventGroupID">{{eventGroupData.id}}</span></td>
         </tr>
         <tr>
           <td><strong>Event group editing password</strong></td>
-          <td><span class="code">{{eventGroupData.editToken}}</span></td>
+          <td><span class="code" id="eventGroupEditToken">{{eventGroupData.editToken}}</span></td>
         </tr>
       </table>
     </div>
@@ -222,15 +222,11 @@
   </div>
 </div>
 
+<script>
+window.groupData = {{{ json jsonData }}};
+</script>
 
 <script>
-  $.validate({
-    lang: 'en',
-    errorElementClass: "is-invalid",
-    errorMessageClass: "text-danger",
-    successElementClass: "is-valid"
-  });
-
   $(document).ready(function() {
     // Save the editing token from the URL, if it is valid
     const eventID = $('#eventName').attr('data-event-id');
@@ -273,23 +269,12 @@
       $('#editModal').modal('show');
     }
 
-    $.uploadPreview({
-      input_field: "#eventGroupImageUpload",
-      preview_box: "#eventGroupImagePreview",
-      label_field: "#eventGroupImageLabel",
-      label_default: "Choose file",
-      label_selected: "Change file",
-      no_label: false
-    });
-    $("#eventGroupImagePreview").css("background-image", "url('/events/{{eventGroupData.image}}')");
-    $("#eventGroupImagePreview").css("background-size", "cover");
-    $("#eventGroupImagePreview").css("background-position", "center center");
     new ClipboardJS('#copyEventLink');
     new ClipboardJS('#copyFeedLink');
     autosize($('textarea'));
     $("#exportICS").click(function(){
       let eventGroupID = $(this).attr('data-event-id');
-      $.get('/exportgroup/' + eventGroupID, function(response) {
+      $.get('/export/group/' + eventGroupID, function(response) {
         downloadFile(response, eventGroupID + '.ics');
       })
     })

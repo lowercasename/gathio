@@ -1,30 +1,36 @@
-<h2>New event</h2>
-<hr>
-<div class="alert alert-info mb-4 text-center" role="alert">
-  <i class="fas fa-exclamation-circle"></i> Events are visible to anyone who knows the link.
-</div>
-
-
-{{#each errors}}
-  <div class="alert alert-danger" role="alert">{{this.msg}}</div>
-{{/each}}
-
 <div class="container mb-4">
   <div class="row">
     <div class="col-sm-4 p-2">
-      <button type="button" id="showNewEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-file"></i> Create a new event</button>
+      <button type="button" id="showNewEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-calendar-day"></i> Create a new event</button>
     </div>
     <div class="col-sm-4 p-2">
       <button type="button" id="showImportEventFormButton" class="btn btn-secondary w-100"><i class="fas fa-file-import"></i> Import an existing event</button>
     </div>
     <div class="col-sm-4 p-2">
-      <button type="button" id="showNewEventGroupFormButton" class="btn btn-secondary w-100"><i class="fas fa-folder-open"></i> Create a new event group </button>
+      <button type="button" id="showNewEventGroupFormButton" class="btn btn-secondary w-100"><i class="fas fa-calendar-alt"></i> Create a new event group </button>
     </div>
   </div>
 </div>
 
+<div class="alert alert-info mb-4 text-center" role="alert">
+  <i class="fas fa-exclamation-circle"></i> Events are visible to anyone who knows the link.
+</div>
+
 <div id="newEventFormContainer">
-  {{>neweventform}}
+  <h4 class="mb-2">Create an event</h4>
+  <form id="newEventForm" enctype="multipart/form-data" x-data="newEventForm()" x-init="init()" @submit.prevent="submitForm">
+    {{>eventForm}}
+    <div class="form-group row">
+      <div class="col-sm-12 pt-3 pb-3 text-center">
+        <button
+          id="newEventFormSubmit"
+          type="submit"
+          class="btn btn-primary w-50"
+          x-bind:disabled="submitting"
+        >Create</button>
+      </div>
+    </div>
+  </form>
 </div>
 
 <div id="importEventFormContainer">
@@ -32,80 +38,18 @@
 </div>
 
 <div id="newEventGroupFormContainer">
-  {{>neweventgroupform}}
+  <h4 class="mb-2">Create an event group</h4>
+  <p class="text-muted">An event group is a holding area for a set of linked events, like a recurring game night, a festival, or a band tour. You can share a public link to your event group just like an individual event link, and people who know the secret editing code will be able to add future events to the group.</p>
+  <p class="text-muted">Event groups do not get automatically removed like events do, but events which have been removed from {{siteName}} will of course not show up in an event group.</p>
+  <form id="newEventGroupForm" enctype="multipart/form-data" x-data="newEventGroupForm()" @submit.prevent="submitForm">
+    {{> eventGroupForm }}
+    <div class="form-group row">
+      <div class="col-sm-12 pt-3 pb-3 text-center">
+        <button type="submit" class="btn btn-primary w-50" x-bind:disabled="submitting">Create</button>
+      </div>
+    </div>
+  </form>
 </div>
 
-  <script>
-  $.validate({
-    lang: 'en',
-    errorElementClass: "is-invalid",
-    errorMessageClass: "text-danger",
-    successElementClass: "is-valid"
-  });
-  $(document).ready(function(){
-    if ($('#icsImportControl')[0].files[0] != null){
-      var file = $('#icsImportControl')[0].files[0].name;
-      $('#icsImportControl').next('label').html('<i class="far fa-file-alt"></i> ' + file);
-    }
-    $('#eventStart').datepicker({
-      language: 'en',
-      minDate: new Date(),
-      timepicker: true,
-      dateFormat: 'd MM yyyy',
-      dateTimeSeparator: ', ',
-      onSelect: function(formattedDate, rawDate){
-        $('#eventEnd').datepicker().data('datepicker').update('minDate', rawDate).clear();
-      }
-    });
-    $('#eventEnd').datepicker({
-      language: 'en',
-      minDate: new Date(),
-      timepicker: true,
-      dateFormat: 'd MM yyyy',
-      dateTimeSeparator: ', '
-    });
-    $("#showNewEventFormButton").click(function(){
-      $("button").removeClass("active");
-      $("#showImportEventFormButton #showNewEventGroupFormButton").removeClass("active");
-      if ($("#newEventFormContainer").is(":visible")){
-        $("#newEventFormContainer").slideUp("fast");
-      }
-      else {
-        $("#newEventFormContainer").slideDown("fast");
-        $("#importEventFormContainer").slideUp("fast");
-        $("#newEventGroupFormContainer").slideUp("fast");
-        $(this).addClass("active");
-      }
-    })
-    $("#showImportEventFormButton").click(function(){
-      $("button").removeClass("active");
-      $("#showNewEventFormButton #showNewEventGroupFormButton").removeClass("active");
-      if ($("#importEventFormContainer").is(":visible")){
-        $("#importEventFormContainer").slideUp("fast");
-      }
-      else {
-        $("#importEventFormContainer").slideDown("fast");
-        $("#newEventFormContainer").slideUp("fast");
-        $("#newEventGroupFormContainer").slideUp("fast");
-        $(this).addClass("active");
-      }
-    })
-    $("#showNewEventGroupFormButton").click(function(){
-      $("button").removeClass("active");
-      $("#showNewEventFormButton #showImportEventFormButton").removeClass("active");
-      if ($("#newEventGroupFormContainer").is(":visible")){
-        $("#newEventGroupFormContainer").slideUp("fast");
-      }
-      else {
-        $("#newEventGroupFormContainer").slideDown("fast");
-        $("#newEventFormContainer").slideUp("fast");
-        $("#importEventFormContainer").slideUp("fast");
-        $(this).addClass("active");
-      }
-    })
-    $('#icsImportControl').change(function(){
-      var file = $('#icsImportControl')[0].files[0].name;
-      $(this).next('label').html('<i class="far fa-file-alt"></i> ' + file);
-    });
-  })
-  </script>
+<script src="/js/generate-timezones.js"></script>
+<script src="/js/modules/new.js"></script>

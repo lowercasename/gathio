@@ -136,7 +136,7 @@
       {{#unless noMoreSpots}}
         <button type="button" id="attendEvent" class="btn btn-success" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> Add me</button>
       {{/unless}}
-      <button type="button" id="unattendEvent" class="btn btn-seco.split("?")[0];dary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
+      <button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
     </div>
   </h5>
   <div class="card-body">
@@ -397,18 +397,12 @@
 
 {{/if}}
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-{{#unless eventHasConcluded}}
-{{#if editingEnabled}}
-<script type="text/javascript" src="/js/generate-timezones.js"></script>
-{{/if}}
-{{/unless}}
+
 <script>
-  $.validate({
-    lang: 'en',
-    errorElementClass: "is-invalid",
-    errorMessageClass: "text-danger",
-    successElementClass: "is-valid"
-  });
+window.eventData = {{{ json jsonData }}};
+</script>
+
+<script>
   {{#if editingEnabled}}
 
   $('#removeAttendeeModal').on('show.bs.modal', function (event) {
@@ -419,24 +413,6 @@
     modal.find('.modal-title').text('Remove ' + attendeeName + ' from {{eventData.name}}')
     modal.find('#removeAttendeeForm').attr('action', '/removeattendee/{{eventData.id}}/' + attendeeID);
   })
-  {{#unless eventHasConcluded}}
-  $('#eventStart').datepicker({
-    language: 'en',
-    timepicker: true,
-    dateFormat: 'd MM yyyy',
-    dateTimeSeparator: ', ',
-    onSelect: function(formattedDate, rawDate){
-      $('#eventEnd').datepicker().data('datepicker').update('minDate', rawDate).clear();
-    }
-  });
-  $('#eventEnd').datepicker({
-    language: 'en',
-    timepicker: true,
-    dateFormat: 'd MM yyyy',
-    dateTimeSeparator: ', '
-  });
-  $("#timezone").val('{{eventData.timezone}}').trigger('change');
-  {{/unless}}
   {{/if}}
   $(".commentTimestamp").html(function(){
     parsedDate = moment($(this).html()).fromNow();
@@ -512,26 +488,10 @@
       document.body.removeChild(a);
     }
 
-    $.uploadPreview({
-      input_field: "#image-upload",
-      preview_box: "#image-preview",
-      label_field: "#image-label",
-      label_default: "Choose file",
-      label_selected: "Change file",
-      no_label: false
-    });
-    $("#image-preview").css("background-image", "url('/events/{{eventData.image}}')");
-    $("#image-preview").css("background-size", "cover");
-    $("#image-preview").css("background-position", "center center");
-    {{#if editingEnabled}}
-    $('#eventStart').datepicker().data('datepicker').selectDate(moment('{{parsedStart}}', 'YYYYMMDD[T]HHmmss').toDate());
-    $('#eventEnd').datepicker().data('datepicker').selectDate(moment('{{parsedEnd}}', 'YYYYMMDD[T]HHmmss').toDate());
-    {{/if}}
     new ClipboardJS('#copyEventLink');
-    autosize($('textarea'));
     $("#exportICS").click(function(){
       let eventID = $(this).attr('data-event-id');
-      $.get('/exportevent/' + eventID, function(response) {
+      $.get('/export/event/' + eventID, function(response) {
         downloadFile(response, eventID + '.ics');
       })
     })
@@ -548,39 +508,6 @@
     if ($("#joinCheckbox").is(':checked')){
       $("#maxAttendeesCheckboxContainer").css("display","flex");
     }
-    $("#maxAttendeesCheckbox").on("click", function() {
-      if ($(this).is(':checked')) {
-        $("#maxAttendeesContainer").slideDown('fast').css("display","flex");
-        $("#maxAttendees").attr("data-validation-optional","false");
-      }
-      else {
-        $("#maxAttendeesContainer").slideUp('fast');
-        $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
-      }
-    });
-    $("#joinCheckbox").on("click", function() {
-      if ($(this).is(':checked')) {
-        $("#maxAttendeesCheckboxContainer").slideDown('fast').css("display","flex");
-      }
-      else {
-        $("#maxAttendeesCheckboxContainer").slideUp('fast');
-        $("#maxAttendeesCheckbox").prop("checked",false);
-        $("#maxAttendeesContainer").slideUp('fast');
-        $("#maxAttendees").attr("data-validation-optional","true").val("").removeClass('is-valid is-invalid');
-      }
-    });
-    $("#eventGroupCheckbox").on("click", function() {
-      if ($(this).is(':checked')) {
-        $("#eventGroupData").slideDown('fast');
-        $("#eventGroupID").removeAttr("data-validation-optional").attr("data-validation","required");
-        $("#eventGroupEditToken").removeAttr("data-validation-optional").attr("data-validation","required");
-      }
-      else {
-        $("#eventGroupData").slideUp('fast');
-        $("#eventGroupID").removeAttr("data-validation").attr("data-validation-optional","true").val("");
-        $("#eventGroupEditToken").removeAttr("data-validation").attr("data-validation-optional","true").val("");
-      }
-    });
     $('#attendEvent').on('click', function(event) {
       const modal = $('#attendModal');
       const eventID = $(this).attr('data-event-id');

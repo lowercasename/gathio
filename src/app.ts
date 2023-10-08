@@ -3,8 +3,15 @@ import hbs from "express-handlebars";
 
 import routes from "./routes.js";
 import frontend from "./routes/frontend.js";
+import activitypub from "./routes/activitypub.js";
+import event from "./routes/event.js";
+import group from "./routes/group.js";
+
+import { initEmailService } from "./lib/email.js";
 
 const app = express();
+
+app.locals.sendEmails = initEmailService();
 
 // View engine //
 const hbsInstance = hbs.create({
@@ -27,6 +34,9 @@ const hbsInstance = hbs.create({
                 match[1] + (match[3] || "s")
             ); // Plural case: 'bagel(s)' or 'bagel' --> bagels
         },
+        json: function (context: any) {
+            return JSON.stringify(context);
+        },
     },
 });
 app.engine("handlebars", hbsInstance.engine);
@@ -37,11 +47,16 @@ app.set("hbsInstance", hbsInstance);
 app.use(express.static("public"));
 
 // Body parser //
-app.use(express.json({ type: "application/activity+json" })); // support json encoded bodies
+app.use(express.json({ type: "application/activity+json" }));
+app.use(express.json({ type: "application/ld+json" }));
+app.use(express.json({ type: "application/json" }));
 app.use(express.urlencoded({ extended: true }));
 
 // Router //
 app.use("/", frontend);
+app.use("/", activitypub);
+app.use("/", event);
+app.use("/", group);
 app.use("/", routes);
 
 export default app;

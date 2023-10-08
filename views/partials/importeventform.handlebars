@@ -5,10 +5,10 @@
 
 <img class="img-thumbnail mb-3 d-block mx-auto" src="/images/facebook-export.png" alt="Image showing the location of the export option on Facebook" />
 
-<form id="icsImportForm" action="/importevent" method="post" enctype="multipart/form-data">
+<form id="icsImportForm" enctype="multipart/form-data" x-data="importEventForm()" @submit.prevent="submitForm">
   <div class="form-group">
     <div class="custom-file" id="icsImportContainer">
-    <input required name="icsImportControl" type="file" class="custom-file-input" id="icsImportControl" aria-describedby="fileHelp" accept="text/calendar">
+    <input required name="icsImportControl" type="file" class="custom-file-input" id="icsImportControl" aria-describedby="fileHelp" accept="text/calendar" x-ref="icsImportControl"/>
     <label name="icsImportLabel" class="custom-file-label" id="icsImportLabel" for="icsImportControl">
        <i class="far fa-file-alt"></i> Select file
     </label>
@@ -17,9 +17,25 @@
   <div class="form-group">
     <label for="creatorEmail" class="form-label">Your email</label>
     <div class="form-group">
-      <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="We won't spam you <3" data-validation="email" data-validation-optional="true">
-      <small class="form-text">We will send your secret editing link to this email address.</small>
+      <input type="email" class="form-control" id="importCreatorEmail" name="creatorEmail" placeholder="Will not be shown anywhere (optional)." x-model="data.creatorEmail" >
+    <small class="form-text">If you provide your email, we will send your secret editing password here, and use it to notify you of updates to the event.</small>
     </div>
   </div>
-  <button type="submit" class="d-block mt-3 mx-auto btn btn-primary w-50">Import</button>
+  <div class="form-group">
+    <div class="col-12">
+      <div
+        class="alert alert-danger"
+        role="alert"
+        x-show="errors.length > 0"
+      >
+        <p><i class="fas fa-exclamation-triangle"></i> Please fix these errors:</p>
+        <ul>
+          <template x-for="error in errors">
+            <li x-text="error.message"></li>
+          </template>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <button type="submit" class="d-block mt-3 mx-auto btn btn-primary w-50 mb-4">Import</button>
 </form>
