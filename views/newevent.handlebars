@@ -36,7 +36,9 @@
           type="submit"
           class="btn btn-primary w-50"
           x-bind:disabled="submitting"
-        >Create</button>
+          x-bind:class="submitting ? 'btn--loading' : ''"
+          x-text="submitting ? 'Creating...' : 'Create'"
+        ></button>
       </div>
     </div>
   </form>
@@ -54,7 +56,13 @@
     {{> eventGroupForm }}
     <div class="form-group row">
       <div class="col-sm-12 pt-3 pb-3 text-center">
-        <button type="submit" class="btn btn-primary w-50" x-bind:disabled="submitting">Create</button>
+        <button
+          type="submit"
+          class="btn btn-primary w-50"
+          x-bind:disabled="submitting"
+          x-bind:class="submitting ? 'btn--loading' : ''"
+          x-text="submitting ? 'Creating...' : 'Create'"
+        ></button>
       </div>
     </div>
   </form>

@@ -1,4 +1,4 @@
-<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true" x-data="editEventGroupForm()">
   <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -8,23 +8,30 @@
         </button>
       </div>
       <div class="modal-body">
-      <form id="editEventForm" enctype="multipart/form-data" x-data="editEventGroupForm()" @submit.prevent="submitForm">
+        <form id="editEventForm" enctype="multipart/form-data" @submit.prevent="submitForm">
 
-        {{> eventGroupForm }}
+          {{> eventGroupForm }}
 
-        <div class="form-group">
-          <div class="card border-danger mb-3">
-            <div class="card-header text-danger">Delete this event group</div>
-            <div class="card-body text-danger">
-              <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i> Delete event group</button>
+          <div class="form-group">
+            <div class="card border-danger mb-3">
+              <div class="card-header text-danger">Delete this event group</div>
+              <div class="card-body text-danger">
+                <button type="button" id="deleteEvent" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash"></i> Delete event group</button>
+              </div>
             </div>
           </div>
-        </div>
+        </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save changes</button>
-      </form>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          @click="submitForm"
+          x-bind:disabled="submitting"
+          x-bind:class="submitting ? 'btn--loading' : ''"
+          x-text="submitting ? 'Saving...' : 'Save'"
+        ></button>
       </div>
     </div>
   </div>

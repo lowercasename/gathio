@@ -37,5 +37,11 @@
       </div>
     </div>
   </div>
-  <button type="submit" class="d-block mt-3 mx-auto btn btn-primary w-50 mb-4">Import</button>
+  <button
+    type="submit"
+    class="d-block mt-3 mx-auto btn btn-primary w-50 mb-4"
+    x-bind:disabled="submitting"
+    x-bind:class="submitting ? 'btn--loading' : ''"
+    x-text="submitting ? 'Importing...' : 'Import'"
+  ></button>
 </form>

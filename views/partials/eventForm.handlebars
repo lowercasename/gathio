@@ -36,7 +36,7 @@
   </div>
 </div>
 <div class="form-group">
-  <label for="eventURL" >Link</label>
+  <label for="eventURL">Link</label>
   <div class="form-group ">
     <input type="url" class="form-control" id="eventURL" name="eventURL" placeholder="For tickets or another event page (optional)." x-model="data.eventURL" >
   </div>
@@ -50,7 +50,9 @@
     </div>
     <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
     {{#if eventData.image}}
-      <button type="button" class="btn btn-danger" id="deleteImage">Delete image</button>
+      <div class="form-group my-2">
+        <button type="button" class="btn btn-danger" id="deleteImage">Delete image</button>
+      </div>
     {{/if}}
   </div>
 </div>
@@ -85,7 +87,7 @@
           <label>Choose a group you've edited before</label>
         </div>
         <div class="form-group" x-show="data.groups.length > 0">
-          <select x-ref="eventGroupSelect" id="eventGroupSelect" name="eventGroupSelect" class="form-control" x-on:change="selectGroup">
+          <select x-ref="eventGroupSelect" id="eventGroupSelect" name="eventGroupSelect" class="form-control" x-on:change="selectGroup" x-model="data.eventGroupID">
             <option value="">Choose a group</option>
             <template x-for="group in data.groups">
               <option :value="group.id" x-text="group.name"></option>
