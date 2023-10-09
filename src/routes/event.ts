@@ -2,7 +2,6 @@ import { Router, Response, Request } from "express";
 import multer from "multer";
 import Jimp from "jimp";
 import moment from "moment-timezone";
-import { marked } from "marked";
 import {
     generateEditToken,
     generateEventID,
@@ -26,6 +25,7 @@ import getConfig from "../lib/config.js";
 import { sendEmailFromTemplate } from "../lib/email.js";
 import crypto from "crypto";
 import ical from "ical";
+import { markdownToSanitizedHTML } from "../util/markdown.js";
 
 const config = getConfig();
 
@@ -148,7 +148,7 @@ router.post(
                 eventID,
                 config.general.domain,
                 publicKey,
-                marked.parse(eventData.eventDescription),
+                markdownToSanitizedHTML(eventData.eventDescription),
                 eventData.eventName,
                 eventData.eventLocation,
                 eventImageFilename,

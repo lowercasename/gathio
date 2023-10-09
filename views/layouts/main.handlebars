@@ -68,12 +68,27 @@
             {{{body}}}
           </div>
           <div id="footerContainer">
-            <small class="text-muted">
-              Version 1.3.0 &middot; <a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="https://raphaelkabo.com">Raphael</a><br />
-            </small>
+            {{#if showInstanceInformation}}
+              <p class="small text-muted">
+                <strong>{{domain}}</strong>
+                {{#each staticPages}}
+                  {{#if @first}}
+                    &middot;
+                  {{/if}}
+
+                  <a href="{{this.path}}">{{this.title}}</a>
+
+                  {{#unless @last}}
+                    &middot;
+                  {{/unless}}
+                {{/each}}
+              </p>
+            {{/if}}
+            <p class="small text-muted">
+              <strong>Gathio</strong> version {{version}} &middot; <a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="https://raphaelkabo.com">Raphael</a> and <a href="https://github.com/lowercasename/gathio/graphs/contributors">contributors</a>
+            </p>
           </div>
         </div>
       </div>
     </div>
-  </body>
 </html>

@@ -54,6 +54,10 @@ body, html {
     padding: 5px 0;
 }
 
+#footerContainer p {
+    margin-bottom: 0.25rem;
+}
+
 #sidebar {
     background: #f5f5f5;
     border-bottom: 2px solid #e0e0e0;
@@ -395,4 +399,9 @@ label:not(.form-check-label) {
 
 input[type="datetime-local"] {
     max-width: 20rem;
+}
+
+article.static-page header {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e0e0e0;
 }

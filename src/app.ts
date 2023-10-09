@@ -6,6 +6,7 @@ import frontend from "./routes/frontend.js";
 import activitypub from "./routes/activitypub.js";
 import event from "./routes/event.js";
 import group from "./routes/group.js";
+import staticPages from "./routes/static.js";
 
 import { initEmailService } from "./lib/email.js";
 
@@ -53,6 +54,7 @@ app.use(express.json({ type: "application/json" }));
 app.use(express.urlencoded({ extended: true }));
 
 // Router //
+app.use("/", staticPages);
 app.use("/", frontend);
 app.use("/", activitypub);
 app.use("/", event);
