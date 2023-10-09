@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import moment from "moment-timezone";
 import { marked } from "marked";
-import { renderPlain } from "../util/markdown.js";
+import { markdownToSanitizedHTML, renderPlain } from "../util/markdown.js";
 import getConfig, { frontendConfig } from "../lib/config.js";
 import { addToLog, exportICal } from "../helpers.js";
 import Event from "../models/Event.js";
@@ -91,7 +91,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
             eventHasBegun = true;
         }
         let fromNow = moment.tz(event.start, event.timezone).fromNow();
-        let parsedDescription = marked.parse(event.description);
+        let parsedDescription = markdownToSanitizedHTML(event.description);
         let eventEditToken = event.editToken;
 
         let escapedName = event.name.replace(/\s+/g, "+");
@@ -262,7 +262,9 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
         if (!eventGroup) {
             return res.status(404).render("404", frontendConfig());
         }
-        const parsedDescription = marked.parse(eventGroup.description);
+        const parsedDescription = markdownToSanitizedHTML(
+            eventGroup.description,
+        );
         const eventGroupEditToken = eventGroup.editToken;
         const escapedName = eventGroup.name.replace(/\s+/g, "+");
         const eventGroupHasCoverImage = !!eventGroup.image;
