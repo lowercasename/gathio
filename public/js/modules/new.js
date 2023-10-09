@@ -161,7 +161,6 @@ function newEventGroupForm() {
         async submitForm() {
             this.submitting = true;
             this.errors = [];
-            console.log(this.data);
             const formData = new FormData();
             for (const [key, value] of Object.entries(this.data)) {
                 formData.append(key, value);
