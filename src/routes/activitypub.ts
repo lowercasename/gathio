@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { createFeaturedPost, createWebfinger } from "../activitypub.js";
 import { acceptsActivityPub } from "../lib/activitypub.js";
-import getConfig from "../lib/config.js";
+import getConfig, { frontendConfig } from "../lib/config.js";
 import Event from "../models/Event.js";
 import { addToLog } from "../helpers.js";
 
@@ -15,8 +15,7 @@ const send404IfNotFederated = (
     next: NextFunction,
 ) => {
     if (!config.general.is_federated) {
-        res.status(404).render("404", { url: req.url });
-        return;
+        return res.status(404).render("404", frontendConfig());
     }
     next();
 };
@@ -49,10 +48,10 @@ router.get("/:eventID/m/:hash", async (req: Request, res: Response) => {
             id: eventID,
         });
         if (!event) {
-            return res.status(404).render("404", { url: req.url });
+            return res.status(404).render("404", frontendConfig());
         } else {
             if (!event.activityPubMessages) {
-                return res.status(404).render("404", { url: req.url });
+                return res.status(404).render("404", frontendConfig());
             }
             const message = event.activityPubMessages.find(
                 (el) => el.id === id,
@@ -69,7 +68,7 @@ router.get("/:eventID/m/:hash", async (req: Request, res: Response) => {
                     );
                 }
             } else {
-                return res.status(404).render("404", { url: req.url });
+                return res.status(404).render("404", frontendConfig());
             }
         }
     } catch (err) {
@@ -81,7 +80,7 @@ router.get("/:eventID/m/:hash", async (req: Request, res: Response) => {
                 " failed with error: " +
                 err,
         );
-        return res.status(404).render("404", { url: req.url });
+        return res.status(404).render("404", frontendConfig());
     }
 });
 
@@ -103,7 +102,7 @@ router.get("/.well-known/webfinger", async (req, res) => {
             const event = await Event.findOne({ id: eventID });
 
             if (!event) {
-                return res.status(404).render("404", { url: req.url });
+                return res.status(404).render("404", frontendConfig());
             } else {
                 if (acceptsActivityPub(req)) {
                     res.header(
@@ -122,7 +121,7 @@ router.get("/.well-known/webfinger", async (req, res) => {
                 "error",
                 `Attempt to render webfinger for ${resource} failed with error: ${err}`,
             );
-            return res.status(404).render("404", { url: req.url });
+            return res.status(404).render("404", frontendConfig());
         }
     }
 });
@@ -167,7 +166,7 @@ router.get("/:eventID/followers", async (req, res) => {
             "error",
             `Attempt to render followers for ${eventID} failed with error: ${err}`,
         );
-        return res.status(404).render("404", { url: req.url });
+        return res.status(404).render("404", frontendConfig());
     }
 });
 

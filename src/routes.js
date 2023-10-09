@@ -2,7 +2,7 @@ import fs from "fs";
 import express from "express";
 import { customAlphabet } from "nanoid";
 import randomstring from "randomstring";
-import { getConfig } from "./lib/config.js";
+import { frontendConfig, getConfig } from "./lib/config.js";
 import { addToLog } from "./helpers.js";
 import moment from "moment-timezone";
 import crypto from "crypto";
@@ -1505,9 +1505,7 @@ router.post("/activitypub/inbox", (req, res) => {
 });
 
 router.use(function (req, res, next) {
-    res.status(404);
-    res.render("404", { url: req.url });
-    return;
+    return res.status(404).render("404", frontendConfig());
 });
 
 addToLog("startup", "success", "Started up successfully");

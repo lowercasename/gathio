@@ -1,9 +1,8 @@
 import { Router, Request, Response } from "express";
 import moment from "moment-timezone";
 import { marked } from "marked";
-import { frontendConfig } from "../util/config.js";
 import { renderPlain } from "../util/markdown.js";
-import getConfig from "../lib/config.js";
+import getConfig, { frontendConfig } from "../lib/config.js";
 import { addToLog, exportICal } from "../helpers.js";
 import Event from "../models/Event.js";
 import EventGroup, { IEventGroup } from "../models/EventGroup.js";
@@ -30,9 +29,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
             .lean() // Required, see: https://stackoverflow.com/questions/59690923/handlebars-access-has-been-denied-to-resolve-the-property-from-because-it-is
             .populate("eventGroup");
         if (!event) {
-            res.status(404);
-            res.render("404", { url: req.url });
-            return;
+            return res.status(404).render("404", frontendConfig());
         }
         const parsedLocation = event.location.replace(/\s+/g, "+");
         let displayDate;
@@ -252,7 +249,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 err,
         );
         console.log(err);
-        res.status(404).render("404", { url: req.url });
+        return res.status(404).render("404", frontendConfig());
     }
 });
 
@@ -263,7 +260,7 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
         }).lean();
 
         if (!eventGroup) {
-            return res.status(404).render("404", { url: req.url });
+            return res.status(404).render("404", frontendConfig());
         }
         const parsedDescription = marked.parse(eventGroup.description);
         const eventGroupEditToken = eventGroup.editToken;
@@ -364,7 +361,7 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
             `Attempt to display event group ${req.params.eventGroupID} failed with error: ${err}`,
         );
         console.log(err);
-        return res.status(404).render("404", { url: req.url });
+        return res.status(404).render("404", frontendConfig());
     }
 });
 
@@ -391,7 +388,7 @@ router.get(
                 `Attempt to display event group feed for ${req.params.eventGroupID} failed with error: ${err}`,
             );
             console.log(err);
-            res.status(404).render("404", { url: req.url });
+            return res.status(404).render("404", frontendConfig());
         }
     },
 );
@@ -413,7 +410,7 @@ router.get("/export/event/:eventID", async (req: Request, res: Response) => {
             `Attempt to export event ${req.params.eventID} failed with error: ${err}`,
         );
         console.log(err);
-        res.status(404).render("404", { url: req.url });
+        return res.status(404).render("404", frontendConfig());
     }
 });
 
@@ -439,7 +436,7 @@ router.get(
                 `Attempt to export event group ${req.params.eventGroupID} failed with error: ${err}`,
             );
             console.log(err);
-            res.status(404).render("404", { url: req.url });
+            return res.status(404).render("404", frontendConfig());
         }
     },
 );
