@@ -31,3 +31,18 @@ smtp_password = ""
 
 [sendgrid]
 api_key = ""
+
+# Links to static pages (for example a privacy policy) or an external community page,
+# which will be displayed in the footer.
+# If paths begin with a slash, they are treated as internal and will open the specified
+# Markdown or text file. If they are absolute (begin with https://), they will simply
+# link to the specified URL.
+
+# [[static_pages]]
+# title = "Privacy Policy"
+# path = "/privacy"
+# filename = "privacy-policy.md"
+
+# [[static_pages]]
+# title = "External Link"
+# path = "https://example.com"

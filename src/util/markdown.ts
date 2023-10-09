@@ -1,7 +1,6 @@
-// Extra marked renderer (used to render plaintext event description for page metadata)
-// Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
-
 import { marked } from "marked";
+import { JSDOM } from "jsdom";
+import DOMPurify from "dompurify";
 
 // &#63; to ? helper
 function htmlEscapeToText(text: string) {
@@ -13,6 +12,9 @@ function htmlEscapeToText(text: string) {
         return String.fromCharCode(Number(code));
     });
 }
+
+// Extra marked renderer (used to render plaintext event description for page metadata)
+// Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
 
 export const renderPlain = () => {
     var render = new marked.Renderer();
@@ -41,4 +43,12 @@ export const renderPlain = () => {
         return "";
     };
     return render;
+};
+
+export const markdownToSanitizedHTML = (markdown: string) => {
+    const html = marked.parse(markdown);
+    const window = new JSDOM("").window;
+    const purify = DOMPurify(window);
+    const clean = purify.sanitize(html);
+    return clean;
 };

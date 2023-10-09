@@ -2,6 +2,12 @@ import fs from "fs";
 import toml from "toml";
 import { exitWithError } from "./process.js";
 
+interface StaticPage {
+    title: string;
+    path: string;
+    filename: string;
+}
+
 interface GathioConfig {
     general: {
         domain: string;
@@ -25,9 +31,21 @@ interface GathioConfig {
     sendgrid?: {
         api_key: string;
     };
+    static_pages: StaticPage[];
 }
 
-export const publicConfig = () => {
+interface FrontendConfig {
+    domain: string;
+    siteName: string;
+    isFederated: boolean;
+    emailLogoUrl: string;
+    showKofi: boolean;
+    showInstanceInformation: boolean;
+    staticPages: StaticPage[];
+    version: string;
+}
+
+export const frontendConfig = (): FrontendConfig => {
     const config = getConfig();
     return {
         domain: config.general.domain,
@@ -35,6 +53,9 @@ export const publicConfig = () => {
         isFederated: config.general.is_federated,
         emailLogoUrl: config.general.email_logo_url,
         showKofi: config.general.show_kofi,
+        showInstanceInformation: config.static_pages.length > 0,
+        staticPages: config.static_pages,
+        version: process.env.npm_package_version || "unknown",
     };
 };
 
