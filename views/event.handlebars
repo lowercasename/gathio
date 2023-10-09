@@ -423,9 +423,9 @@ window.eventData = {{{ json jsonData }}};
     $(this).closest(".comment").find(".replyContainer").slideToggle();
   })
   $(document).ready(function() {
-
     // Save the editing token from the URL, if it is valid
     const eventID = $('#eventName').attr('data-event-id');
+    const url = new URL(window.location.href);
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('e')) {
       $.ajax({
@@ -463,6 +463,8 @@ window.eventData = {{{ json jsonData }}};
 
     if (urlParams.has('show_edit')) {
       $('#editModal').modal('show');
+      url.searchParams.delete('show_edit'); 
+      history.replaceState(history.state, '', url.href);
     }
 
     // From https://davidwalsh.name/javascript-download
