@@ -80,18 +80,40 @@
       <div class="card-header">
         <strong>Link this event to an event group</strong>
       </div>
-      <div class="card-body">
+      <div class="card-body" x-data="eventGroupLinker()">
+        <div class="form-group-label" x-show="data.groups.length > 0">
+          <label>Choose a group you've edited before</label>
+        </div>
+        <div class="form-group" x-show="data.groups.length > 0">
+          <select x-ref="eventGroupSelect" id="eventGroupSelect" name="eventGroupSelect" class="form-control" x-on:change="selectGroup">
+            <option value="">Choose a group</option>
+            <template x-for="group in data.groups">
+              <option :value="group.id" x-text="group.name"></option>
+            </template> 
+          </select>
+        </div>
+        <a class="card shadow-sm card--group-preview mb-3" x-show="showGroupPreview()" x-bind:href="groupPreview().url" target="_blank">
+          <img :src="'/events/' + groupPreview().image" x-show="groupPreview().image"/>
+          <img src="/images/seigaiha-single.png" x-show="!groupPreview().image"/>
+          <div class="card--group-preview__text">
+            <strong x-text="groupPreview().name"></strong>
+            <p x-text="groupPreview().description"></p>
+          </div>
+        </a>
+        <div class="alert alert-info text-center" role="alert" x-show="data.groups.length > 0">
+          <i class="fas fa-info-circle"></i> You can also enter the group ID and secret editing code manually.
+        </div>
         <div class="form-group">
-          <label for="eventGroupID" class="col-12">Event group ID</label>
-          <div class="form-group col-12">
-            <input type="text" class="form-control" id="eventGroupID" name="eventGroupID" placeholder="" x-model="data.eventGroupID" >
+          <label for="eventGroupID">Event group ID</label>
+          <div class="form-group">
+            <input type="text" class="form-control" id="eventGroupID" name="eventGroupID" x-model="data.eventGroupID" x-on:input="resetGroupSelector">
             <small class="form-text">You can find this short string of characters in the event group's link, in your confirmation email, or on the event group's page.</small>
           </div>
         </div>
         <div class="form-group">
-          <label for="eventGroupEditToken" class="col-12">Event group secret editing code</label>
-          <div class="form-group col-12">
-            <input type="text" class="form-control" id="eventGroupEditToken" name="eventGroupEditToken" placeholder="" x-model="data.eventGroupEditToken" >
+          <label for="eventGroupEditToken">Event group secret editing code</label>
+          <div class="form-group">
+            <input type="text" class="form-control" id="eventGroupEditToken" name="eventGroupEditToken" x-model="data.eventGroupEditToken" x-on:input="resetGroupSelector">
             <small class="form-text">You can find this long string of characters in the confirmation email you received when you created the event group.</small>
           </div>
         </div>

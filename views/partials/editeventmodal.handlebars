@@ -8,8 +8,15 @@
         </button>
       </div>
       <div class="modal-body">
-        <form id="editEventForm" enctype="multipart/form-data" x-data="editEventForm()" x-init="init()"
-          @submit.prevent="submitForm">
+        <form
+          id="editEventForm"
+          enctype="multipart/form-data"
+          x-data="editEventForm()"
+          x-init="init()"
+          @submit.prevent="submitForm"
+          @event-group-id-changed="data.eventGroupID = $event.detail"
+          @event-group-edit-token-changed="data.eventGroupEditToken = $event.detail"
+        >
 
             {{> eventForm }}
 
@@ -47,3 +54,4 @@
 
 <script type="text/javascript" src="/js/generate-timezones.js"></script>
 <script type="text/javascript" src="/js/modules/event-edit.js"></script>
+<script src="/js/modules/group-linker.js"></script>

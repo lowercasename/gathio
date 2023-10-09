@@ -229,29 +229,30 @@ window.groupData = {{{ json jsonData }}};
 <script>
   $(document).ready(function() {
     // Save the editing token from the URL, if it is valid
-    const eventID = $('#eventName').attr('data-event-id');
+    const eventGroupID = window.groupData.id;
+    const url = new URL(window.location.href);
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('e')) {
       $.ajax({
         type: "POST",
-        url: `/verifytoken/group/${eventID}`,
+        url: `/verifytoken/group/${eventGroupID}`,
         data: { editToken: urlParams.get('e') },
         success: function(response, status, xhr) {
           if (xhr.status === 200) {
-            addStoredToken(eventID, urlParams.get('e'));
+            addStoredToken(eventGroupID, urlParams.get('e'));
           }
         },
         error: function(response, status, xhr) {
           // The editing token is wrong - remove it
-          removeStoredToken(eventID);
+          removeStoredToken(eventGroupID);
           window.location = window.location.pathname;
         }
       });
-    } else if (getStoredToken(eventID)) {
-      const editToken = getStoredToken(eventID);
+    } else if (getStoredToken(eventGroupID)) {
+      const editToken = getStoredToken(eventGroupID);
       $.ajax({
         type: "POST",
-        url: `/verifytoken/group/${eventID}`,
+        url: `/verifytoken/group/${eventGroupID}`,
         data: { editToken },
         success: function(response, status, xhr) {
           if (xhr.status === 200) {
@@ -260,13 +261,15 @@ window.groupData = {{{ json jsonData }}};
         },
         error: function(response, status, xhr) {
           // The editing token is wrong - remove it
-          removeStoredToken(eventID);
+          removeStoredToken(eventGroupID);
         }
       });
     }
 
     if (urlParams.has('show_edit')) {
       $('#editModal').modal('show');
+      url.searchParams.delete('show_edit'); 
+      history.replaceState(history.state, '', url.href);
     }
 
     new ClipboardJS('#copyEventLink');
