@@ -19,7 +19,15 @@
 
 <div id="newEventFormContainer">
   <h4 class="mb-2">Create an event</h4>
-  <form id="newEventForm" enctype="multipart/form-data" x-data="newEventForm()" x-init="init()" @submit.prevent="submitForm">
+  <form
+    id="newEventForm"
+    enctype="multipart/form-data"
+    x-data="newEventForm()"
+    x-init="init()"
+    @submit.prevent="submitForm"
+    @event-group-id-changed="data.eventGroupID = $event.detail"
+    @event-group-edit-token-changed="data.eventGroupEditToken = $event.detail"
+  >
     {{>eventForm}}
     <div class="form-group row">
       <div class="col-sm-12 pt-3 pb-3 text-center">
@@ -56,3 +64,4 @@
 
 <script src="/js/generate-timezones.js"></script>
 <script src="/js/modules/new.js"></script>
+<script src="/js/modules/group-linker.js"></script>

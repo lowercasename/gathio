@@ -7,6 +7,8 @@ import Jimp from "jimp";
 import { addToLog } from "../helpers.js";
 import EventGroup from "../models/EventGroup.js";
 import { sendEmailFromTemplate } from "../lib/email.js";
+import { marked } from "marked";
+import { renderPlain } from "../util/markdown.js";
 
 const config = getConfig();
 
@@ -236,5 +238,63 @@ router.put(
         }
     },
 );
+
+// Accepts a JSON object of event/group IDs mapped to edit tokens.
+// Returns an object of basic group data for each of the IDs
+// which are valid groups and have an edit token which matches.
+router.post("/known/groups", async (req: Request, res: Response) => {
+    const known = req.body;
+    if (!known) {
+        return res.status(400).json({
+            errors: [
+                {
+                    message: "No known IDs were provided.",
+                },
+            ],
+        });
+    }
+
+    try {
+        const knownIDs = Object.keys(known);
+        const groups = await EventGroup.find({
+            id: { $in: knownIDs },
+        });
+        const knownGroups = groups.filter((group) => {
+            return group.editToken === known[group.id];
+        });
+        const groupData = knownGroups.map((group) => {
+            return {
+                id: group.id,
+                name: group.name,
+                description: marked
+                    .parse(group.description, {
+                        renderer: renderPlain(),
+                    })
+                    .split(" ")
+                    .splice(0, 40)
+                    .join(" ")
+                    .trim(),
+                image: group.image,
+                editToken: group.editToken,
+                url: `/group/${group.id}`,
+            };
+        });
+        return res.status(200).json(groupData);
+    } catch (err) {
+        console.error(err);
+        addToLog(
+            "getKnownGroups",
+            "error",
+            "Attempt to get known groups failed with error: " + err,
+        );
+        return res.status(500).json({
+            errors: [
+                {
+                    message: err,
+                },
+            ],
+        });
+    }
+});
 
 export default router;

@@ -47,6 +47,13 @@ function editEventForm() {
                 this.data.timezone = event.target.value;
             });
             this.data.timezone = this.select2.val();
+
+            // Set checkboxes
+            this.data.eventGroupCheckbox = window.eventData.eventGroupID !== "";
+            this.data.interactionCheckbox = window.eventData.usersCanComment;
+            this.data.joinCheckbox = window.eventData.usersCanAttend;
+            this.data.maxAttendeesCheckbox =
+                window.eventData.maxAttendees !== null;
         },
         async submitForm() {
             this.submitting = true;
