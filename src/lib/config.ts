@@ -53,7 +53,7 @@ export const frontendConfig = (): FrontendConfig => {
         isFederated: config.general.is_federated,
         emailLogoUrl: config.general.email_logo_url,
         showKofi: config.general.show_kofi,
-        showInstanceInformation: config.static_pages.length > 0,
+        showInstanceInformation: config.static_pages?.length > 0,
         staticPages: config.static_pages,
         version: process.env.npm_package_version || "unknown",
     };
