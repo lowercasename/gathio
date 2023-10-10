@@ -16,7 +16,6 @@ $(document).ready(function () {
         $("#event-image-preview").css("background-size", "cover");
         $("#event-image-preview").css("background-position", "center center");
     }
-    $("#timezone").val(window.eventData.timezone).trigger("change");
 });
 
 function editEventForm() {
@@ -46,7 +45,8 @@ function editEventForm() {
             this.select2.on("select2:select", (event) => {
                 this.data.timezone = event.target.value;
             });
-            this.data.timezone = this.select2.val();
+            this.select2.val(this.data.timezone).trigger("change");
+            console.log(JSON.stringify(this.data, null, 2));
 
             // Set checkboxes
             this.data.eventGroupCheckbox = !!window.eventData.eventGroupID;
