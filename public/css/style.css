@@ -301,6 +301,12 @@ body, html {
     height: 2.25rem !important;
 }
 
+.select2-container--default .select2-selection--single {
+    /* Match Bootstrap 4 styling */
+    border: 1px solid #ced4da;
+    height: calc(2.25rem + 2px);
+}
+
 .attendee-name {
     white-space: nowrap;
     overflow: hidden;
