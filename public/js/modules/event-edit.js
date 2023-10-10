@@ -49,7 +49,7 @@ function editEventForm() {
             this.data.timezone = this.select2.val();
 
             // Set checkboxes
-            this.data.eventGroupCheckbox = window.eventData.eventGroupID !== "";
+            this.data.eventGroupCheckbox = !!window.eventData.eventGroupID;
             this.data.interactionCheckbox = window.eventData.usersCanComment;
             this.data.joinCheckbox = window.eventData.usersCanAttend;
             this.data.maxAttendeesCheckbox =

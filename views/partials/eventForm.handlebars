@@ -95,8 +95,12 @@
           </select>
         </div>
         <a class="card shadow-sm card--group-preview mb-3" x-show="showGroupPreview()" x-bind:href="groupPreview().url" target="_blank">
-          <img :src="'/events/' + groupPreview().image" x-show="groupPreview().image"/>
-          <img src="/images/seigaiha-single.png" x-show="!groupPreview().image"/>
+          <template x-if="groupPreview().image">
+            <img :src="'/events/' + groupPreview().image"/>
+          </template>
+          <template x-if="!groupPreview().image">
+            <img src="/images/seigaiha-single.png"/>
+          </template>
           <div class="card--group-preview__text">
             <strong x-text="groupPreview().name"></strong>
             <p x-text="groupPreview().description"></p>
