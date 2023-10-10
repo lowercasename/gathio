@@ -87,39 +87,37 @@
           <label>Choose a group you've edited before</label>
         </div>
         <div class="form-group" x-show="data.groups.length > 0">
-          <select x-ref="eventGroupSelect" id="eventGroupSelect" name="eventGroupSelect" class="form-control" x-on:change="selectGroup" x-model="data.eventGroupID">
-            <option value="">Choose a group</option>
+          <select
+            x-ref="eventGroupSelect"
+            id="eventGroupSelect"
+            name="eventGroupSelect"
+            class="form-control"
+            x-on:change="selectGroup"
+          >
+            <option></option>
             <template x-for="group in data.groups">
               <option :value="group.id" x-text="group.name"></option>
             </template> 
           </select>
         </div>
-        <a class="card shadow-sm card--group-preview mb-3" x-show="showGroupPreview()" x-bind:href="groupPreview().url" target="_blank">
-          <template x-if="groupPreview().image">
-            <img :src="'/events/' + groupPreview().image"/>
-          </template>
-          <template x-if="!groupPreview().image">
-            <img src="/images/seigaiha-single.png"/>
-          </template>
-          <div class="card--group-preview__text">
-            <strong x-text="groupPreview().name"></strong>
-            <p x-text="groupPreview().description"></p>
-          </div>
-        </a>
-        <div class="alert alert-info text-center" role="alert" x-show="data.groups.length > 0">
-          <i class="fas fa-info-circle"></i> You can also enter the group ID and secret editing code manually.
-        </div>
-        <div class="form-group">
-          <label for="eventGroupID">Event group ID</label>
+        <button type="button" class="btn btn-outline-secondary w-100 text-center" x-on:click="manualGroupInputVisible = !manualGroupInputVisible">
+          Enter group details manually <i class="fas" :class="{'fa-caret-down': !manualGroupInputVisible, 'fa-caret-up': manualGroupInputVisible}"></i>
+        </button>
+        <div
+          class="form-group slider"
+          id="manualGroupInput"
+          :class="manualGroupInputVisible && 'slider--open'"
+          :style="manualGroupInputVisible && {height: $el.scrollHeight+`px`}"
+          :aria-hidden="!manualGroupInputVisible"
+        >
+          <label for="eventGroupID" class="mt-2">Event group ID</label>
           <div class="form-group">
-            <input type="text" class="form-control" id="eventGroupID" name="eventGroupID" x-model="data.eventGroupID" x-on:input="resetGroupSelector">
+            <input type="text" class="form-control text-monospace" id="eventGroupID" name="eventGroupID" x-model="data.eventGroupID" x-on:input="resetGroupSelector">
             <small class="form-text">You can find this short string of characters in the event group's link, in your confirmation email, or on the event group's page.</small>
           </div>
-        </div>
-        <div class="form-group">
           <label for="eventGroupEditToken">Event group secret editing code</label>
-          <div class="form-group">
-            <input type="text" class="form-control" id="eventGroupEditToken" name="eventGroupEditToken" x-model="data.eventGroupEditToken" x-on:input="resetGroupSelector">
+          <div class="form-group mb-0">
+            <input type="text" class="form-control text-monospace" id="eventGroupEditToken" name="eventGroupEditToken" x-model="data.eventGroupEditToken" x-on:input="resetGroupSelector">
             <small class="form-text">You can find this long string of characters in the confirmation email you received when you created the event group.</small>
           </div>
         </div>

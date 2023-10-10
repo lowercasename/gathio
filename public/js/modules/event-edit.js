@@ -46,7 +46,6 @@ function editEventForm() {
                 this.data.timezone = event.target.value;
             });
             this.select2.val(this.data.timezone).trigger("change");
-            console.log(JSON.stringify(this.data, null, 2));
 
             // Set checkboxes
             this.data.eventGroupCheckbox = !!window.eventData.eventGroupID;

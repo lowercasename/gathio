@@ -294,17 +294,22 @@ body, html {
 .select2-selection__rendered {
     line-height: 2.25rem !important;
 }
-.select2-container .select2-selection--single {
-    height: 2.25rem !important;
-}
+
 .select2-selection__arrow {
-    height: 2.25rem !important;
+    height: 100% !important;
 }
 
-.select2-container--default .select2-selection--single {
+.select2-container .select2-selection--single {
     /* Match Bootstrap 4 styling */
     border: 1px solid #ced4da;
-    height: calc(2.25rem + 2px);
+    height: 2.25rem;
+}
+
+.select2-results__option[aria-selected="true"] .group-preview__text,
+.select2-results__option[aria-selected="true"]
+    .group-preview__text
+    p.text-muted {
+    color: white !important;
 }
 
 .attendee-name {
@@ -413,26 +418,41 @@ article.static-page header {
     border-bottom: 1px solid #e0e0e0;
 }
 
-.card--group-preview {
+.select2-selection__rendered,
+.select2-selection--single {
+    overflow: hidden;
+}
+
+.group-preview {
     display: grid;
     grid-template-columns: 60px 1fr;
     overflow: hidden;
     gap: 1rem;
-
-    transition: background-color 0.15s;
 }
 
-.card--group-preview:hover {
-    background-color: #f5f5f5;
+.select2-selection__rendered .group-preview {
+    transform: translateX(-8px);
 }
 
-.card--group-preview img {
+img.group-preview__image {
     width: 100%;
     height: 60px;
     object-fit: cover;
 }
 
-.card--group-preview__text {
+.select2-container .select2-selection--single.group-select-dropdown {
+    height: 60px;
+}
+
+.select2-container
+    .select2-selection--single.group-select-dropdown
+    .select2-selection__rendered {
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.group-preview__text {
     text-decoration: none;
     color: #1b1b1b;
     overflow: hidden;
@@ -440,18 +460,15 @@ article.static-page header {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    line-height: 1.5;
 }
 
-.card--group-preview__text strong,
-.card--group-preview__text p {
+.group-preview__text strong,
+.group-preview__text p {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     margin: 0;
-}
-
-.card--group-preview:hover {
-    text-decoration: none;
 }
 
 @keyframes shimmer {
@@ -491,4 +508,17 @@ article.static-page header {
     100% {
         left: 100%;
     }
+}
+
+.slider {
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.45s;
+    pointer-events: none;
+}
+
+.slider.slider--open {
+    opacity: 1;
+    pointer-events: auto;
 }

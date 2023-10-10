@@ -95,12 +95,13 @@ function newEventForm() {
         errors: [],
         submitting: false,
         init() {
-            // Set up Select2
+            // Set up timezone Select2
             this.select2 = $(this.$refs.timezone).select2();
             this.select2.on("select2:select", (event) => {
                 this.data.timezone = event.target.value;
             });
             this.data.timezone = this.select2.val();
+
             // Reset checkboxes
             this.data.eventGroupCheckbox = false;
             this.data.interactionCheckbox = false;
