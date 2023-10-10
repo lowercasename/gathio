@@ -35,3 +35,40 @@
 //     }
 //   }
 // }
+
+declare namespace Cypress {
+    interface Chainable<Subject> {
+        createGroup(groupData: {
+            eventGroupName: string;
+            eventGroupDescription: string;
+            eventGroupURL: string;
+            hostName: string;
+            creatorEmail: string;
+        }): Chainable<Subject>;
+    }
+}
+
+Cypress.Commands.add("createGroup", (groupData) => {
+    cy.visit("/new");
+    cy.get("#showNewEventGroupFormButton").click();
+
+    // Fill in the form
+    cy.get("#eventGroupName").type(groupData.eventGroupName);
+    cy.get("#eventGroupDescription").type(groupData.eventGroupDescription);
+    cy.get("#eventGroupURL").type(groupData.eventGroupURL);
+    cy.get("#eventGroupHostName").type(groupData.hostName);
+    cy.get("#eventGroupCreatorEmail").type(groupData.creatorEmail);
+
+    // Submit the form
+    cy.get("#newEventGroupForm").submit();
+
+    // Wait for the new page to load
+    cy.url().should("not.include", "/new");
+
+    // Get the new group ID from the URL
+    cy.url().then((url) => {
+        const [groupID, editToken] = url.split("/").pop().split("?");
+        cy.wrap(groupID).as("groupID");
+        cy.wrap(editToken.slice(2)).as("editToken");
+    });
+});

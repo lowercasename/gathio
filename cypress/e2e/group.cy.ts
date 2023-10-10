@@ -8,28 +8,7 @@ const groupData = {
 
 describe("Groups", () => {
     beforeEach(() => {
-        cy.visit("/new");
-        cy.get("#showNewEventGroupFormButton").click();
-
-        // Fill in the form
-        cy.get("#eventGroupName").type(groupData.eventGroupName);
-        cy.get("#eventGroupDescription").type(groupData.eventGroupDescription);
-        cy.get("#eventGroupURL").type(groupData.eventGroupURL);
-        cy.get("#eventGroupHostName").type(groupData.hostName);
-        cy.get("#eventGroupCreatorEmail").type(groupData.creatorEmail);
-
-        // Submit the form
-        cy.get("#newEventGroupForm").submit();
-
-        // Wait for the new page to load
-        cy.url().should("not.include", "/new");
-
-        // Get the new group ID from the URL
-        cy.url().then((url) => {
-            const [groupID, editToken] = url.split("/").pop().split("?");
-            cy.wrap(groupID).as("groupID");
-            cy.wrap(editToken.slice(2)).as("editToken");
-        });
+        cy.createGroup(groupData);
     });
     it("creates a new group", function () {
         cy.get("#eventGroupName").should("have.text", groupData.eventGroupName);
@@ -47,23 +26,42 @@ describe("Groups", () => {
     });
 
     it("edits a group", function () {
-        // // Wait for the modal to not be visible
-        // cy.get("#editModal").should("not.be.visible");
-        // // Check that all the data is correct
-        // cy.get(".p-name").should("have.text", "Edited Event Name");
-        // cy.get(".p-location").should("have.text", "Edited Event Location");
-        // cy.get(".p-summary").should("contain.text", "Edited Event Description");
-        // cy.get("#hosted-by").should("contain.text", "Hosted by Edited Name");
-        // cy.get(".dt-duration").should(
-        //     "contain.text",
-        //     "Sunday 1 December 2030 from 12:00 am to 1:00 am",
-        // );
-        // cy.get(".dt-duration")
-        //     .invoke("text")
-        //     .should("match", /AE(D|S)T/);
-        // // Check that the comment form is not visible
-        // cy.get("#postComment").should("not.exist");
-        // // Check that the attendee form is not visible
-        // cy.get("#attendEvent").should("not.exist");
+        cy.get("#editGroup").click();
+
+        cy.get("#editEventGroupForm #eventGroupName").focus().clear();
+        cy.get("#editEventGroupForm #eventGroupDescription").focus().clear();
+        cy.get("#editEventGroupForm #eventGroupURL").focus().clear();
+        cy.get("#editEventGroupForm #eventGroupHostName").focus().clear();
+        cy.get("#editEventGroupForm #eventGroupCreatorEmail").focus().clear();
+
+        cy.get("#editEventGroupForm #eventGroupName").type("Edited Group Name");
+        cy.get("#editEventGroupForm #eventGroupDescription").type(
+            "Edited Group Description",
+        );
+        cy.get("#editEventGroupForm #eventGroupURL").type(
+            "https://edited.example.com",
+        );
+        cy.get("#editEventGroupForm #eventGroupHostName").type("Edited Name");
+        cy.get("#editEventGroupForm #eventGroupCreatorEmail").type(
+            "edited@example.com",
+        );
+
+        // Submit the form
+        cy.get("#editEventGroupForm").submit();
+
+        // Wait for the modal to not be visible
+        cy.get("#editModal").should("not.be.visible");
+
+        // Check that all the data is correct
+        cy.get("#eventGroupName").should("have.text", "Edited Group Name");
+        cy.get("#eventDescription").should(
+            "contain.text",
+            "Edited Group Description",
+        );
+        cy.get("#eventGroupURL").should(
+            "contain.text",
+            "https://edited.example.com",
+        );
+        cy.get("#hostName").should("contain.text", "Edited Name");
     });
 });

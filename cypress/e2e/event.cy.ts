@@ -7,8 +7,6 @@ const eventData = {
     hostName: "Your Name",
     creatorEmail: "test@example.com",
     eventGroupCheckbox: false,
-    eventGroupID: "YourEventGroupID",
-    eventGroupEditToken: "YourEventGroupEditToken",
     interactionCheckbox: true,
     joinCheckbox: true,
     maxAttendeesCheckbox: true,
@@ -28,7 +26,7 @@ describe("Events", () => {
         cy.get("#eventStart").type(eventData.eventStart);
         cy.get("#eventEnd").type(eventData.eventEnd);
 
-        cy.get(".select2-container").click();
+        cy.get("select#timezone + span.select2").click();
         cy.get(".select2-results__option")
             .contains(eventData.timezone)
             .click({ force: true });
@@ -177,7 +175,7 @@ describe("Events", () => {
         cy.get("#editEventForm #eventStart").type("2030-12-01T00:00");
         cy.get("#editEventForm #eventEnd").type("2030-12-01T01:00");
 
-        cy.get("#editEventForm .select2-container").click();
+        cy.get("#editEventForm select#timezone + span.select2").click();
         cy.get(".select2-results__option")
             .contains("Australia/Sydney")
             .click({ force: true });
@@ -217,5 +215,33 @@ describe("Events", () => {
         cy.get("#postComment").should("not.exist");
         // Check that the attendee form is not visible
         cy.get("#attendEvent").should("not.exist");
+    });
+
+    it("sets a group for an event", function () {
+        // For this we need to create a group first. This will load the group edit token
+        // into our localStorage, and will then appear in the group select dropdown.
+        // We then go back to the event page, edit the event, and set the group.
+        cy.createGroup({
+            eventGroupName: "Test Group",
+            eventGroupDescription: "Test Group Description",
+            eventGroupURL: "testgroup",
+            hostName: "Test Host",
+            creatorEmail: "test@example.com",
+        });
+
+        cy.visit(`/${this.eventID}`);
+        cy.url().should("include", this.editToken);
+
+        cy.get("#editEvent").click();
+        cy.get("#editEventForm #eventGroupCheckbox").check();
+        cy.get("select#eventGroupSelect + span.select2").click();
+        cy.get(".select2-results__option")
+            .contains("Test Group")
+            .click({ force: true });
+        cy.get("#editEventForm").submit();
+
+        cy.get("#editModal").should("not.be.visible");
+
+        cy.get("#event-group").should("contain.text", "Test Group");
     });
 });
