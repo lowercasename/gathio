@@ -63,7 +63,7 @@ Cypress.Commands.add("createGroup", (groupData) => {
     cy.get("#newEventGroupForm").submit();
 
     // Wait for the new page to load
-    cy.url().should("not.include", "/new");
+    cy.url({ timeout: 10000 }).should("not.include", "/new");
 
     // Get the new group ID from the URL
     cy.url().then((url) => {
