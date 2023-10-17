@@ -34,8 +34,14 @@ export function createActivityPubActor(
         "@context": [
             "https://www.w3.org/ns/activitystreams",
             "https://w3id.org/security/v1",
+            {
+              "toot": "http://joinmastodon.org/ns#",
+              "discoverable": "toot:discoverable",
+              "indexable": "toot:indexable"
+            },
         ],
-
+        indexable: false,
+        discoverable: false,
         id: `https://${domain}/${eventID}`,
         type: "Person",
         preferredUsername: `${eventID}`,
@@ -45,7 +51,8 @@ export function createActivityPubActor(
         summary: `<p>${description}</p>`,
         name: name,
         featured: `https://${domain}/${eventID}/featured`,
-
+        indexable: false,
+        discoverable: false,
         publicKey: {
             id: `https://${domain}/${eventID}#main-key`,
             owner: `https://${domain}/${eventID}`,
@@ -82,7 +89,17 @@ export function createActivityPubEvent(
 ) {
     const guid = crypto.randomBytes(16).toString("hex");
     let eventObject = {
-        "@context": "https://www.w3.org/ns/activitystreams",
+        "@context": [
+            "https://www.w3.org/ns/activitystreams",
+            "https://w3id.org/security/v1",
+            {
+              "toot": "http://joinmastodon.org/ns#",
+              "discoverable": "toot:discoverable",
+              "indexable": "toot:indexable"
+            },
+        ],
+        indexable: false,
+        discoverable: false,
         id: `https://${domain}/${guid}`,
         name: name,
         type: "Event",
