@@ -6,6 +6,10 @@ import getConfig, { frontendConfig } from "../lib/config.js";
 import { addToLog, exportICal } from "../helpers.js";
 import Event from "../models/Event.js";
 import EventGroup, { IEventGroup } from "../models/EventGroup.js";
+import {
+    acceptsActivityPub,
+    activityPubContentType,
+} from "../lib/activitypub.js";
 
 const config = getConfig();
 
@@ -174,13 +178,8 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 : null,
             url: `https://${config.general.domain}/` + req.params.eventID,
         };
-        if (
-            req.headers.accept &&
-            (req.headers.accept.includes("application/activity+json") ||
-                req.headers.accept.includes("application/json") ||
-                req.headers.accept.includes("application/json+ld"))
-        ) {
-            res.header("Content-Type", "application/activity+json").send(
+        if (acceptsActivityPub(req)) {
+            res.header("Content-Type", activityPubContentType).send(
                 JSON.parse(event.activityPubActor || "{}"),
             );
         } else {

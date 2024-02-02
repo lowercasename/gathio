@@ -9,6 +9,10 @@ import group from "./routes/group.js";
 import staticPages from "./routes/static.js";
 
 import { initEmailService } from "./lib/email.js";
+import {
+    activityPubContentType,
+    alternateActivityPubContentType,
+} from "./lib/activitypub.js";
 
 const app = express();
 
@@ -48,8 +52,8 @@ app.set("hbsInstance", hbsInstance);
 app.use(express.static("public"));
 
 // Body parser //
-app.use(express.json({ type: "application/activity+json" }));
-app.use(express.json({ type: "application/ld+json" }));
+app.use(express.json({ type: alternateActivityPubContentType }));
+app.use(express.json({ type: activityPubContentType }));
 app.use(express.json({ type: "application/json" }));
 app.use(express.urlencoded({ extended: true }));
 

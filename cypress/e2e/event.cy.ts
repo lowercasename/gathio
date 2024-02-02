@@ -113,7 +113,7 @@ describe("Events", () => {
         cy.request({
             url: `/${this.eventID}/featured`,
             headers: {
-                Accept: "application/activity+json",
+                Accept: 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
             },
         }).then((response) => {
             expect(response.body).to.have.property("@context");
@@ -139,7 +139,7 @@ describe("Events", () => {
                 this.eventID
             }@${Cypress.env("CYPRESS_DOMAIN")}`,
             headers: {
-                Accept: "application/activity+json",
+                Accept: 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
             },
         }).then((response) => {
             expect(response.body).to.have.property("subject");
