@@ -10,6 +10,7 @@ const domain = config.general.domain;
 const siteName = config.general.site_name;
 const isFederated = config.general.is_federated;
 import Event from "./models/Event.js";
+import { activityPubContentType, alternateActivityPubContentType } from "./lib/activitypub.js";
 
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
 // because ActivityPub doesn't like it in IDs
@@ -35,9 +36,9 @@ export function createActivityPubActor(
             "https://www.w3.org/ns/activitystreams",
             "https://w3id.org/security/v1",
             {
-              "toot": "http://joinmastodon.org/ns#",
-              "discoverable": "toot:discoverable",
-              "indexable": "toot:indexable"
+                "toot": "http://joinmastodon.org/ns#",
+                "discoverable": "toot:discoverable",
+                "indexable": "toot:indexable"
             },
         ],
         indexable: false,
@@ -93,9 +94,9 @@ export function createActivityPubEvent(
             "https://www.w3.org/ns/activitystreams",
             "https://w3id.org/security/v1",
             {
-              "toot": "http://joinmastodon.org/ns#",
-              "discoverable": "toot:discoverable",
-              "indexable": "toot:indexable"
+                "toot": "http://joinmastodon.org/ns#",
+                "discoverable": "toot:discoverable",
+                "indexable": "toot:indexable"
             },
         ],
         indexable: false,
@@ -219,8 +220,8 @@ export function signAndSend(message, eventID, targetDomain, inbox, callback) {
                         Date: d.toUTCString(),
                         Signature: header,
                         Digest: `SHA-256=${digest}`,
-                        "Content-Type": "application/activity+json",
-                        Accept: "application/activity+json",
+                        "Content-Type": activityPubContentType,
+                        Accept: activityPubContentType,
                     },
                     method: "POST",
                     json: true,
@@ -257,7 +258,7 @@ export function signAndSend(message, eventID, targetDomain, inbox, callback) {
                                             "addActivityPubMessage",
                                             "success",
                                             "ActivityPubMessage added to event " +
-                                                eventID,
+                                            eventID,
                                         );
                                         callback(null, message.id, 200);
                                     })
@@ -266,9 +267,9 @@ export function signAndSend(message, eventID, targetDomain, inbox, callback) {
                                             "addActivityPubMessage",
                                             "error",
                                             "Attempt to add ActivityPubMessage to event " +
-                                                eventID +
-                                                " failed with error: " +
-                                                err,
+                                            eventID +
+                                            " failed with error: " +
+                                            err,
                                         );
                                         callback(err, null, 500);
                                     });
@@ -463,7 +464,7 @@ export function broadcastUpdateMessage(apObject, followers, eventID) {
 }
 
 export function broadcastDeleteMessage(apObject, followers, eventID, callback) {
-    callback = callback || function () {};
+    callback = callback || function () { };
     if (!isFederated) {
         callback([]);
         return;
@@ -560,7 +561,7 @@ export function broadcastDeleteMessage(apObject, followers, eventID, callback) {
 // this sends a message "to:" an individual fediverse user
 export function sendDirectMessage(apObject, actorId, eventID, callback) {
     if (!isFederated) return;
-    callback = callback || function () {};
+    callback = callback || function () { };
     const guidCreate = crypto.randomBytes(16).toString("hex");
     const guidObject = crypto.randomBytes(16).toString("hex");
     let d = new Date();
@@ -618,7 +619,7 @@ export function sendDirectMessage(apObject, actorId, eventID, callback) {
 
 export function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
     if (!isFederated) return;
-    callback = callback || function () {};
+    callback = callback || function () { };
     const guid = crypto.randomBytes(16).toString("hex");
     const actorId = thebody.actor;
     let message = {
@@ -666,8 +667,8 @@ function _handleFollow(req, res) {
         {
             url: req.body.actor,
             headers: {
-                Accept: "application/activity+json",
-                "Content-Type": "application/activity+json",
+                Accept: activityPubContentType,
+                "Content-Type": activityPubContentType,
             },
         },
         function (error, response, body) {
@@ -794,9 +795,9 @@ function _handleFollow(req, res) {
                                     "addEventFollower",
                                     "error",
                                     "Attempt to add follower to event " +
-                                        eventID +
-                                        " failed with error: " +
-                                        err,
+                                    eventID +
+                                    " failed with error: " +
+                                    err,
                                 );
                                 return res
                                     .status(500)
@@ -851,9 +852,9 @@ function _handleUndoFollow(req, res) {
                                 "removeEventFollower",
                                 "error",
                                 "Attempt to remove follower from event " +
-                                    eventID +
-                                    " failed with error: " +
-                                    err,
+                                eventID +
+                                " failed with error: " +
+                                err,
                             );
                             return res.send(
                                 "Database error, please try again :(",
@@ -887,8 +888,8 @@ function _handleAcceptEvent(req, res) {
                     {
                         url: actor,
                         headers: {
-                            Accept: "application/activity+json",
-                            "Content-Type": "application/activity+json",
+                            Accept: activityPubContentType,
+                            "Content-Type": activityPubContentType,
                         },
                     },
                     function (error, response, body) {
@@ -913,7 +914,7 @@ function _handleAcceptEvent(req, res) {
                                         "addEventAttendee",
                                         "success",
                                         "Attendee added to event " +
-                                            req.params.eventID,
+                                        req.params.eventID,
                                     );
                                     // get the new attendee with its hidden id from the full event
                                     let fullAttendee = fullEvent.attendees.find(
@@ -947,9 +948,9 @@ function _handleAcceptEvent(req, res) {
                                         "addEventAttendee",
                                         "error",
                                         "Attempt to add attendee to event " +
-                                            req.params.eventID +
-                                            " failed with error: " +
-                                            err,
+                                        req.params.eventID +
+                                        " failed with error: " +
+                                        err,
                                     );
                                     return res
                                         .status(500)
@@ -996,7 +997,7 @@ function _handleUndoAcceptEvent(req, res) {
                         "oneClickUnattend",
                         "success",
                         "Attendee removed via one click unattend " +
-                            req.params.eventID,
+                        req.params.eventID,
                     );
                 });
             }
@@ -1039,8 +1040,8 @@ function _handleCreateNote(req, res) {
                             {
                                 url: attributedTo,
                                 headers: {
-                                    Accept: "application/activity+json",
-                                    "Content-Type": "application/activity+json",
+                                    Accept: activityPubContentType,
+                                    "Content-Type": activityPubContentType,
                                 },
                             },
                             function (error, response, body) {
@@ -1069,7 +1070,7 @@ function _handleCreateNote(req, res) {
                                                 "addEventAttendee",
                                                 "success",
                                                 "Attendee added to event " +
-                                                    req.params.eventID,
+                                                req.params.eventID,
                                             );
                                             // get the new attendee with its hidden id from the full event
                                             let fullAttendee =
@@ -1105,9 +1106,9 @@ function _handleCreateNote(req, res) {
                                                 "addEventAttendee",
                                                 "error",
                                                 "Attempt to add attendee to event " +
-                                                    req.params.eventID +
-                                                    " failed with error: " +
-                                                    err,
+                                                req.params.eventID +
+                                                " failed with error: " +
+                                                err,
                                             );
                                             return res
                                                 .status(500)
@@ -1169,7 +1170,7 @@ function _handleDelete(req, res) {
                     return (
                         comment.activityJson &&
                         JSON.parse(comment.activityJson).object.id ===
-                            req.body.object.id
+                        req.body.object.id
                     );
                 },
             );
@@ -1189,11 +1190,11 @@ function _handleDelete(req, res) {
                         "deleteComment",
                         "error",
                         "Attempt to delete comment " +
-                            req.body.object.id +
-                            "from event " +
-                            eventWithComment.id +
-                            " failed with error: " +
-                            err,
+                        req.body.object.id +
+                        "from event " +
+                        eventWithComment.id +
+                        " failed with error: " +
+                        err,
                     );
                     return res.sendStatus(500);
                 });
@@ -1233,8 +1234,8 @@ function _handleCreateNoteComment(req, res) {
                 {
                     url: req.body.actor,
                     headers: {
-                        Accept: "application/activity+json",
-                        "Content-Type": "application/activity+json",
+                        Accept: activityPubContentType,
+                        "Content-Type": activityPubContentType,
                     },
                 },
                 function (error, response, actor) {
@@ -1296,13 +1297,13 @@ function _handleCreateNoteComment(req, res) {
                                             "addEventComment",
                                             "error",
                                             "Attempt to add comment to event " +
-                                                eventID +
-                                                " failed with error: " +
-                                                err,
+                                            eventID +
+                                            " failed with error: " +
+                                            err,
                                         );
                                         res.status(500).send(
                                             "Database error, please try again :(" +
-                                                err,
+                                            err,
                                         );
                                     });
                             },
@@ -1387,7 +1388,7 @@ export function createWebfinger(eventID, domain) {
         links: [
             {
                 rel: "self",
-                type: "application/activity+json",
+                type: alternateActivityPubContentType,
                 href: `https://${domain}/${eventID}`,
             },
         ],

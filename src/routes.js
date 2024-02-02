@@ -22,6 +22,7 @@ import {
 import Event from "./models/Event.js";
 import EventGroup from "./models/EventGroup.js";
 import path from "path";
+import { activityPubContentType } from "./lib/activitypub.js";
 
 const config = getConfig();
 const domain = config.general.domain;
@@ -104,9 +105,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                                 "deleteOldEvents",
                                 "error",
                                 "Attempt to delete old event " +
-                                    id +
-                                    " failed with error: " +
-                                    err,
+                                id +
+                                " failed with error: " +
+                                err,
                             );
                         });
                 };
@@ -123,9 +124,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                                     "deleteOldEvents",
                                     "error",
                                     "Attempt to delete event image for old event " +
-                                        event.id +
-                                        " failed with error: " +
-                                        err,
+                                    event.id +
+                                    " failed with error: " +
+                                    err,
                                 );
                             }
                             // Image removed
@@ -172,9 +173,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                 "deleteOldEvents",
                 "error",
                 "Attempt to delete old event " +
-                    event.id +
-                    " failed with error: " +
-                    err,
+                event.id +
+                " failed with error: " +
+                err,
             );
         });
 
@@ -227,9 +228,9 @@ router.post("/deleteimage/:eventID/:editToken", (req, res) => {
                             "deleteEventImage",
                             "error",
                             "Attempt to delete event image for event " +
-                                req.params.eventID +
-                                " failed with error: " +
-                                err,
+                            req.params.eventID +
+                            " failed with error: " +
+                            err,
                         );
                     }
                     // Image removed
@@ -250,9 +251,9 @@ router.post("/deleteimage/:eventID/:editToken", (req, res) => {
                                 "deleteEventImage",
                                 "error",
                                 "Attempt to delete event image for event " +
-                                    req.params.eventID +
-                                    " failed with error: " +
-                                    err,
+                                req.params.eventID +
+                                " failed with error: " +
+                                err,
                             );
                         });
                 },
@@ -294,9 +295,9 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                         "deleteEvent",
                                         "error",
                                         "Attempt to delete event " +
-                                            req.params.eventID +
-                                            " failed with error: " +
-                                            err,
+                                        req.params.eventID +
+                                        " failed with error: " +
+                                        err,
                                     );
                                 }
                             },
@@ -316,9 +317,9 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                                     "deleteEvent",
                                                     "error",
                                                     "Attempt to delete event image for event " +
-                                                        req.params.eventID +
-                                                        " failed with error: " +
-                                                        err,
+                                                    req.params.eventID +
+                                                    " failed with error: " +
+                                                    err,
                                                 );
                                             }
                                             // Image removed
@@ -326,8 +327,8 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                                 "deleteEvent",
                                                 "success",
                                                 "Event " +
-                                                    req.params.eventID +
-                                                    " deleted",
+                                                req.params.eventID +
+                                                " deleted",
                                             );
                                         },
                                     );
@@ -349,7 +350,7 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                     if (attendeeEmails.length) {
                                         console.log(
                                             "Sending emails to: " +
-                                                attendeeEmails,
+                                            attendeeEmails,
                                         );
                                         req.app.get("hbsInstance").renderView(
                                             "./views/emails/deleteEvent/deleteEventHtml.handlebars",
@@ -408,15 +409,15 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                             .catch((err) => {
                                 res.send(
                                     "Sorry! Something went wrong (error deleting): " +
-                                        err,
+                                    err,
                                 );
                                 addToLog(
                                     "deleteEvent",
                                     "error",
                                     "Attempt to delete event " +
-                                        req.params.eventID +
-                                        " failed with error: " +
-                                        err,
+                                    req.params.eventID +
+                                    " failed with error: " +
+                                    err,
                                 );
                             });
                     },
@@ -428,8 +429,8 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                     "deleteEvent",
                     "error",
                     "Attempt to delete event " +
-                        req.params.eventID +
-                        " failed with error: token does not match",
+                    req.params.eventID +
+                    " failed with error: token does not match",
                 );
             }
         })
@@ -439,9 +440,9 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                 "deleteEvent",
                 "error",
                 "Attempt to delete event " +
-                    req.params.eventID +
-                    " failed with error: " +
-                    err,
+                req.params.eventID +
+                " failed with error: " +
+                err,
             );
         });
 });
@@ -474,9 +475,9 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                                 "deleteEventGroup",
                                 "error",
                                 "Attempt to delete event group " +
-                                    req.params.eventGroupID +
-                                    " failed with error: " +
-                                    err,
+                                req.params.eventGroupID +
+                                " failed with error: " +
+                                err,
                             );
                         }
                     },
@@ -496,9 +497,9 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                                             "deleteEventGroup",
                                             "error",
                                             "Attempt to delete event image for event group " +
-                                                req.params.eventGroupID +
-                                                " failed with error: " +
-                                                err,
+                                            req.params.eventGroupID +
+                                            " failed with error: " +
+                                            err,
                                         );
                                     }
                                 },
@@ -515,8 +516,8 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                                     "deleteEventGroup",
                                     "success",
                                     "Event group " +
-                                        req.params.eventGroupID +
-                                        " deleted",
+                                    req.params.eventGroupID +
+                                    " deleted",
                                 );
                                 res.writeHead(302, {
                                     Location: "/",
@@ -526,30 +527,30 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                             .catch((err) => {
                                 res.send(
                                     "Sorry! Something went wrong (error deleting): " +
-                                        err,
+                                    err,
                                 );
                                 addToLog(
                                     "deleteEventGroup",
                                     "error",
                                     "Attempt to delete event group " +
-                                        req.params.eventGroupID +
-                                        " failed with error: " +
-                                        err,
+                                    req.params.eventGroupID +
+                                    " failed with error: " +
+                                    err,
                                 );
                             });
                     })
                     .catch((err) => {
                         res.send(
                             "Sorry! Something went wrong (error deleting): " +
-                                err,
+                            err,
                         );
                         addToLog(
                             "deleteEventGroup",
                             "error",
                             "Attempt to delete event group " +
-                                req.params.eventGroupID +
-                                " failed with error: " +
-                                err,
+                            req.params.eventGroupID +
+                            " failed with error: " +
+                            err,
                         );
                     });
             } else {
@@ -559,8 +560,8 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                     "deleteEventGroup",
                     "error",
                     "Attempt to delete event group " +
-                        req.params.eventGroupID +
-                        " failed with error: token does not match",
+                    req.params.eventGroupID +
+                    " failed with error: token does not match",
                 );
             }
         })
@@ -570,9 +571,9 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                 "deleteEventGroup",
                 "error",
                 "Attempt to delete event group " +
-                    req.params.eventGroupID +
-                    " failed with error: " +
-                    err,
+                req.params.eventGroupID +
+                " failed with error: " +
+                err,
             );
         });
 });
@@ -590,9 +591,9 @@ router.post("/attendee/provision", async (req, res) => {
             "provisionEventAttendee",
             "error",
             "Attempt to provision attendee in event " +
-                req.query.eventID +
-                " failed with error: " +
-                e,
+            req.query.eventID +
+            " failed with error: " +
+            e,
         );
         return res.sendStatus(500);
     });
@@ -608,9 +609,9 @@ router.post("/attendee/provision", async (req, res) => {
             "provisionEventAttendee",
             "error",
             "Attempt to provision attendee in event " +
-                req.query.eventID +
-                " failed with error: " +
-                e,
+            req.query.eventID +
+            " failed with error: " +
+            e,
         );
         return res.sendStatus(500);
     });
@@ -646,9 +647,9 @@ router.post("/attendevent/:eventID", async (req, res) => {
             "attendEvent",
             "error",
             "Attempt to attend event " +
-                req.params.eventID +
-                " failed with error: " +
-                e,
+            req.params.eventID +
+            " failed with error: " +
+            e,
         );
         return res.sendStatus(500);
     });
@@ -747,9 +748,9 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "addEventAttendee",
                 "error",
                 "Attempt to add attendee to event " +
-                    req.params.eventID +
-                    " failed with error: " +
-                    error,
+                req.params.eventID +
+                " failed with error: " +
+                error,
             );
         });
 });
@@ -825,9 +826,9 @@ router.post("/unattendevent/:eventID", (req, res) => {
                 "removeEventAttendee",
                 "error",
                 "Attempt to remove attendee from event " +
-                    req.params.eventID +
-                    " failed with error: " +
-                    err,
+                req.params.eventID +
+                " failed with error: " +
+                err,
             );
         });
 });
@@ -906,9 +907,9 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
                 "removeEventAttendee",
                 "error",
                 "Attempt to remove attendee by admin from event " +
-                    req.params.eventID +
-                    " failed with error: " +
-                    err,
+                req.params.eventID +
+                " failed with error: " +
+                err,
             );
         });
 });
@@ -979,9 +980,9 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
                 "removeEventAttendee",
                 "error",
                 "Attempt to remove attendee by admin from event " +
-                    req.params.eventID +
-                    " failed with error: " +
-                    err,
+                req.params.eventID +
+                " failed with error: " +
+                err,
             );
         });
 });
@@ -1055,11 +1056,11 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
                 "addSubscription",
                 "error",
                 "Attempt to subscribe " +
-                    req.body.emailAddress +
-                    " to event group " +
-                    req.params.eventGroupID +
-                    " failed with error: " +
-                    error,
+                req.body.emailAddress +
+                " to event group " +
+                req.params.eventGroupID +
+                " failed with error: " +
+                error,
             );
             return res.sendStatus(500);
         });
@@ -1087,11 +1088,11 @@ router.get("/unsubscribe/:eventGroupID", (req, res) => {
                 "removeSubscription",
                 "error",
                 "Attempt to unsubscribe " +
-                    req.query.email +
-                    " from event group " +
-                    req.params.eventGroupID +
-                    " failed with error: " +
-                    error,
+                req.query.email +
+                " from event group " +
+                req.params.eventGroupID +
+                " failed with error: " +
+                error,
             );
             return res.sendStatus(500);
         });
@@ -1217,9 +1218,9 @@ router.post("/post/comment/:eventID", (req, res) => {
                         "addEventComment",
                         "error",
                         "Attempt to add comment to event " +
-                            req.params.eventID +
-                            " failed with error: " +
-                            err,
+                        req.params.eventID +
+                        " failed with error: " +
+                        err,
                     );
                 });
         },
@@ -1250,9 +1251,9 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                         "addEventReply",
                         "success",
                         "Reply added to comment " +
-                            commentID +
-                            " in event " +
-                            req.params.eventID,
+                        commentID +
+                        " in event " +
+                        req.params.eventID,
                     );
                     // broadcast an identical message to all followers, will show in their home timeline
                     const guidObject = crypto.randomBytes(16).toString("hex");
@@ -1348,11 +1349,11 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                         "addEventReply",
                         "error",
                         "Attempt to add reply to comment " +
-                            commentID +
-                            " in event " +
-                            req.params.eventID +
-                            " failed with error: " +
-                            err,
+                        commentID +
+                        " in event " +
+                        req.params.eventID +
+                        " failed with error: " +
+                        err,
                     );
                 });
         },
@@ -1388,17 +1389,17 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
                     .catch((err) => {
                         res.send(
                             "Sorry! Something went wrong (error deleting): " +
-                                err,
+                            err,
                         );
                         addToLog(
                             "deleteComment",
                             "error",
                             "Attempt to delete comment " +
-                                req.params.commentID +
-                                "from event " +
-                                req.params.eventID +
-                                " failed with error: " +
-                                err,
+                            req.params.commentID +
+                            "from event " +
+                            req.params.eventID +
+                            " failed with error: " +
+                            err,
                         );
                     });
             } else {
@@ -1408,10 +1409,10 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
                     "deleteComment",
                     "error",
                     "Attempt to delete comment " +
-                        req.params.commentID +
-                        "from event " +
-                        req.params.eventID +
-                        " failed with error: token does not match",
+                    req.params.commentID +
+                    "from event " +
+                    req.params.eventID +
+                    " failed with error: token does not match",
                 );
             }
         })
@@ -1421,11 +1422,11 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
                 "deleteComment",
                 "error",
                 "Attempt to delete comment " +
-                    req.params.commentID +
-                    "from event " +
-                    req.params.eventID +
-                    " failed with error: " +
-                    err,
+                req.params.commentID +
+                "from event " +
+                req.params.eventID +
+                " failed with error: " +
+                err,
             );
         });
 });
@@ -1452,8 +1453,8 @@ router.post("/activitypub/inbox", (req, res) => {
         {
             url: signature_header.keyId,
             headers: {
-                Accept: "application/activity+json",
-                "Content-Type": "application/activity+json",
+                Accept: activityPubContentType,
+                "Content-Type": activityPubContentType,
             },
         },
         function (error, response, actor) {
