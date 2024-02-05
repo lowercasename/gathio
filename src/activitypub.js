@@ -10,7 +10,7 @@ const domain = config.general.domain;
 const siteName = config.general.site_name;
 const isFederated = config.general.is_federated;
 import Event from "./models/Event.js";
-import { activityPubContentType, alternateActivityPubContentType } from "./lib/activitypub.js";
+import { handlePollResponse, activityPubContentType, alternateActivityPubContentType, getEventId, getNoteRecipient } from "./lib/activitypub.js";
 
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
 // because ActivityPub doesn't like it in IDs
@@ -660,7 +660,7 @@ export function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
 function _handleFollow(req, res) {
     const myURL = new URL(req.body.actor);
     let targetDomain = myURL.hostname;
-    let eventID = req.body.object.replace(`https://${domain}/`, "");
+    let eventID = getEventId(req.body.object);
     // Add the user to the DB of accounts that follow the account
     // get the follower's username
     request(
@@ -735,11 +735,22 @@ function _handleFollow(req, res) {
                                                         "https://www.w3.org/ns/activitystreams",
                                                     name: `RSVP to ${event.name}`,
                                                     type: "Question",
-                                                    content: `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}? (If you reply "Yes", you'll be listed as an attendee on the event page.)`,
+                                                    content: `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}?`,
                                                     oneOf: [
                                                         {
                                                             type: "Note",
-                                                            name: "Yes",
+                                                            name: "Yes, and show me in the public list",
+                                                            "replies": { "type": "Collection", "totalItems": 0 }
+                                                        },
+                                                        {
+                                                            type: "Note",
+                                                            name: "Yes, but hide me from the public list",
+                                                            "replies": { "type": "Collection", "totalItems": 0 }
+                                                        },
+                                                        {
+                                                            type: "Note",
+                                                            name: "No",
+                                                            "replies": { "type": "Collection", "totalItems": 0 }
                                                         },
                                                     ],
                                                     endTime:
@@ -807,7 +818,7 @@ function _handleFollow(req, res) {
                             });
                     } else {
                         // this person is already a follower so just say "ok"
-                        return res.status(200);
+                        return res.sendStatus(200);
                     }
                 },
             );
@@ -867,11 +878,15 @@ function _handleUndoFollow(req, res) {
 }
 
 function _handleAcceptEvent(req, res) {
-    let { name, attributedTo, inReplyTo, to, actor } = req.body;
-    if (Array.isArray(to)) {
-        to = to[0];
+    let { name, attributedTo, inReplyTo, actor } = req.body;
+    const recipient = getNoteRecipient(req.body);
+    if (!recipient) {
+        return res.status(400).send("No recipient found in the object");
     }
-    const eventID = to.replace(`https://${domain}/`, "");
+    const eventID = getEventId(recipient);
+    if (!eventID) {
+        return res.status(400).send("No event ID found in the recipient");
+    }
     Event.findOne(
         {
             id: eventID,
@@ -989,7 +1004,7 @@ function _handleUndoAcceptEvent(req, res) {
             );
             if (message) {
                 // it's a match
-                Event.update(
+                Event.updateOne(
                     { id: eventID },
                     { $pull: { attendees: { id: actor } } },
                 ).then((response) => {
@@ -1000,134 +1015,6 @@ function _handleUndoAcceptEvent(req, res) {
                         req.params.eventID,
                     );
                 });
-            }
-        },
-    );
-}
-
-function _handleCreateNote(req, res) {
-    // figure out what this is in reply to -- it should be addressed specifically to us
-    let { name, attributedTo, inReplyTo, to } = req.body.object;
-    // if it's an array just grab the first element, since a poll should only broadcast back to the pollster
-    if (Array.isArray(to)) {
-        to = to[0];
-    }
-    const eventID = to.replace(`https://${domain}/`, "");
-    // make sure this person is actually a follower
-    Event.findOne(
-        {
-            id: eventID,
-        },
-        function (err, event) {
-            if (!event) return;
-            // is this even someone who follows us
-            const indexOfFollower = event.followers.findIndex(
-                (el) => el.actorId === req.body.object.attributedTo,
-            );
-            if (indexOfFollower !== -1) {
-                // compare the inReplyTo to its stored message, if it exists and it's going to the right follower then this is a valid reply
-                const message = event.activityPubMessages.find((el) => {
-                    const content = JSON.parse(el.content);
-                    return inReplyTo === (content.object && content.object.id);
-                });
-                if (message) {
-                    const content = JSON.parse(message.content);
-                    // check if the message we sent out was sent to the actor this incoming message is attributedTo
-                    if (content.to[0] === attributedTo) {
-                        // it's a match, this is a valid poll response, add RSVP to database
-                        // fetch the profile information of the user
-                        request(
-                            {
-                                url: attributedTo,
-                                headers: {
-                                    Accept: activityPubContentType,
-                                    "Content-Type": activityPubContentType,
-                                },
-                            },
-                            function (error, response, body) {
-                                body = JSON.parse(body);
-                                // if this account is NOT already in our attendees list, add it
-                                if (
-                                    !event.attendees
-                                        .map((el) => el.id)
-                                        .includes(attributedTo)
-                                ) {
-                                    const attendeeName =
-                                        body.preferredUsername ||
-                                        body.name ||
-                                        attributedTo;
-                                    const newAttendee = {
-                                        name: attendeeName,
-                                        status: "attending",
-                                        id: attributedTo,
-                                        number: 1,
-                                    };
-                                    event.attendees.push(newAttendee);
-                                    event
-                                        .save()
-                                        .then((fullEvent) => {
-                                            addToLog(
-                                                "addEventAttendee",
-                                                "success",
-                                                "Attendee added to event " +
-                                                req.params.eventID,
-                                            );
-                                            // get the new attendee with its hidden id from the full event
-                                            let fullAttendee =
-                                                fullEvent.attendees.find(
-                                                    (el) =>
-                                                        el.id === attributedTo,
-                                                );
-                                            // send a "click here to remove yourself" link back to the user as a DM
-                                            const jsonObject = {
-                                                "@context":
-                                                    "https://www.w3.org/ns/activitystreams",
-                                                name: `RSVP to ${event.name}`,
-                                                type: "Note",
-                                                content: `<span class=\"h-card\"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
-                                                tag: [
-                                                    {
-                                                        type: "Mention",
-                                                        href: newAttendee.id,
-                                                        name: newAttendee.name,
-                                                    },
-                                                ],
-                                            };
-                                            // send direct message to user
-                                            sendDirectMessage(
-                                                jsonObject,
-                                                newAttendee.id,
-                                                event.id,
-                                            );
-                                            return res.sendStatus(200);
-                                        })
-                                        .catch((err) => {
-                                            addToLog(
-                                                "addEventAttendee",
-                                                "error",
-                                                "Attempt to add attendee to event " +
-                                                req.params.eventID +
-                                                " failed with error: " +
-                                                err,
-                                            );
-                                            return res
-                                                .status(500)
-                                                .send(
-                                                    "Database error, please try again :(",
-                                                );
-                                        });
-                                } else {
-                                    // it's a duplicate and this person is already rsvped so just say OK
-                                    return res
-                                        .status(200)
-                                        .send(
-                                            "Attendee is already registered.",
-                                        );
-                                }
-                            },
-                        );
-                    }
-                }
             }
         },
     );
@@ -1221,7 +1108,10 @@ function _handleCreateNoteComment(req, res) {
             cc.includes("https://www.w3.org/ns/activitystreams#Public"))
     ) {
         // figure out which event(s) of ours it was addressing
+        // Mastodon seems to put the event ID in the to field, Pleroma in the cc field
+        // This is because ActivityPub is a mess (love you ActivityPub)
         let ourEvents = cc
+            .concat(to)
             .filter((el) => el.includes(`https://${domain}/`))
             .map((el) => el.replace(`https://${domain}/`, ""));
         // comments should only be on one event. if more than one, ignore (spam, probably)
@@ -1320,28 +1210,31 @@ export function processInbox(req, res) {
     try {
         // if a Follow activity hits the inbox
         if (typeof req.body.object === "string" && req.body.type === "Follow") {
+            console.log("Sending to _handleFollow");
             _handleFollow(req, res);
         }
         // if an Undo activity with a Follow object hits the inbox
-        if (
+        else if (
             req.body &&
             req.body.type === "Undo" &&
             req.body.object &&
             req.body.object.type === "Follow"
         ) {
+            console.log("Sending to _handleUndoFollow");
             _handleUndoFollow(req, res);
         }
         // if an Accept activity with the id of the Event we sent out hits the inbox, it is an affirmative RSVP
-        if (
+        else if (
             req.body &&
             req.body.type === "Accept" &&
             req.body.object &&
             typeof req.body.object === "string"
         ) {
+            console.log("Sending to _handleAcceptEvent");
             _handleAcceptEvent(req, res);
         }
         // if an Undo activity containing an Accept containing the id of the Event we sent out hits the inbox, it is an undo RSVP
-        if (
+        else if (
             req.body &&
             req.body.type === "Undo" &&
             req.body.object &&
@@ -1349,10 +1242,11 @@ export function processInbox(req, res) {
             typeof req.body.object.object === "string" &&
             req.body.object.type === "Accept"
         ) {
+            console.log("Sending to _handleUndoAcceptEvent");
             _handleUndoAcceptEvent(req, res);
         }
         // if a Create activity with a Note object hits the inbox, and it's a reply, it might be a vote in a poll
-        if (
+        else if (
             req.body &&
             req.body.type === "Create" &&
             req.body.object &&
@@ -1360,22 +1254,27 @@ export function processInbox(req, res) {
             req.body.object.inReplyTo &&
             req.body.object.to
         ) {
-            _handleCreateNote(req, res);
+            handlePollResponse(req, res);
         }
         // if a Delete activity hits the inbox, it might a deletion of a comment
-        if (req.body && req.body.type === "Delete") {
+        else if (req.body && req.body.type === "Delete") {
+            console.log("Sending to _handleDelete");
             _handleDelete(req, res);
         }
         // if we are CC'ed on a public or unlisted Create/Note, then this is a comment to us we should boost (Announce) to our followers
-        if (
+        else if (
             req.body &&
             req.body.type === "Create" &&
             req.body.object &&
             req.body.object.type === "Note" &&
             req.body.object.to
         ) {
+            console.log("Sending to _handleCreateNoteComment");
             _handleCreateNoteComment(req, res);
         } // CC'ed
+        else {
+            console.log("No action taken");
+        }
     } catch (e) {
         console.log("Error in processing inbox:", e);
     }

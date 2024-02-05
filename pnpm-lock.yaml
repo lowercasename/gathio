@@ -8,6 +8,9 @@ dependencies:
   '@sendgrid/mail':
     specifier: ^6.5.5
     version: 6.5.5
+  activitypub-types:
+    specifier: ^1.0.3
+    version: 1.0.3
   cors:
     specifier: ^2.8.5
     version: 2.8.5
@@ -874,6 +877,10 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
     dev: true
+
+  /activitypub-types@1.0.3:
+    resolution: {integrity: sha512-70PzXqhskrXebCcIAxyvKeQAR8myxLlSF5GKcyN/5UkTpTPTlQyzehzd4tXFgR6ZE+Tvsy3/1WWKSPTQPXvFwA==}
+    dev: false
 
   /agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}

@@ -505,13 +505,12 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                                 },
                             );
                         }
-                        Event.update(
+                        Event.updateOne(
                             { _id: { $in: linkedEventIDs } },
                             { $set: { eventGroup: null } },
                             { multi: true },
                         )
                             .then((response) => {
-                                console.log(response);
                                 addToLog(
                                     "deleteEventGroup",
                                     "success",
@@ -762,12 +761,11 @@ router.post("/unattendevent/:eventID", (req, res) => {
         return res.sendStatus(500);
     }
 
-    Event.update(
+    Event.updateOne(
         { id: req.params.eventID },
         { $pull: { attendees: { removalPassword } } },
     )
         .then((response) => {
-            console.log(response);
             addToLog(
                 "unattendEvent",
                 "success",
@@ -836,15 +834,16 @@ router.post("/unattendevent/:eventID", (req, res) => {
 // this is a one-click unattend that requires a secret URL that only the person who RSVPed over
 // activitypub knows
 router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
-    // Mastodon will "click" links that sent to its users, presumably as a prefetch?
+    // Mastodon and Pleroma will "click" links that sent to its users, presumably as a prefetch?
     // Anyway, this ignores the automated clicks that are done without the user's knowledge
     if (
         req.headers["user-agent"] &&
-        req.headers["user-agent"].includes("Mastodon")
+        (req.headers["user-agent"].toLowerCase().includes("mastodon") ||
+            req.headers["user-agent"].toLowerCase().includes("pleroma"))
     ) {
         return res.sendStatus(200);
     }
-    Event.update(
+    Event.updateOne(
         { id: req.params.eventID },
         { $pull: { attendees: { _id: req.params.attendeeID } } },
     )
@@ -915,12 +914,11 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
 });
 
 router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
-    Event.update(
+    Event.updateOne(
         { id: req.params.eventID },
         { $pull: { attendees: { _id: req.params.attendeeID } } },
     )
         .then((response) => {
-            console.log(response);
             addToLog(
                 "removeEventAttendee",
                 "success",
@@ -1071,12 +1069,11 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
  */
 router.get("/unsubscribe/:eventGroupID", (req, res) => {
     const email = req.query.email;
-    console.log(email);
     if (!email) {
         return res.sendStatus(500);
     }
 
-    EventGroup.update(
+    EventGroup.updateOne(
         { id: req.params.eventGroupID },
         { $pull: { subscribers: { email } } },
     )
@@ -1434,7 +1431,10 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
 router.post("/activitypub/inbox", (req, res) => {
     if (!isFederated) return res.sendStatus(404);
     // validate the incoming message
-    const signature = req.get("Signature");
+    const signature = req.get("signature");
+    if (!signature) {
+        return res.status(401).send("No signature provided.");
+    }
     let signature_header = signature
         .split(",")
         .map((pair) => {
@@ -1446,7 +1446,6 @@ router.post("/activitypub/inbox", (req, res) => {
             acc[el[0]] = el[1];
             return acc;
         }, {});
-
     // get the actor
     // TODO if this is a Delete for an Actor this won't work
     request(
@@ -1478,11 +1477,10 @@ router.post("/activitypub/inbox", (req, res) => {
                     }
                 })
                 .join("\n");
-
             const verifier = crypto.createVerify("RSA-SHA256");
             verifier.update(comparison_string, "ascii");
-            const publicKeyBuf = new Buffer(publicKey, "ascii");
-            const signatureBuf = new Buffer(
+            const publicKeyBuf = Buffer.from(publicKey, "ascii");
+            const signatureBuf = Buffer.from(
                 signature_header.signature,
                 "base64",
             );
