@@ -139,7 +139,7 @@
       <button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
     </div>
   </h5>
-  <div class="card-body">
+  <div class="card-body text-center">
     {{#if eventData.maxAttendees}}
       {{#if noMoreSpots}}
         <div class="alert alert-warning text-center" id="attendees-alert">This event is at capacity.</div>
@@ -147,20 +147,20 @@
         <div class="alert alert-warning text-center" id="attendees-alert">{{spotsRemaining}} {{plural spotsRemaining "spot(s)"}} remaining - add yourself now!</div>
       {{/if}}
     {{/if}}
-    {{#if visibleAttendees}}
+    {{#if numberOfAttendees}}
       <ul class="attendeesList">
         {{#each visibleAttendees}}
           <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
         {{/each}}
         {{#if editingEnabled}}
           {{#each hiddenAttendees}}
-            <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}} (hidden from public list)</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+            <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}} class="hidden-attendee"><span class="attendee-name">{{this.name}} (hidden from public list)</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
           {{/each}}
         {{/if}}
       </ul>
       {{#unless editingEnabled}}
         {{#if numberOfHiddenAttendees}}
-          <p class="text-center text-muted mb-0">+{{numberOfHiddenAttendees}} hidden attendee{{plural numberOfHiddenAttendees ""}}</p>
+          <div class="hidden-attendees-message">{{numberOfHiddenAttendees}} hidden attendee{{plural numberOfHiddenAttendees ""}}</div>
         {{/if}}
       {{/unless}}
     {{else}}
