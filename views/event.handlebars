@@ -153,14 +153,16 @@
           <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
         {{/each}}
         {{#if editingEnabled}}
-          {{#each visibleAttendees}}
-            <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}} (Hidden from public list)</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+          {{#each hiddenAttendees}}
+            <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}} (hidden from public list)</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
           {{/each}}
         {{/if}}
       </ul>
-      {{#if numberOfHiddenAttendees}}
-        <p class="text-center text-muted mb-0">+{{numberOfHiddenAttendees}} hidden attendee{{plural numberOfHiddenAttendees ""}}</p>
-      {{/if}}
+      {{#unless editingEnabled}}
+        {{#if numberOfHiddenAttendees}}
+          <p class="text-center text-muted mb-0">+{{numberOfHiddenAttendees}} hidden attendee{{plural numberOfHiddenAttendees ""}}</p>
+        {{/if}}
+      {{/unless}}
     {{else}}
       <p class="text-center text-muted mb-0">No attendees yet!</p>
     {{/if}}

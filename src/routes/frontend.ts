@@ -142,7 +142,11 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 if (el.number && el.number > 1) {
                     el.name = `${el.name} (${el.number} people)`;
                 }
-                return el;
+                return {
+                    ...el,
+                    // Backwards compatibility - if visibility is not set, default to public
+                    visibility: el.visibility || "public",
+                };
             })
             .filter((obj, pos, arr) => {
                 return (
@@ -159,13 +163,13 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 }
                 return acc;
             }, 0) || 0;
-        const visibleAttendees = event.attendees?.filter(
+        const visibleAttendees = eventAttendees?.filter(
             (attendee) => attendee.visibility === "public",
         );
-        const hiddenAttendees = event.attendees?.filter(
+        const hiddenAttendees = eventAttendees?.filter(
             (attendee) => attendee.visibility === "private",
         );
-        const numberOfHiddenAttendees = event.attendees?.reduce(
+        const numberOfHiddenAttendees = eventAttendees?.reduce(
             (acc, attendee) => {
                 if (
                     attendee.status === "attending" &&
