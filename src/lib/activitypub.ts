@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Event from "../models/Event.js";
+import Event, { IAttendee } from "../models/Event.js";
 import { sendDirectMessage } from "../activitypub.js";
 import { successfulRSVPResponse } from "./activitypub/templates.js";
 
@@ -142,7 +142,7 @@ export const handlePollResponse = async (req: Request, res: Response) => {
         if (!event.attendees?.some((el) => el.id === attributedTo)) {
             const attendeeName =
                 apActor.preferredUsername || apActor.name || attributedTo;
-            const newAttendee = {
+            const newAttendee: Partial<IAttendee> = {
                 name: attendeeName,
                 status: "attending",
                 id: attributedTo,
