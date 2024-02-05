@@ -131,7 +131,7 @@
 
 {{#if eventData.usersCanAttend}}
 <div class="card mb-4" id="eventAttendees">
-  <h5 class="card-header">Attendees {{#if eventAttendees}}({{numberOfAttendees}}){{/if}}
+  <h5 class="card-header">Attendees {{#if numberOfAttendees}}({{numberOfAttendees}}){{/if}}
     <div class="btn-group" role="group" aria-label="Attendance controls">
       {{#unless noMoreSpots}}
         <button type="button" id="attendEvent" class="btn btn-success" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> Add me</button>
@@ -147,12 +147,20 @@
         <div class="alert alert-warning text-center" id="attendees-alert">{{spotsRemaining}} {{plural spotsRemaining "spot(s)"}} remaining - add yourself now!</div>
       {{/if}}
     {{/if}}
-    {{#if eventAttendees}}
+    {{#if visibleAttendees}}
       <ul class="attendeesList">
-        {{#each eventAttendees}}
+        {{#each visibleAttendees}}
           <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
         {{/each}}
+        {{#if editingEnabled}}
+          {{#each visibleAttendees}}
+            <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}} (Hidden from public list)</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="Remove user from event"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+          {{/each}}
+        {{/if}}
       </ul>
+      {{#if numberOfHiddenAttendees}}
+        <p class="text-center text-muted mb-0">+{{numberOfHiddenAttendees}} hidden attendee{{plural numberOfHiddenAttendees ""}}</p>
+      {{/if}}
     {{else}}
       <p class="text-center text-muted mb-0">No attendees yet!</p>
     {{/if}}

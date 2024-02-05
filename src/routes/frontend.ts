@@ -159,6 +159,24 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 }
                 return acc;
             }, 0) || 0;
+        const visibleAttendees = event.attendees?.filter(
+            (attendee) => attendee.visibility === "public",
+        );
+        const hiddenAttendees = event.attendees?.filter(
+            (attendee) => attendee.visibility === "private",
+        );
+        const numberOfHiddenAttendees = event.attendees?.reduce(
+            (acc, attendee) => {
+                if (
+                    attendee.status === "attending" &&
+                    attendee.visibility === "private"
+                ) {
+                    return acc + (attendee.number || 1);
+                }
+                return acc;
+            },
+            0,
+        );
         if (event.maxAttendees) {
             spotsRemaining = event.maxAttendees - numberOfAttendees;
             if (spotsRemaining <= 0) {
@@ -189,8 +207,10 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 title: event.name,
                 escapedName: escapedName,
                 eventData: event,
-                eventAttendees: eventAttendees,
+                visibleAttendees,
+                hiddenAttendees,
                 numberOfAttendees,
+                numberOfHiddenAttendees,
                 spotsRemaining: spotsRemaining,
                 noMoreSpots: noMoreSpots,
                 eventStartISO: eventStartISO,
