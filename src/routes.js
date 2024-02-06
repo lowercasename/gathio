@@ -687,6 +687,7 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "attendees.$.name": req.body.attendeeName,
                 "attendees.$.email": req.body.attendeeEmail,
                 "attendees.$.number": req.body.attendeeNumber,
+                "attendees.$.visibility": !!req.body.attendeeVisible ? "public" : "private",
             },
         },
     )
