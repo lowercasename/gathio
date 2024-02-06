@@ -9,6 +9,7 @@ export interface IAttendee {
     number?: number;
     created?: Date;
     _id: string;
+    visibility?: "public" | "private";
 }
 
 export interface IReply {
@@ -104,6 +105,11 @@ const Attendees = new mongoose.Schema({
         type: Number,
         trim: true,
         default: 1,
+    },
+    visibility: {
+        type: String,
+        trim: true,
+        default: "public",
     },
     created: Date,
 });

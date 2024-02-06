@@ -9,6 +9,7 @@ mongoose.connect(config.database.mongodb_url, {
     useUnifiedTopology: true,
 });
 mongoose.set("useCreateIndex", true);
+mongoose.set("useFindAndModify", false);
 mongoose.Promise = global.Promise;
 mongoose.connection
     .on("connected", () => {

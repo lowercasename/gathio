@@ -142,7 +142,11 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 if (el.number && el.number > 1) {
                     el.name = `${el.name} (${el.number} people)`;
                 }
-                return el;
+                return {
+                    ...el,
+                    // Backwards compatibility - if visibility is not set, default to public
+                    visibility: el.visibility || "public",
+                };
             })
             .filter((obj, pos, arr) => {
                 return (
@@ -159,6 +163,24 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 }
                 return acc;
             }, 0) || 0;
+        const visibleAttendees = eventAttendees?.filter(
+            (attendee) => attendee.visibility === "public",
+        );
+        const hiddenAttendees = eventAttendees?.filter(
+            (attendee) => attendee.visibility === "private",
+        );
+        const numberOfHiddenAttendees = eventAttendees?.reduce(
+            (acc, attendee) => {
+                if (
+                    attendee.status === "attending" &&
+                    attendee.visibility === "private"
+                ) {
+                    return acc + (attendee.number || 1);
+                }
+                return acc;
+            },
+            0,
+        );
         if (event.maxAttendees) {
             spotsRemaining = event.maxAttendees - numberOfAttendees;
             if (spotsRemaining <= 0) {
@@ -189,8 +211,10 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 title: event.name,
                 escapedName: escapedName,
                 eventData: event,
-                eventAttendees: eventAttendees,
+                visibleAttendees,
+                hiddenAttendees,
                 numberOfAttendees,
+                numberOfHiddenAttendees,
                 spotsRemaining: spotsRemaining,
                 noMoreSpots: noMoreSpots,
                 eventStartISO: eventStartISO,

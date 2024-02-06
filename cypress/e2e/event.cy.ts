@@ -86,7 +86,7 @@ describe("Events", () => {
         );
     });
 
-    it("allows you to attend an event", function () {
+    it("allows you to attend an event - visible in public list", function () {
         cy.get("button#attendEvent").click();
         cy.get("#attendeeName").type("Test Attendee");
         cy.get("#attendeeNumber").focus().clear();
@@ -96,6 +96,20 @@ describe("Events", () => {
         cy.get(".attendeesList").should(
             "contain.text",
             "Test Attendee (2 people)",
+        );
+    });
+
+    it("allows you to attend an event - hidden from public list", function () {
+        cy.get("button#attendEvent").click();
+        cy.get("#attendeeName").type("Test Attendee");
+        cy.get("#attendeeNumber").focus().clear();
+        cy.get("#attendeeNumber").type("2");
+        cy.get("#attendeeVisible").uncheck();
+        cy.get("form#attendEventForm").submit();
+        cy.get("#attendees-alert").should("contain.text", "8 spots remaining");
+        cy.get(".attendeesList").should(
+            "contain.text",
+            "Test Attendee (2 people) (hidden from public list)",
         );
     });
 
