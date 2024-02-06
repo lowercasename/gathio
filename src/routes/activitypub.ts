@@ -84,6 +84,61 @@ router.get("/:eventID/m/:hash", async (req: Request, res: Response) => {
     }
 });
 
+router.get("/.well-known/nodeinfo", (req, res) => {
+    if (!config.general.is_federated) {
+        return res.status(404).render("404", frontendConfig());
+    }
+    const nodeInfo = {
+        links: [
+            {
+                rel: "http://nodeinfo.diaspora.software/ns/schema/2.2",
+                href: `https://${config.general.domain}/.well-known/nodeinfo/2.2`,
+            },
+        ],
+    };
+    res.header(
+        "Content-Type",
+        'application/json; profile="http://nodeinfo.diaspora.software/ns/schema/2.1#"',
+    ).send(nodeInfo);
+});
+
+router.get("/.well-known/nodeinfo/2.2", async (req, res) => {
+    const eventCount = await Event.countDocuments();
+
+    if (!config.general.is_federated) {
+        return res.status(404).render("404", frontendConfig());
+    }
+    const nodeInfo = {
+        version: "2.2",
+        instance: {
+            name: config.general.site_name,
+            description:
+                "Federated, no-registration, privacy-respecting event hosting.",
+        },
+        software: {
+            name: "Gathio",
+            version: process.env.npm_package_version || "unknown",
+            repository: "https://github.com/lowercasename/gathio",
+            homepage: "https://gath.io",
+        },
+        protocols: ["activitypub"],
+        services: {
+            inbound: [],
+            outbound: [],
+        },
+        openRegistrations: true,
+        usage: {
+            users: {
+                total: eventCount,
+            },
+        },
+    };
+    res.header(
+        "Content-Type",
+        'application/json; profile="http://nodeinfo.diaspora.software/ns/schema/2.1#"',
+    ).send(nodeInfo);
+});
+
 router.get("/.well-known/webfinger", async (req, res) => {
     let resource = req.query.resource as string;
     if (!resource || !resource.includes("acct:")) {
