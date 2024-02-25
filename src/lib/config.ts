@@ -18,6 +18,7 @@ interface GathioConfig {
         email_logo_url: string;
         show_kofi: boolean;
         mail_service: "nodemailer" | "sendgrid";
+        creator_email_addresses: string[];
     };
     database: {
         mongodb_url: string;

@@ -19,6 +19,8 @@ export const generateEventID = () => nanoid();
 
 export const generateEditToken = () => generateAlphanumericString(32);
 
+export const generateMagicLinkToken = () => generateAlphanumericString(32);
+
 export const generateRSAKeypair = () => {
     return crypto.generateKeyPairSync("rsa", {
         modulusLength: 4096,

@@ -9,6 +9,7 @@ import EventGroup from "../models/EventGroup.js";
 import { sendEmailFromTemplate } from "../lib/email.js";
 import { marked } from "marked";
 import { renderPlain } from "../util/markdown.js";
+import { checkMagicLink } from "../lib/middleware.js";
 
 const config = getConfig();
 
@@ -32,6 +33,7 @@ const router = Router();
 router.post(
     "/group",
     upload.single("imageUpload"),
+    checkMagicLink,
     async (req: Request, res: Response) => {
         const { data: groupData, errors } = validateGroupData(req.body);
         if (errors && errors.length > 0) {
