@@ -26,6 +26,7 @@ import { sendEmailFromTemplate } from "../lib/email.js";
 import crypto from "crypto";
 import ical from "ical";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
+import { checkMagicLink } from "../lib/middleware.js";
 
 const config = getConfig();
 
@@ -60,6 +61,7 @@ const router = Router();
 router.post(
     "/event",
     upload.single("imageUpload"),
+    checkMagicLink,
     async (req: Request, res: Response) => {
         const { data: eventData, errors } = validateEventData(req.body);
         if (errors && errors.length > 0) {
@@ -527,6 +529,7 @@ router.put(
 router.post(
     "/import/event",
     icsUpload.single("icsImportControl"),
+    checkMagicLink,
     async (req: Request, res: Response) => {
         if (!req.file) {
             return res.status(400).json({

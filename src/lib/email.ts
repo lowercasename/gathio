@@ -12,6 +12,7 @@ type EmailTemplate =
     | "addEventComment"
     | "createEvent"
     | "createEventGroup"
+    | "createEventMagicLink"
     | "deleteEvent"
     | "editEvent"
     | "eventGroupUpdated"

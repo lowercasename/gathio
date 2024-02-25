@@ -17,6 +17,11 @@ show_kofi = false
 # 'nodemailer' or 'sendgrid'. Configure settings for this mail
 # service below.
 mail_service = "nodemailer"
+# An array of email addresses which are permitted to create events. If this is
+# empty, anyone can create events.
+# For example:
+# creator_email_addresses = ["test@test.com", "admin@test.com"]
+creator_email_addresses = []
 
 [database]
 # Set up for a locally running MongoDB connection. Change this to

@@ -119,6 +119,10 @@ function newEventForm() {
                 "imageUpload",
                 this.$refs.eventImageUpload.files[0],
             );
+            formData.append(
+                "magicLinkToken",
+                this.$refs.magicLinkToken.value,
+            );
             try {
                 const response = await fetch("/event", {
                     method: "POST",
@@ -170,6 +174,10 @@ function newEventGroupForm() {
                 "imageUpload",
                 this.$refs.eventGroupImageUpload.files[0],
             );
+            formData.append(
+                "magicLinkToken",
+                this.$refs.magicLinkToken.value,
+            );
             try {
                 const response = await fetch("/group", {
                     method: "POST",
@@ -217,6 +225,10 @@ function importEventForm() {
             formData.append(
                 "icsImportControl",
                 this.$refs.icsImportControl.files[0],
+            );
+            formData.append(
+                "magicLinkToken",
+                this.$refs.magicLinkToken.value,
             );
             try {
                 const response = await fetch("/import/event", {

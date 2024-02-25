@@ -1,3 +1,4 @@
+<input type="hidden" name="magicLinkToken" value="{{magicLinkToken}}" x-ref="magicLinkToken">
 <div class="form-group">
   <label for="eventName" >Event name</label>
   <div class="form-group ">
@@ -65,7 +66,7 @@
 <div class="form-group">
   <label for="creatorEmail" >Your email</label>
   <div class="form-group ">
-    <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="Will not be shown anywhere (optional)." x-model="data.creatorEmail" >
+    <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="Will not be shown anywhere (optional)." x-model.fill="data.creatorEmail" {{#if creatorEmail}}value="{{creatorEmail}}" readonly{{/if}}>
     <small class="form-text">If you provide your email, we will send your secret editing password here, and use it to notify you of updates to the event.</small>
   </div>
 </div>
@@ -159,7 +160,7 @@
       <p><i class="fas fa-exclamation-triangle"></i> Please fix these errors:</p>
       <ul>
         <template x-for="error in errors">
-          <li x-text="error.message"></li>
+          <li x-html="error.message"></li>
         </template>
       </ul>
     </div>

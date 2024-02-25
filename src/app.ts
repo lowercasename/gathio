@@ -7,6 +7,7 @@ import activitypub from "./routes/activitypub.js";
 import event from "./routes/event.js";
 import group from "./routes/group.js";
 import staticPages from "./routes/static.js";
+import magicLink from "./routes/magicLink.js";
 
 import { initEmailService } from "./lib/email.js";
 import {
@@ -63,6 +64,7 @@ app.use("/", frontend);
 app.use("/", activitypub);
 app.use("/", event);
 app.use("/", group);
+app.use("/", magicLink);
 app.use("/", routes);
 
 export default app;

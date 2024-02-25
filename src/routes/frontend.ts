@@ -10,6 +10,7 @@ import {
     acceptsActivityPub,
     activityPubContentType,
 } from "../lib/activitypub.js";
+import MagicLink from "../models/MagicLink.js";
 
 const config = getConfig();
 
@@ -19,9 +20,40 @@ router.get("/", (_: Request, res: Response) => {
 });
 
 router.get("/new", (_: Request, res: Response) => {
+    if (config.general.creator_email_addresses?.length) {
+        return res.render("createEventMagicLink", frontendConfig());
+    }
+    return res.render("newevent", {
+        title: "New event",
+        ...frontendConfig(),
+    });
+});
+
+router.get("/new/:magicLinkToken", async (req: Request, res: Response) => {
+    // If we don't have any creator email addresses, we don't need to check the magic link
+    // so we can just redirect to the new event page
+    if (!config.general.creator_email_addresses?.length) {
+        return res.redirect("/new");
+    }
+    const magicLink = await MagicLink.findOne({
+        token: req.params.magicLinkToken,
+        expiryTime: { $gt: new Date() },
+        permittedActions: "createEvent",
+    });
+    if (!magicLink) {
+        return res.render("createEventMagicLink", {
+            ...frontendConfig(),
+            message: {
+                type: "danger",
+                text: "This magic link is invalid or has expired. Please request a new one here.",
+            },
+        });
+    }
     res.render("newevent", {
         title: "New event",
         ...frontendConfig(),
+        magicLinkToken: req.params.magicLinkToken,
+        creatorEmail: magicLink.email,
     });
 });
 
