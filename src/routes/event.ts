@@ -140,6 +140,7 @@ router.post(
             viewPassword: "", // Backwards compatibility
             editPassword: "", // Backwards compatibility
             editToken: editToken,
+            showOnPublicList: eventData?.publicBoolean,
             eventGroup: isPartOfEventGroup ? eventGroup?._id : null,
             usersCanAttend: eventData.joinBoolean ? true : false,
             showUsersList: false, // Backwards compatibility
@@ -371,6 +372,7 @@ router.put(
                 url: eventData.eventURL,
                 hostName: eventData.hostName,
                 image: eventImageFilename,
+                showOnPublicList: eventData.publicBoolean,
                 usersCanAttend: eventData.joinBoolean,
                 showUsersList: false, // Backwards compatibility
                 usersCanComment: eventData.interactionBoolean,

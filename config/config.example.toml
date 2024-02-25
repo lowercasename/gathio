@@ -16,6 +16,9 @@ email_logo_url = ""
 # Show a Ko-Fi box to donate money to Raphael (Gathio's creator) on the front
 # page.
 show_kofi = false
+# Show a list of events and groups on the front page which have been marked as
+# 'Display this event/group on the public event/group list'.
+show_public_event_list = false
 # Which mail service to use to send emails to hosts and attendees. Options are
 # 'nodemailer' or 'sendgrid'. Configure settings for this mail
 # service below.

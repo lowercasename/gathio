@@ -14,10 +14,11 @@ interface GathioConfig {
         port: string;
         email: string;
         site_name: string;
-        delete_after_days: number | null;
+        delete_after_days: number;
         is_federated: boolean;
         email_logo_url: string;
         show_kofi: boolean;
+        show_public_event_list: boolean;
         mail_service: "nodemailer" | "sendgrid";
         creator_email_addresses: string[];
     };
@@ -42,6 +43,7 @@ interface FrontendConfig {
     isFederated: boolean;
     emailLogoUrl: string;
     showKofi: boolean;
+    showPublicEventList: boolean;
     showInstanceInformation: boolean;
     staticPages?: StaticPage[];
     version: string;
@@ -56,8 +58,10 @@ const defaultConfig: GathioConfig = {
         is_federated: true,
         delete_after_days: 7,
         email_logo_url: "",
+        show_public_event_list: false,
         show_kofi: false,
         mail_service: "nodemailer",
+        creator_email_addresses: [],
     },
     database: {
         mongodb_url: "mongodb://localhost:27017/gathio",
@@ -69,13 +73,69 @@ export const frontendConfig = (): FrontendConfig => {
     return {
         domain: config.general.domain,
         siteName: config.general.site_name,
-        isFederated: config.general.is_federated,
+        isFederated: !!config.general.is_federated,
         emailLogoUrl: config.general.email_logo_url,
-        showKofi: config.general.show_kofi,
+        showPublicEventList: !!config.general.show_public_event_list,
+        showKofi: !!config.general.show_kofi,
         showInstanceInformation: !!config.static_pages?.length,
         staticPages: config.static_pages,
         version: process.env.npm_package_version || "unknown",
     };
+};
+
+interface InstanceRule {
+    icon: string;
+    text: string;
+}
+
+export const instanceRules = (): InstanceRule[] => {
+    const config = getConfig();
+    const rules = [];
+    rules.push(
+        config.general.show_public_event_list
+            ? {
+                  text: "Public events and groups are displayed on the homepage",
+                  icon: "fas fa-eye",
+              }
+            : {
+                  text: "Events and groups can only be accessed by direct link",
+                  icon: "fas fa-eye-slash",
+              },
+    );
+    rules.push(
+        config.general.creator_email_addresses?.length
+            ? {
+                  text: "Only specific people can create events and groups",
+                  icon: "fas fa-user-check",
+              }
+            : {
+                  text: "Anyone can create events and groups",
+                  icon: "fas fa-users",
+              },
+    );
+    rules.push(
+        config.general.delete_after_days > 0
+            ? {
+                  text: `Events are automatically deleted ${config.general.delete_after_days} days after they end`,
+                  icon: "far fa-calendar-times",
+              }
+            : {
+                  text: "Events are permanent, and are never automatically deleted",
+                  icon: "far fa-calendar-check",
+              },
+    );
+    rules.push(
+        config.general.is_federated
+            ? {
+                  text: "This instance federates with other instances using ActivityPub",
+                  icon: "fas fa-globe",
+              }
+            : {
+                  text: "This instance does not federate with other instances",
+                  icon: "fas fa-globe",
+              },
+    );
+    return rules;
 };
 
 // Attempt to load our global config. Will stop the app if the config file

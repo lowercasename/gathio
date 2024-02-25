@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import moment from "moment-timezone";
 import { marked } from "marked";
 import { markdownToSanitizedHTML, renderPlain } from "../util/markdown.js";
-import getConfig, { frontendConfig } from "../lib/config.js";
+import getConfig, { frontendConfig, instanceRules } from "../lib/config.js";
 import { addToLog, exportICal } from "../helpers.js";
 import Event from "../models/Event.js";
 import EventGroup, { IEventGroup } from "../models/EventGroup.js";
@@ -16,7 +16,20 @@ const config = getConfig();
 
 const router = Router();
 router.get("/", (_: Request, res: Response) => {
-    res.render("home", frontendConfig());
+    if (config.general.show_public_event_list) {
+        return res.redirect("/events");
+    }
+    return res.render("home", {
+        ...frontendConfig(),
+        instanceRules: instanceRules(),
+    });
+});
+
+router.get("/about", (_: Request, res: Response) => {
+    return res.render("home", {
+        ...frontendConfig(),
+        instanceRules: instanceRules(),
+    });
 });
 
 router.get("/new", (_: Request, res: Response) => {
@@ -54,6 +67,51 @@ router.get("/new/:magicLinkToken", async (req: Request, res: Response) => {
         ...frontendConfig(),
         magicLinkToken: req.params.magicLinkToken,
         creatorEmail: magicLink.email,
+    });
+});
+
+router.get("/events", async (_: Request, res: Response) => {
+    if (!config.general.show_public_event_list) {
+        return res.status(404).render("404", frontendConfig());
+    }
+    const events = await Event.find({ showOnPublicList: true })
+        .populate("eventGroup")
+        .lean()
+        .sort("start");
+    const updatedEvents = events.map((event) => {
+        const startMoment = moment.tz(event.start, event.timezone);
+        const endMoment = moment.tz(event.end, event.timezone);
+        const isSameDay = startMoment.isSame(endMoment, "day");
+
+        return {
+            id: event.id,
+            name: event.name,
+            location: event.location,
+            displayDate: isSameDay
+                ? startMoment.format("D MMM YYYY")
+                : `${startMoment.format("D MMM YYYY")} - ${endMoment.format(
+                      "D MMM YYYY",
+                  )}`,
+            eventHasConcluded: endMoment.isBefore(moment.tz(event.timezone)),
+            eventGroup: event.eventGroup,
+        };
+    });
+    const upcomingEvents = updatedEvents.filter(
+        (event) => event.eventHasConcluded === false,
+    );
+    const pastEvents = updatedEvents.filter(
+        (event) => event.eventHasConcluded === true,
+    );
+    const eventGroups = await EventGroup.find({
+        showOnPublicList: true,
+    }).lean();
+
+    res.render("publicEventList", {
+        title: "Public events",
+        upcomingEvents: upcomingEvents,
+        pastEvents: pastEvents,
+        eventGroups: eventGroups,
+        ...frontendConfig(),
     });
 });
 
@@ -266,6 +324,11 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 firstLoad: firstLoad,
                 eventHasConcluded: eventHasConcluded,
                 eventHasBegun: eventHasBegun,
+                eventWillBeDeleted: config.general.delete_after_days > 0,
+                daysUntilDeletion: moment
+                    .tz(event.end, event.timezone)
+                    .add(config.general.delete_after_days, "days")
+                    .fromNow(),
                 metadata: metadata,
                 jsonData: {
                     name: event.name,
@@ -276,6 +339,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                     url: event.url,
                     hostName: event.hostName,
                     creatorEmail: event.creatorEmail,
+                    showOnPublicList: event.showOnPublicList,
                     eventGroupID: event.eventGroup
                         ? (event.eventGroup as unknown as IEventGroup).id
                         : null,
@@ -337,6 +401,7 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
             return {
                 id: event.id,
                 name: event.name,
+                location: event.location,
                 displayDate: isSameDay
                     ? startMoment.format("D MMM YYYY")
                     : `${startMoment.format("D MMM YYYY")} - ${endMoment.format(
@@ -388,6 +453,7 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
 
         res.set("X-Robots-Tag", "noindex");
         res.render("eventgroup", {
+            ...frontendConfig(),
             domain: config.general.domain,
             title: eventGroup.name,
             eventGroupData: eventGroup,
@@ -409,6 +475,7 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
                 creatorEmail: eventGroup.creatorEmail,
                 image: eventGroup.image,
                 editToken: editingEnabled ? eventGroupEditToken : null,
+                showOnPublicList: eventGroup.showOnPublicList,
             },
         });
     } catch (err) {

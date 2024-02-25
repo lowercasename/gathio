@@ -81,6 +81,7 @@ router.post(
                 hostName: groupData.hostName,
                 editToken: editToken,
                 firstLoad: true,
+                showOnPublicList: groupData.publicBoolean,
             });
 
             await eventGroup.save();
@@ -206,6 +207,7 @@ router.put(
                 url: req.body.eventGroupURL,
                 hostName: req.body.hostName,
                 image: eventGroupImageFilename,
+                showOnPublicList: groupData.publicBoolean,
             };
 
             await EventGroup.findOneAndUpdate(

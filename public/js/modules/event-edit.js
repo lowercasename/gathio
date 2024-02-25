@@ -32,6 +32,7 @@ function editEventForm() {
             creatorEmail: window.eventData.creatorEmail,
             eventGroupID: window.eventData.eventGroupID,
             eventGroupEditToken: window.eventData.eventGroupEditToken,
+            publicCheckbox: window.eventData.showOnPublicList,
             interactionCheckbox: window.eventData.usersCanComment,
             joinCheckbox: window.eventData.usersCanAttend,
             maxAttendeesCheckbox: window.eventData.maxAttendees !== null,
@@ -53,6 +54,7 @@ function editEventForm() {
             this.data.joinCheckbox = window.eventData.usersCanAttend;
             this.data.maxAttendeesCheckbox =
                 window.eventData.maxAttendees !== null;
+            this.data.publicCheckbox = window.eventData.showOnPublicList;
         },
         async submitForm() {
             this.submitting = true;

@@ -87,6 +87,7 @@ function newEventForm() {
             creatorEmail: "",
             eventGroupID: "",
             eventGroupEditToken: "",
+            publicCheckbox: false,
             interactionCheckbox: false,
             joinCheckbox: false,
             maxAttendeesCheckbox: false,
@@ -107,6 +108,7 @@ function newEventForm() {
             this.data.interactionCheckbox = false;
             this.data.joinCheckbox = false;
             this.data.maxAttendeesCheckbox = false;
+            this.data.publicCheckbox = false;
         },
         async submitForm() {
             this.submitting = true;
@@ -160,6 +162,11 @@ function newEventGroupForm() {
             eventGroupURL: "",
             hostName: "",
             creatorEmail: "",
+            publicCheckbox: false,
+        },
+        init() {
+            // Reset checkboxes
+            this.data.publicCheckbox = false;
         },
         errors: [],
         submitting: false,

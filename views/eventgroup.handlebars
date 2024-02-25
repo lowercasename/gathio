@@ -122,6 +122,7 @@
         <a href="/{{this.id}}" class="list-group-item list-group-item-action" target="_blank">
           <i class="fas fa-fw fa-calendar-day"></i>
           <strong>{{this.name}}</strong>
+          {{#if this.location}}<span class="ml-2 text-muted"><i class="fas fa-map-marker-alt"></i> {{this.location}}</span>{{/if}}
           <span class="ml-2 text-muted">{{this.displayDate}}</span>
         </a>
       {{/unless}}
