@@ -82,7 +82,13 @@ router.use(fileUpload());
 
 // SCHEDULED DELETION
 schedule.scheduleJob("59 23 * * *", function (fireDate) {
-    const too_old = moment.tz("Etc/UTC").subtract(7, "days").toDate();
+    const deleteAfterDays = config.general.delete_after_days;
+    if (!deleteAfterDays || deleteAfterDays <= 0) {
+        // Deletion is disabled
+        return;
+    }
+
+    const too_old = moment.tz("Etc/UTC").subtract(deleteAfterDays, "days").toDate();
     console.log(
         "Old event deletion running! Deleting all events concluding before ",
         too_old,
