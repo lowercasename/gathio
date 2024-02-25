@@ -6,6 +6,9 @@ port = "3000"
 email = "contact@example.com"
 site_name = "gathio"
 is_federated = true
+# Events will be deleted this many days after they have ended. Set to 0 to
+# disable automatic deletion (old events will never be deleted).
+delete_after_days = 7
 # If left blank, this defaults to
 # https://yourdomain.com/images/gathio-email-logo.gif. Set a full URL here to
 # change it to your own logo (or just change the file itself).

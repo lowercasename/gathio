@@ -14,6 +14,7 @@ interface GathioConfig {
         port: string;
         email: string;
         site_name: string;
+        delete_after_days: number | null;
         is_federated: boolean;
         email_logo_url: string;
         show_kofi: boolean;
@@ -32,7 +33,7 @@ interface GathioConfig {
     sendgrid?: {
         api_key: string;
     };
-    static_pages: StaticPage[];
+    static_pages?: StaticPage[];
 }
 
 interface FrontendConfig {
@@ -42,9 +43,26 @@ interface FrontendConfig {
     emailLogoUrl: string;
     showKofi: boolean;
     showInstanceInformation: boolean;
-    staticPages: StaticPage[];
+    staticPages?: StaticPage[];
     version: string;
 }
+
+const defaultConfig: GathioConfig = {
+    general: {
+        domain: "localhost:3000",
+        email: "contact@example.com",
+        port: "3000",
+        site_name: "gathio",
+        is_federated: true,
+        delete_after_days: 7,
+        email_logo_url: "",
+        show_kofi: false,
+        mail_service: "nodemailer",
+    },
+    database: {
+        mongodb_url: "mongodb://localhost:27017/gathio",
+    },
+};
 
 export const frontendConfig = (): FrontendConfig => {
     const config = getConfig();
@@ -54,7 +72,7 @@ export const frontendConfig = (): FrontendConfig => {
         isFederated: config.general.is_federated,
         emailLogoUrl: config.general.email_logo_url,
         showKofi: config.general.show_kofi,
-        showInstanceInformation: config.static_pages?.length > 0,
+        showInstanceInformation: !!config.static_pages?.length,
         staticPages: config.static_pages,
         version: process.env.npm_package_version || "unknown",
     };
@@ -67,7 +85,10 @@ export const getConfig = (): GathioConfig => {
         const config = toml.parse(
             fs.readFileSync("./config/config.toml", "utf-8"),
         ) as GathioConfig;
-        return config;
+        return {
+            ...defaultConfig,
+            ...config,
+        };
     } catch {
         exitWithError(
             "Configuration file not found! Have you renamed './config/config-example.toml' to './config/config.toml'?",
