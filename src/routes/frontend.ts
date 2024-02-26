@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import moment from "moment-timezone";
 import { marked } from "marked";
 import { markdownToSanitizedHTML, renderPlain } from "../util/markdown.js";
-import getConfig, { frontendConfig, instanceRules } from "../lib/config.js";
+import { frontendConfig, instanceRules } from "../lib/config.js";
 import { addToLog, exportICal } from "../helpers.js";
 import Event from "../models/Event.js";
 import EventGroup, { IEventGroup } from "../models/EventGroup.js";
@@ -11,41 +11,44 @@ import {
     activityPubContentType,
 } from "../lib/activitypub.js";
 import MagicLink from "../models/MagicLink.js";
-
-const config = getConfig();
+import { getConfigMiddleware } from "../lib/middleware.js";
 
 const router = Router();
+
+// Add config middleware to all routes
+router.use(getConfigMiddleware);
+
 router.get("/", (_: Request, res: Response) => {
-    if (config.general.show_public_event_list) {
+    if (res.locals.config?.general.show_public_event_list) {
         return res.redirect("/events");
     }
     return res.render("home", {
-        ...frontendConfig(),
+        ...frontendConfig(res),
         instanceRules: instanceRules(),
     });
 });
 
 router.get("/about", (_: Request, res: Response) => {
     return res.render("home", {
-        ...frontendConfig(),
+        ...frontendConfig(res),
         instanceRules: instanceRules(),
     });
 });
 
-router.get("/new", (_: Request, res: Response) => {
-    if (config.general.creator_email_addresses?.length) {
-        return res.render("createEventMagicLink", frontendConfig());
+router.get("/new", (req: Request, res: Response) => {
+    if (res.locals.config?.general.creator_email_addresses?.length) {
+        return res.render("createEventMagicLink", frontendConfig(res));
     }
     return res.render("newevent", {
         title: "New event",
-        ...frontendConfig(),
+        ...frontendConfig(res),
     });
 });
 
 router.get("/new/:magicLinkToken", async (req: Request, res: Response) => {
     // If we don't have any creator email addresses, we don't need to check the magic link
     // so we can just redirect to the new event page
-    if (!config.general.creator_email_addresses?.length) {
+    if (!res.locals.config?.general.creator_email_addresses?.length) {
         return res.redirect("/new");
     }
     const magicLink = await MagicLink.findOne({
@@ -55,7 +58,7 @@ router.get("/new/:magicLinkToken", async (req: Request, res: Response) => {
     });
     if (!magicLink) {
         return res.render("createEventMagicLink", {
-            ...frontendConfig(),
+            ...frontendConfig(res),
             message: {
                 type: "danger",
                 text: "This magic link is invalid or has expired. Please request a new one here.",
@@ -64,15 +67,15 @@ router.get("/new/:magicLinkToken", async (req: Request, res: Response) => {
     }
     res.render("newevent", {
         title: "New event",
-        ...frontendConfig(),
+        ...frontendConfig(res),
         magicLinkToken: req.params.magicLinkToken,
         creatorEmail: magicLink.email,
     });
 });
 
 router.get("/events", async (_: Request, res: Response) => {
-    if (!config.general.show_public_event_list) {
-        return res.status(404).render("404", frontendConfig());
+    if (!res.locals.config?.general.show_public_event_list) {
+        return res.status(404).render("404", frontendConfig(res));
     }
     const events = await Event.find({ showOnPublicList: true })
         .populate("eventGroup")
@@ -93,7 +96,7 @@ router.get("/events", async (_: Request, res: Response) => {
                       "D MMM YYYY",
                   )}`,
             eventHasConcluded: endMoment.isBefore(moment.tz(event.timezone)),
-            eventGroup: event.eventGroup,
+            eventGroup: event.eventGroup as any as IEventGroup,
         };
     });
     const upcomingEvents = updatedEvents.filter(
@@ -105,13 +108,23 @@ router.get("/events", async (_: Request, res: Response) => {
     const eventGroups = await EventGroup.find({
         showOnPublicList: true,
     }).lean();
+    const updatedEventGroups = eventGroups.map((eventGroup) => {
+        return {
+            name: eventGroup.name,
+            numberOfEvents: updatedEvents.filter(
+                (event) =>
+                    event.eventGroup?._id.toString() ===
+                    eventGroup._id.toString(),
+            ).length,
+        };
+    });
 
     res.render("publicEventList", {
         title: "Public events",
         upcomingEvents: upcomingEvents,
         pastEvents: pastEvents,
-        eventGroups: eventGroups,
-        ...frontendConfig(),
+        eventGroups: updatedEventGroups,
+        ...frontendConfig(res),
     });
 });
 
@@ -123,7 +136,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
             .lean() // Required, see: https://stackoverflow.com/questions/59690923/handlebars-access-has-been-denied-to-resolve-the-property-from-because-it-is
             .populate("eventGroup");
         if (!event) {
-            return res.status(404).render("404", frontendConfig());
+            return res.status(404).render("404", frontendConfig(res));
         }
         const parsedLocation = event.location.replace(/\s+/g, "+");
         let displayDate;
@@ -286,9 +299,12 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 .join(" ")
                 .trim(),
             image: eventHasCoverImage
-                ? `https://${config.general.domain}/events/` + event.image
+                ? `https://${res.locals.config?.general.domain}/events/` +
+                  event.image
                 : null,
-            url: `https://${config.general.domain}/` + req.params.eventID,
+            url:
+                `https://${res.locals.config?.general.domain}/` +
+                req.params.eventID,
         };
         if (acceptsActivityPub(req)) {
             res.header("Content-Type", activityPubContentType).send(
@@ -297,7 +313,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         } else {
             res.set("X-Robots-Tag", "noindex");
             res.render("event", {
-                ...frontendConfig(),
+                ...frontendConfig(res),
                 title: event.name,
                 escapedName: escapedName,
                 eventData: event,
@@ -324,10 +340,11 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 firstLoad: firstLoad,
                 eventHasConcluded: eventHasConcluded,
                 eventHasBegun: eventHasBegun,
-                eventWillBeDeleted: config.general.delete_after_days > 0,
+                eventWillBeDeleted:
+                    (res.locals.config?.general.delete_after_days || 0) > 0,
                 daysUntilDeletion: moment
                     .tz(event.end, event.timezone)
-                    .add(config.general.delete_after_days, "days")
+                    .add(res.locals.config?.general.delete_after_days, "days")
                     .fromNow(),
                 metadata: metadata,
                 jsonData: {
@@ -368,7 +385,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 err,
         );
         console.log(err);
-        return res.status(404).render("404", frontendConfig());
+        return res.status(404).render("404", frontendConfig(res));
     }
 });
 
@@ -379,7 +396,7 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
         }).lean();
 
         if (!eventGroup) {
-            return res.status(404).render("404", frontendConfig());
+            return res.status(404).render("404", frontendConfig(res));
         }
         const parsedDescription = markdownToSanitizedHTML(
             eventGroup.description,
@@ -446,15 +463,18 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
                 .join(" ")
                 .trim(),
             image: eventGroupHasCoverImage
-                ? `https://${config.general.domain}/events/` + eventGroup.image
+                ? `https://${res.locals.config?.general.domain}/events/` +
+                  eventGroup.image
                 : null,
-            url: `https://${config.general.domain}/` + req.params.eventID,
+            url:
+                `https://${res.locals.config?.general.domain}/` +
+                req.params.eventID,
         };
 
         res.set("X-Robots-Tag", "noindex");
         res.render("eventgroup", {
-            ...frontendConfig(),
-            domain: config.general.domain,
+            ...frontendConfig(res),
+            domain: res.locals.config?.general.domain,
             title: eventGroup.name,
             eventGroupData: eventGroup,
             escapedName: escapedName,
@@ -485,7 +505,7 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
             `Attempt to display event group ${req.params.eventGroupID} failed with error: ${err}`,
         );
         console.log(err);
-        return res.status(404).render("404", frontendConfig());
+        return res.status(404).render("404", frontendConfig(res));
     }
 });
 
@@ -512,7 +532,7 @@ router.get(
                 `Attempt to display event group feed for ${req.params.eventGroupID} failed with error: ${err}`,
             );
             console.log(err);
-            return res.status(404).render("404", frontendConfig());
+            return res.status(404).render("404", frontendConfig(res));
         }
     },
 );
@@ -534,7 +554,7 @@ router.get("/export/event/:eventID", async (req: Request, res: Response) => {
             `Attempt to export event ${req.params.eventID} failed with error: ${err}`,
         );
         console.log(err);
-        return res.status(404).render("404", frontendConfig());
+        return res.status(404).render("404", frontendConfig(res));
     }
 });
 
@@ -560,7 +580,7 @@ router.get(
                 `Attempt to export event group ${req.params.eventGroupID} failed with error: ${err}`,
             );
             console.log(err);
-            return res.status(404).render("404", frontendConfig());
+            return res.status(404).render("404", frontendConfig(res));
         }
     },
 );

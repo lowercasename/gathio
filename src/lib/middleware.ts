@@ -1,14 +1,14 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import MagicLink from "../models/MagicLink.js";
-import getConfig from "../lib/config.js";
-
-const config = getConfig();
+import getConfig, { GathioConfig } from "../lib/config.js";
+import { deepMerge } from "../util/object.js";
 
 export const checkMagicLink = async (
     req: Request,
     res: Response,
-    next: any,
+    next: NextFunction,
 ) => {
+    const config = getConfig();
     if (!config.general.creator_email_addresses?.length) {
         // No creator email addresses are configured, so skip the magic link check
         return next();
@@ -48,4 +48,23 @@ export const checkMagicLink = async (
         });
     }
     next();
+};
+
+// Route-specific middleware which injects the config into the request object
+// It can also be used to modify the config based on the request, which
+// we use for Cypress testing.
+export const getConfigMiddleware = (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    const config = getConfig();
+    if (process.env.CYPRESS === "true" && req.cookies?.cypressConfigOverride) {
+        console.log("Overriding config with Cypress config");
+        const override = JSON.parse(req.cookies.cypressConfigOverride);
+        res.locals.config = deepMerge<GathioConfig>(config, override);
+        return next();
+    }
+    res.locals.config = config;
+    return next();
 };

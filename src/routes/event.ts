@@ -21,14 +21,11 @@ import {
     updateActivityPubActor,
     updateActivityPubEvent,
 } from "../activitypub.js";
-import getConfig from "../lib/config.js";
 import { sendEmailFromTemplate } from "../lib/email.js";
 import crypto from "crypto";
 import ical from "ical";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
-import { checkMagicLink } from "../lib/middleware.js";
-
-const config = getConfig();
+import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
 
 const storage = multer.memoryStorage();
 // Accept only JPEG, GIF or PNG images, up to 10MB
@@ -57,6 +54,8 @@ const icsUpload = multer({
 });
 
 const router = Router();
+
+router.use(getConfigMiddleware);
 
 router.post(
     "/event",
@@ -149,7 +148,7 @@ router.post(
             firstLoad: true,
             activityPubActor: createActivityPubActor(
                 eventID,
-                config.general.domain,
+                res.locals.config?.general.domain,
                 publicKey,
                 markdownToSanitizedHTML(eventData.eventDescription),
                 eventData.eventName,
@@ -169,7 +168,7 @@ router.post(
             ),
             activityPubMessages: [
                 {
-                    id: `https://${config.general.domain}/${eventID}/m/featuredPost`,
+                    id: `https://${res.locals.config?.general.domain}/${eventID}/m/featuredPost`,
                     content: JSON.stringify(
                         createFeaturedPost(
                             eventID,
@@ -198,9 +197,9 @@ router.post(
                     {
                         eventID,
                         editToken,
-                        siteName: config.general.site_name,
-                        siteLogo: config.general.email_logo_url,
-                        domain: config.general.domain,
+                        siteName: res.locals.config?.general.site_name,
+                        siteLogo: res.locals.config?.general.email_logo_url,
+                        domain: res.locals.config?.general.domain,
                     },
                     req,
                 );
@@ -232,9 +231,10 @@ router.post(
                             `New event in ${eventGroup.name}`,
                             "eventGroupUpdated",
                             {
-                                siteName: config.general.site_name,
-                                siteLogo: config.general.email_logo_url,
-                                domain: config.general.domain,
+                                siteName: res.locals.config?.general.site_name,
+                                siteLogo:
+                                    res.locals.config?.general.email_logo_url,
+                                domain: res.locals.config?.general.domain,
                                 eventGroupName: eventGroup.name,
                                 eventName: event.name,
                                 eventID: event.id,
@@ -451,11 +451,11 @@ router.put(
             const guidObject = crypto.randomBytes(16).toString("hex");
             const jsonObject = {
                 "@context": "https://www.w3.org/ns/activitystreams",
-                id: `https://${config.general.domain}/${req.params.eventID}/m/${guidObject}`,
+                id: `https://${res.locals.config?.general.domain}/${req.params.eventID}/m/${guidObject}`,
                 name: `RSVP to ${event.name}`,
                 type: "Note",
                 cc: "https://www.w3.org/ns/activitystreams#Public",
-                content: `${diffText} See here: <a href="https://${config.general.domain}/${req.params.eventID}">https://${config.general.domain}/${req.params.eventID}</a>`,
+                content: `${diffText} See here: <a href="https://${res.locals.config?.general.domain}/${req.params.eventID}">https://${res.locals.config?.general.domain}/${req.params.eventID}</a>`,
             };
             broadcastCreateMessage(jsonObject, event.followers, eventID);
             // also broadcast an Update profile message to all followers so that at least Mastodon servers will update the local profile information
@@ -472,7 +472,7 @@ router.put(
                         "@context": "https://www.w3.org/ns/activitystreams",
                         name: `RSVP to ${event.name}`,
                         type: "Note",
-                        content: `<span class=\"h-card\"><a href="${attendee.id}" class="u-url mention">@<span>${attendee.name}</span></a></span> ${diffText} See here: <a href="https://${config.general.domain}/${req.params.eventID}">https://${config.general.domain}/${req.params.eventID}</a>`,
+                        content: `<span class=\"h-card\"><a href="${attendee.id}" class="u-url mention">@<span>${attendee.name}</span></a></span> ${diffText} See here: <a href="https://${res.locals.config?.general.domain}/${req.params.eventID}">https://${res.locals.config?.general.domain}/${req.params.eventID}</a>`,
                         tag: [
                             {
                                 type: "Mention",
@@ -498,9 +498,9 @@ router.put(
                         {
                             diffText,
                             eventID: req.params.eventID,
-                            siteName: config.general.site_name,
-                            siteLogo: config.general.email_logo_url,
-                            domain: config.general.domain,
+                            siteName: res.locals.config?.general.site_name,
+                            siteLogo: res.locals.config?.general.email_logo_url,
+                            domain: res.locals.config?.general.domain,
                         },
                         req,
                     );
@@ -612,9 +612,9 @@ router.post(
                     {
                         eventID,
                         editToken,
-                        siteName: config.general.site_name,
-                        siteLogo: config.general.email_logo_url,
-                        domain: config.general.domain,
+                        siteName: res.locals.config?.general.site_name,
+                        siteLogo: res.locals.config?.general.email_logo_url,
+                        domain: res.locals.config?.general.domain,
                     },
                     req,
                 );

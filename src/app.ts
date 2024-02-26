@@ -1,5 +1,6 @@
 import express from "express";
 import hbs from "express-handlebars";
+import cookieParser from "cookie-parser";
 
 import routes from "./routes.js";
 import frontend from "./routes/frontend.js";
@@ -57,6 +58,9 @@ app.use(express.json({ type: alternateActivityPubContentType }));
 app.use(express.json({ type: activityPubContentType }));
 app.use(express.json({ type: "application/json" }));
 app.use(express.urlencoded({ extended: true }));
+
+// Cookies //
+app.use(cookieParser());
 
 // Router //
 app.use("/", staticPages);

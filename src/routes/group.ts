@@ -1,5 +1,4 @@
 import { Router, Response, Request } from "express";
-import getConfig from "../lib/config.js";
 import multer from "multer";
 import { generateEditToken, generateEventID } from "../util/generator.js";
 import { validateGroupData } from "../util/validation.js";
@@ -9,9 +8,7 @@ import EventGroup from "../models/EventGroup.js";
 import { sendEmailFromTemplate } from "../lib/email.js";
 import { marked } from "marked";
 import { renderPlain } from "../util/markdown.js";
-import { checkMagicLink } from "../lib/middleware.js";
-
-const config = getConfig();
+import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
 
 const storage = multer.memoryStorage();
 // Accept only JPEG, GIF or PNG images, up to 10MB
@@ -29,6 +26,8 @@ const upload = multer({
 });
 
 const router = Router();
+
+router.use(getConfigMiddleware);
 
 router.post(
     "/group",
@@ -101,9 +100,9 @@ router.post(
                     {
                         eventGroupID: eventGroup.id,
                         editToken: eventGroup.editToken,
-                        siteName: config.general.site_name,
-                        siteLogo: config.general.email_logo_url,
-                        domain: config.general.domain,
+                        siteName: res.locals.config?.general.site_name,
+                        siteLogo: res.locals.config?.general.email_logo_url,
+                        domain: res.locals.config?.general.domain,
                     },
                     req,
                 );

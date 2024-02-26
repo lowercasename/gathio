@@ -1,6 +1,7 @@
 import fs from "fs";
 import toml from "toml";
 import { exitWithError } from "./process.js";
+import { Response } from "express";
 
 interface StaticPage {
     title: string;
@@ -8,7 +9,7 @@ interface StaticPage {
     filename: string;
 }
 
-interface GathioConfig {
+export interface GathioConfig {
     general: {
         domain: string;
         port: string;
@@ -68,8 +69,21 @@ const defaultConfig: GathioConfig = {
     },
 };
 
-export const frontendConfig = (): FrontendConfig => {
-    const config = getConfig();
+export const frontendConfig = (res: Response): FrontendConfig => {
+    const config = res.locals.config;
+    if (!config) {
+        return {
+            domain: defaultConfig.general.domain,
+            siteName: defaultConfig.general.site_name,
+            isFederated: defaultConfig.general.is_federated,
+            emailLogoUrl: defaultConfig.general.email_logo_url,
+            showPublicEventList: defaultConfig.general.show_public_event_list,
+            showKofi: defaultConfig.general.show_kofi,
+            showInstanceInformation: false,
+            staticPages: [],
+            version: process.env.npm_package_version || "unknown",
+        };
+    }
     return {
         domain: config.general.domain,
         siteName: config.general.site_name,
