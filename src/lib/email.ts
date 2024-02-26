@@ -1,6 +1,6 @@
 import { Request } from "express";
 import sgMail from "@sendgrid/mail";
-import nodemailer, { TransportOptions } from "nodemailer";
+import nodemailer from "nodemailer";
 import { getConfig } from "./config.js";
 import SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import { exitWithError } from "./process.js";
