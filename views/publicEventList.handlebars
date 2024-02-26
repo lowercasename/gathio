@@ -1,17 +1,17 @@
 <article x-data="{currentTab: 'events'}">
 <h2 class="mb-4">{{siteName}}</h2>
-<p><strong>{{siteName}}</strong> is an instance of <a href="/about">Gathio</a>, a simple, federated, privacy-first event hosting platform.</p>
+<p><strong>{{siteName}}</strong> runs on <a href="/about">Gathio</a> — a simple, federated, privacy-first event hosting platform.</p>
 <ul class="nav nav-pills">
   <li class="nav-item">
-    <a class="nav-link" x-bind:class="currentTab === 'events' && 'active'" aria-current="page" href="#" x-on:click.prevent="currentTab = 'events'">Events</a>
+    <a id="eventsTab" class="nav-link" x-bind:class="currentTab === 'events' && 'active'" aria-current="page" href="#" x-on:click.prevent="currentTab = 'events'">Events</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" x-bind:class="currentTab === 'groups' && 'active'" href="#" x-on:click.prevent="currentTab = 'groups'">Groups</a>
+    <a id="groupsTab" class="nav-link" x-bind:class="currentTab === 'groups' && 'active'" href="#" x-on:click.prevent="currentTab = 'groups'">Groups</a>
   </li>
 </ul>
 
 <div x-show="currentTab === 'events'">
-    <div class="card mt-4 mb-4">
+    <div class="card mt-4 mb-4" id="upcomingEvents">
     <h5 class="card-header">Upcoming events</h5>
     <div class="list-group list-group-flush">
     {{#if upcomingEvents}}
@@ -32,7 +32,7 @@
     </div>
     </div>
 
-    <div class="card mt-4 mb-4">
+    <div class="card mt-4 mb-4" id="pastEvents">
     <h5 class="card-header">Past events</h5>
     <div class="list-group list-group-flush">
     {{#if pastEvents}}
@@ -42,7 +42,7 @@
             <strong>{{this.name}}</strong>
             <span class="ml-2 text-muted">{{this.displayDate}}</span>
             {{#if this.eventGroup}}
-            <span class="badge badge-secondary ml-2">In group: {{this.eventGroup.name}}</span>
+            <span class="badge badge-secondary ml-2">{{this.eventGroup.name}}</span>
             {{/if}}
         </a>
         {{/each}}
@@ -54,7 +54,7 @@
 </div>
 
 <div x-show="currentTab === 'groups'">
-    <div class="card mt-4 mb-4">
+    <div class="card mt-4 mb-4" id="eventGroups">
     <h5 class="card-header">Event groups</h5>
     <div class="list-group list-group-flush">
     {{#if eventGroups}}
@@ -62,6 +62,7 @@
         <a href="/group/{{this.id}}" class="list-group-item list-group-item-action">
             <i class="fas fa-fw fa-calendar-alt"></i>
             <strong>{{this.name}}</strong>
+            <span class="badge badge-secondary ml-2">{{this.numberOfEvents}} {{plural this.numberOfEvents "event(s)"}}</span>
         </a>
         {{/each}}
     {{else}}
