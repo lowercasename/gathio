@@ -1,0 +1,7 @@
+{
+    "eventGroupName": "Test Group",
+    "eventGroupDescription": "Test Group Description",
+    "eventGroupURL": "https://example.com",
+    "hostName": "Test Host",
+    "creatorEmail": "test@example.com"
+}

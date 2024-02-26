@@ -38,17 +38,20 @@
 
 declare namespace Cypress {
     interface Chainable<Subject> {
-        createGroup(groupData: {
-            eventGroupName: string;
-            eventGroupDescription: string;
-            eventGroupURL: string;
-            hostName: string;
-            creatorEmail: string;
-        }): Chainable<Subject>;
+        createGroup(
+            groupData: {
+                eventGroupName: string;
+                eventGroupDescription: string;
+                eventGroupURL: string;
+                hostName: string;
+                creatorEmail: string;
+            },
+            isPublic: boolean,
+        ): Chainable<Subject>;
     }
 }
 
-Cypress.Commands.add("createGroup", (groupData) => {
+Cypress.Commands.add("createGroup", (groupData, isPublic) => {
     cy.visit("/new");
     cy.get("#showNewEventGroupFormButton").click();
 
@@ -58,6 +61,10 @@ Cypress.Commands.add("createGroup", (groupData) => {
     cy.get("#eventGroupURL").type(groupData.eventGroupURL);
     cy.get("#eventGroupHostName").type(groupData.hostName);
     cy.get("#eventGroupCreatorEmail").type(groupData.creatorEmail);
+
+    if (isPublic) {
+        cy.get("#publicGroupCheckbox").check();
+    }
 
     // Submit the form
     cy.get("#newEventGroupForm").submit();
