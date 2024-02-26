@@ -21,13 +21,13 @@ if (config.static_pages?.length) {
                         return res.render("static", {
                             title: page.title,
                             content: parsed,
-                            ...frontendConfig(),
+                            ...frontendConfig(res),
                         });
                     }
-                    return res.status(404).render("404", frontendConfig());
+                    return res.status(404).render("404", frontendConfig(res));
                 } catch (err) {
                     console.error(err);
-                    return res.status(404).render("404", frontendConfig());
+                    return res.status(404).render("404", frontendConfig(res));
                 }
             });
         });

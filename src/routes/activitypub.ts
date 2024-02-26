@@ -1,21 +1,22 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { createFeaturedPost, createWebfinger } from "../activitypub.js";
 import { acceptsActivityPub } from "../lib/activitypub.js";
-import getConfig, { frontendConfig } from "../lib/config.js";
+import { frontendConfig } from "../lib/config.js";
 import Event from "../models/Event.js";
 import { addToLog } from "../helpers.js";
-
-const config = getConfig();
+import { getConfigMiddleware } from "../lib/middleware.js";
 
 const router = Router();
+
+router.use(getConfigMiddleware);
 
 const send404IfNotFederated = (
     req: Request,
     res: Response,
     next: NextFunction,
 ) => {
-    if (!config.general.is_federated) {
-        return res.status(404).render("404", frontendConfig());
+    if (!res.locals.config?.general.is_federated) {
+        return res.status(404).render("404", frontendConfig(res));
     }
     next();
 };
@@ -27,7 +28,7 @@ router.get("/:eventID/featured", (req: Request, res: Response) => {
     const { eventID } = req.params;
     const featured = {
         "@context": "https://www.w3.org/ns/activitystreams",
-        id: `https://${config.general.domain}/${eventID}/featured`,
+        id: `https://${res.locals.config?.general.domain}/${eventID}/featured`,
         type: "OrderedCollection",
         orderedItems: [createFeaturedPost(eventID)],
     };
@@ -41,17 +42,17 @@ router.get("/:eventID/featured", (req: Request, res: Response) => {
 // return the JSON for a given activitypub message
 router.get("/:eventID/m/:hash", async (req: Request, res: Response) => {
     const { hash, eventID } = req.params;
-    const id = `https://${config.general.domain}/${eventID}/m/${hash}`;
+    const id = `https://${res.locals.config?.general.domain}/${eventID}/m/${hash}`;
 
     try {
         const event = await Event.findOne({
             id: eventID,
         });
         if (!event) {
-            return res.status(404).render("404", frontendConfig());
+            return res.status(404).render("404", frontendConfig(res));
         } else {
             if (!event.activityPubMessages) {
-                return res.status(404).render("404", frontendConfig());
+                return res.status(404).render("404", frontendConfig(res));
             }
             const message = event.activityPubMessages.find(
                 (el) => el.id === id,
@@ -68,7 +69,7 @@ router.get("/:eventID/m/:hash", async (req: Request, res: Response) => {
                     );
                 }
             } else {
-                return res.status(404).render("404", frontendConfig());
+                return res.status(404).render("404", frontendConfig(res));
             }
         }
     } catch (err) {
@@ -80,19 +81,19 @@ router.get("/:eventID/m/:hash", async (req: Request, res: Response) => {
                 " failed with error: " +
                 err,
         );
-        return res.status(404).render("404", frontendConfig());
+        return res.status(404).render("404", frontendConfig(res));
     }
 });
 
 router.get("/.well-known/nodeinfo", (req, res) => {
-    if (!config.general.is_federated) {
-        return res.status(404).render("404", frontendConfig());
+    if (!res.locals.config?.general.is_federated) {
+        return res.status(404).render("404", frontendConfig(res));
     }
     const nodeInfo = {
         links: [
             {
                 rel: "http://nodeinfo.diaspora.software/ns/schema/2.2",
-                href: `https://${config.general.domain}/.well-known/nodeinfo/2.2`,
+                href: `https://${res.locals.config?.general.domain}/.well-known/nodeinfo/2.2`,
             },
         ],
     };
@@ -105,13 +106,13 @@ router.get("/.well-known/nodeinfo", (req, res) => {
 router.get("/.well-known/nodeinfo/2.2", async (req, res) => {
     const eventCount = await Event.countDocuments();
 
-    if (!config.general.is_federated) {
-        return res.status(404).render("404", frontendConfig());
+    if (!res.locals.config?.general.is_federated) {
+        return res.status(404).render("404", frontendConfig(res));
     }
     const nodeInfo = {
         version: "2.2",
         instance: {
-            name: config.general.site_name,
+            name: res.locals.config?.general.site_name,
             description:
                 "Federated, no-registration, privacy-respecting event hosting.",
         },
@@ -157,16 +158,24 @@ router.get("/.well-known/webfinger", async (req, res) => {
             const event = await Event.findOne({ id: eventID });
 
             if (!event) {
-                return res.status(404).render("404", frontendConfig());
+                return res.status(404).render("404", frontendConfig(res));
             } else {
                 if (acceptsActivityPub(req)) {
                     res.header(
                         "Content-Type",
                         "application/activity+json",
-                    ).send(createWebfinger(eventID, config.general.domain));
+                    ).send(
+                        createWebfinger(
+                            eventID,
+                            res.locals.config?.general.domain,
+                        ),
+                    );
                 } else {
                     res.header("Content-Type", "application/json").send(
-                        createWebfinger(eventID, config.general.domain),
+                        createWebfinger(
+                            eventID,
+                            res.locals.config?.general.domain,
+                        ),
                     );
                 }
             }
@@ -176,7 +185,7 @@ router.get("/.well-known/webfinger", async (req, res) => {
                 "error",
                 `Attempt to render webfinger for ${resource} failed with error: ${err}`,
             );
-            return res.status(404).render("404", frontendConfig());
+            return res.status(404).render("404", frontendConfig(res));
         }
     }
 });
@@ -192,13 +201,13 @@ router.get("/:eventID/followers", async (req, res) => {
             let followersCollection = {
                 type: "OrderedCollection",
                 totalItems: followers.length,
-                id: `https://${config.general.domain}/${eventID}/followers`,
+                id: `https://${res.locals.config?.general.domain}/${eventID}/followers`,
                 first: {
                     type: "OrderedCollectionPage",
                     totalItems: followers.length,
-                    partOf: `https://${config.general.domain}/${eventID}/followers`,
+                    partOf: `https://${res.locals.config?.general.domain}/${eventID}/followers`,
                     orderedItems: followers,
-                    id: `https://${config.general.domain}/${eventID}/followers?page=1`,
+                    id: `https://${res.locals.config?.general.domain}/${eventID}/followers?page=1`,
                 },
                 "@context": ["https://www.w3.org/ns/activitystreams"],
             };
@@ -221,7 +230,7 @@ router.get("/:eventID/followers", async (req, res) => {
             "error",
             `Attempt to render followers for ${eventID} failed with error: ${err}`,
         );
-        return res.status(404).render("404", frontendConfig());
+        return res.status(404).render("404", frontendConfig(res));
     }
 });
 

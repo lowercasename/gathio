@@ -1511,7 +1511,7 @@ router.post("/activitypub/inbox", (req, res) => {
 });
 
 router.use(function (req, res, next) {
-    return res.status(404).render("404", frontendConfig());
+    return res.status(404).render("404", frontendConfig(res));
 });
 
 addToLog("startup", "success", "Started up successfully");

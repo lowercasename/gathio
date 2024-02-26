@@ -1,7 +1,11 @@
 <div id="fixedContainer" class="pt-3">
-    <h1><a href="/">gath<span class="text-muted">io</span></a></h1>
+    <h1 class="mb-4"><a href="/">gathio</a></h1>
 
-    <p class="lead text-center mb-4">Nicer events</p>
-
-    <a class="btn btn-success mb-2 btn-block" href="/new"><i class="far fa-calendar-plus"></i> New</a>
+    <ul id="sidebar__nav">
+        <li><a class="btn btn-success" href="/new"><i class="far fa-calendar-plus"></i> New</a></li>
+        {{#if showPublicEventList}}
+            <li><a href="/events">View events</a></li>
+            <li><a href="/about">About</a></li>
+        {{/if}}
+    </ul>
 </div>

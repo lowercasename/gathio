@@ -1,17 +1,19 @@
 import { Router, Request, Response } from "express";
-import getConfig, { frontendConfig } from "../lib/config.js";
+import { frontendConfig } from "../lib/config.js";
 import { sendEmailFromTemplate } from "../lib/email.js";
 import { generateMagicLinkToken } from "../util/generator.js";
 import MagicLink from "../models/MagicLink.js";
+import { getConfigMiddleware } from "../lib/middleware.js";
 
 const router = Router();
-const config = getConfig();
+
+router.use(getConfigMiddleware);
 
 router.post("/magic-link/event/create", async (req: Request, res: Response) => {
     const { email } = req.body;
     if (!email) {
         res.render("createEventMagicLink", {
-            ...frontendConfig(),
+            ...frontendConfig(res),
             message: {
                 type: "danger",
                 text: "Please provide an email address.",
@@ -19,14 +21,14 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
         });
         return;
     }
-    const allowedEmails = config.general.creator_email_addresses;
+    const allowedEmails = res.locals.config?.general.creator_email_addresses;
     if (!allowedEmails?.length) {
         // No creator email addresses are configured, so skip the magic link check
         return res.redirect("/new");
     }
     if (!allowedEmails.includes(email)) {
         res.render("createEventMagicLink", {
-            ...frontendConfig(),
+            ...frontendConfig(res),
             message: {
                 type: "success",
                 text: "Thanks! If this email address can create events, you should receive an email with a magic link.",
@@ -52,14 +54,14 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
         "createEventMagicLink",
         {
             token,
-            siteName: config.general.site_name,
-            siteLogo: config.general.email_logo_url,
-            domain: config.general.domain,
+            siteName: res.locals.config?.general.site_name,
+            siteLogo: res.locals.config?.general.email_logo_url,
+            domain: res.locals.config?.general.domain,
         },
         req,
     );
     res.render("createEventMagicLink", {
-        ...frontendConfig(),
+        ...frontendConfig(res),
         message: {
             type: "success",
             text: "Thanks! If this email address can create events, you should receive an email with a magic link.",

@@ -73,6 +73,7 @@ export interface IEvent extends mongoose.Document {
     privateKey?: string;
     followers?: IFollower[];
     activityPubMessages?: IActivityPubMessage[];
+    showOnPublicList?: boolean;
 }
 
 const Attendees = new mongoose.Schema({
@@ -334,6 +335,10 @@ const EventSchema = new mongoose.Schema({
     },
     followers: [Followers],
     activityPubMessages: [ActivityPubMessages],
+    showOnPublicList: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 export default mongoose.model<IEvent>("Event", EventSchema);

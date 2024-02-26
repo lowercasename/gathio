@@ -1,19 +1,4 @@
-const eventData = {
-    eventName: "Your Event Name",
-    eventLocation: "Event Location",
-    timezone: "America/New York",
-    eventDescription: "Event Description",
-    eventURL: "https://example.com",
-    hostName: "Your Name",
-    creatorEmail: "test@example.com",
-    eventGroupCheckbox: false,
-    interactionCheckbox: true,
-    joinCheckbox: true,
-    maxAttendeesCheckbox: true,
-    maxAttendees: 10,
-    eventStart: "2030-01-01T00:00",
-    eventEnd: "2030-01-01T01:00",
-};
+import eventData from "../fixtures/eventData.json";
 
 describe("Events", () => {
     beforeEach(() => {
@@ -36,13 +21,6 @@ describe("Events", () => {
 
         cy.get("#hostName").type(eventData.hostName);
         cy.get("#creatorEmail").type(eventData.creatorEmail);
-
-        // Check checkboxes based on eventData
-        if (eventData.eventGroupCheckbox) {
-            cy.get("#eventGroupCheckbox").check();
-            cy.get("#eventGroupID").type(eventData.eventGroupID);
-            cy.get("#eventGroupEditToken").type(eventData.eventGroupEditToken);
-        }
 
         if (eventData.interactionCheckbox) {
             cy.get("#interactionCheckbox").check();

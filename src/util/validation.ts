@@ -5,8 +5,13 @@ type Error = {
     field?: string;
 };
 
-type ValidationResponse = {
+type EventValidationResponse = {
     data?: ValidatedEventData;
+    errors?: Error[];
+};
+
+type EventGroupValidationResponse = {
+    data?: ValidatedEventGroupData;
     errors?: Error[];
 };
 
@@ -21,6 +26,7 @@ interface EventData {
     imagePath: string;
     hostName: string;
     creatorEmail: string;
+    publicCheckbox: string;
     eventGroupCheckbox: string;
     eventGroupID: string;
     eventGroupEditToken: string;
@@ -33,11 +39,13 @@ interface EventData {
 // EventData without the 'checkbox' fields
 export type ValidatedEventData = Omit<
     EventData,
+    | "publicCheckbox"
     | "eventGroupCheckbox"
     | "interactionCheckbox"
     | "joinCheckbox"
     | "maxAttendeesCheckbox"
 > & {
+    publicBoolean: boolean;
     eventGroupBoolean: boolean;
     interactionBoolean: boolean;
     joinBoolean: boolean;
@@ -50,7 +58,12 @@ interface EventGroupData {
     eventGroupURL: string;
     hostName: string;
     creatorEmail: string;
+    publicCheckbox: string;
 }
+
+export type ValidatedEventGroupData = Omit<EventGroupData, "publicCheckbox"> & {
+    publicBoolean: boolean;
+};
 
 const validateEmail = (email: string) => {
     if (!email || email.length === 0 || typeof email !== "string") {
@@ -89,9 +102,12 @@ export const validateEventTime = (start: Date, end: Date): Error | boolean => {
     return true;
 };
 
-export const validateEventData = (eventData: EventData): ValidationResponse => {
+export const validateEventData = (
+    eventData: EventData,
+): EventValidationResponse => {
     const validatedData: ValidatedEventData = {
         ...eventData,
+        publicBoolean: eventData.publicCheckbox === "true",
         eventGroupBoolean: eventData.eventGroupCheckbox === "true",
         interactionBoolean: eventData.interactionCheckbox === "true",
         joinBoolean: eventData.joinCheckbox === "true",
@@ -186,7 +202,9 @@ export const validateEventData = (eventData: EventData): ValidationResponse => {
     };
 };
 
-export const validateGroupData = (groupData: EventGroupData) => {
+export const validateGroupData = (
+    groupData: EventGroupData,
+): EventGroupValidationResponse => {
     const errors: Error[] = [];
     if (!groupData.eventGroupName) {
         errors.push({
@@ -209,8 +227,13 @@ export const validateGroupData = (groupData: EventGroupData) => {
         }
     }
 
+    const validatedData: ValidatedEventGroupData = {
+        ...groupData,
+        publicBoolean: groupData.publicCheckbox === "true",
+    };
+
     return {
-        data: groupData,
+        data: validatedData,
         errors: errors,
     };
 };

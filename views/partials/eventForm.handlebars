@@ -73,6 +73,14 @@
 <div class="form-group">
   <label>Options</label>
   <div >
+    {{#if showPublicEventList}}
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="publicEventCheckbox" name="publicCheckbox" x-model="data.publicCheckbox">
+        <label class="form-check-label" for="publicEventCheckbox">
+          Display this event on the public event list
+        </label>
+      </div>
+    {{/if}}
     <div class="form-check">
       <input class="form-check-input" type="checkbox" id="eventGroupCheckbox" name="eventGroupCheckbox" x-model="data.eventGroupCheckbox">
       <label class="form-check-label" for="eventGroupCheckbox">

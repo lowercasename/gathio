@@ -1,0 +1,16 @@
+{
+    "eventName": "Your Event Name",
+    "eventLocation": "Event Location",
+    "timezone": "America/New York",
+    "eventDescription": "Event Description",
+    "eventURL": "https://example.com",
+    "hostName": "Your Name",
+    "creatorEmail": "test@example.com",
+    "eventGroupCheckbox": false,
+    "interactionCheckbox": true,
+    "joinCheckbox": true,
+    "maxAttendeesCheckbox": true,
+    "maxAttendees": 10,
+    "eventStart": "2030-01-01T00:00",
+    "eventEnd": "2030-01-01T01:00"
+}

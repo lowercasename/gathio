@@ -16,6 +16,7 @@ export interface IEventGroup extends mongoose.Document {
     firstLoad?: boolean;
     events?: mongoose.Types.ObjectId[];
     subscribers?: ISubscriber[];
+    showOnPublicList?: boolean;
 }
 
 const Subscriber = new mongoose.Schema({
@@ -70,6 +71,10 @@ const EventGroupSchema = new mongoose.Schema({
     },
     events: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
     subscribers: [Subscriber],
+    showOnPublicList: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 export default mongoose.model<IEventGroup>("EventGroup", EventGroupSchema);

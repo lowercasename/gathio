@@ -1,25 +1,53 @@
-<p class="lead">A quick and easy way to make and share events which respects your privacy.</p>
+<p class="lead">Gathio is a simple, federated, privacy-first event hosting platform.</p>
 
-<hr>
+<div class="card mb-3 border-primary">
+<div class="card-header">
+  This instance, <strong>{{siteName}}</strong>, has the following features:
+</div>
 
-<p>You don't need to sign up for an account. When you create an event, we generate a password which allows you to edit the event. Send all your guests the public link, and all your co-hosts the secret editing link containing the password. A week after the event finishes, it's deleted from our servers for ever, and your email goes with it.</p>
+<div class="card-body m-0 p-0">
+  <ul class="list-group list-group-flush">
+    {{#each instanceRules}}
+      <li class="list-group-item"><i class="{{this.icon}} fa-fw mr-2"></i> {{this.text}}</li>
+    {{/each}}
+  </ul>
+</div>
+</div>
 
 <div id="example-event" class="text-center w-100 mt-4 mb-5">
   <img alt ="An example event page for a picnic. The page shows the event's location, host, date and time, and description, as well as buttons to save the event to Google Calendar, export it, and open the location in OpenStreetMap and Google Maps." src="images/example-event-2023.png" class="img-fluid w-75 mx-auto shadow-lg rounded">
 </div>
 
-<p>Also, we don't show you ads, don't sell your data, and never send you unnecessary emails.</p>
+<h3>Privacy-first</h3>
 
-<p>But remember: all events are visible to anyone who knows the link, so probably don't use <strong>gathio</strong> to plot your surprise birthday party or revolution. Or whatever, you do you.</p>
+<p>There are no accounts on Gathio. When you create an event, we generate a password which allows you to edit the event. Send all your guests the public link, and all your co-hosts the secret editing link containing the password.</p>
 
-<h4 class="pt-2">Federation and self-hosting</h4>
+<p>If you supply your email, we'll send you the editing password so you don't lose it - but supplying your email is optional!</p>
 
-<p><strong>gathio</strong> can easily be self-hosted, and supports ActivityPub services like Mastodon, Pleroma, and Friendica, allowing you to access events from anywhere on the Fediverse. We encourage you to spin up your own instance for your community. Detailed instructions on <a href="https://github.com/lowercasename/gathio/wiki/Fediverse-Instructions">ActivityPub access</a> and <a href="https://github.com/lowercasename/gathio/wiki/Installation-instructions">self-hosted installation</a> live on our GitHub wiki. Leave a question in our <a href="https://github.com/lowercasename/gathio/issues">tracker</a> if you encounter any issues.</p>
+<p>If this instance automatically deletes its events, sometime after the event finishes, it's deleted from the database for ever, and your data goes with it.</p>
+
+<p>Also, Gathio doesn't show you ads, doesn't sell your data, and never sends you unnecessary emails.</p>
+
+<p>But remember: all events are visible to anyone who knows the link, so probably don't use Gathio to plot your surprise birthday party or revolution. Or whatever, you do you.</p>
+
+<h3>Configurable</h3>
+
+<p>The <a href="https://gath.io">flagship Gathio instance at gath.io</a> is designed for anyone to create ephemeral, hidden events. Anyone can create an event; events are never displayed anywhere public; and they're deleted 7 days after they end.</p>
+
+<p>But if your community sets up their own instance, you can limit event creation to a specific list of people, display events on a handy list on the homepage, and disable event deletion entirely!</p>
+
+<h3>Federation and self-hosting</h3>
+
+<p>Gathio can easily be self-hosted, and supports ActivityPub services like Mastodon, Pleroma, and Friendica, allowing you to access events from anywhere on the Fediverse. We encourage you to spin up your own instance for your community. Detailed instructions on <a href="https://github.com/lowercasename/gathio/wiki/Fediverse-Instructions">ActivityPub access</a> and <a href="https://github.com/lowercasename/gathio/wiki/Installation-instructions">self-hosted installation</a> live on our GitHub wiki.
+
+<h3>Open source</h3>
+
+<p>Gathio is delighted to be open source, and is built by a lovely group of people. Leave a question in our <a href="https://github.com/lowercasename/gathio/issues">tracker</a> if you encounter any issues.</p>
 
 {{#if showKofi}}
 <div class="card border-secondary mt-5 mb-3 mx-auto" style="min-width:300px;max-width:50%;">
   <div class="card-body text-secondary">
-    <p>If you find yourself using and enjoying <strong>gath<span class="text-muted">io</span></strong>, consider buying me a coffee. It'll help keep the site running! <i class="far fa-heart"></i></p>
+    <p>If you find yourself using and enjoying Gathio, consider buying Raphael a coffee. It'll help keep the project and main site running! <i class="far fa-heart"></i></p>
     <script type='text/javascript' src='https://ko-fi.com/widgets/widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support Me on Ko-fi', '#46b798', 'Q5Q2O7T5');kofiwidget2.draw();</script>
   </div>
 </div>

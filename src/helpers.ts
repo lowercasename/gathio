@@ -1,6 +1,6 @@
 import moment from "moment-timezone";
 import icalGenerator from "ical-generator";
-import Log, { ILog } from "./models/Log.js";
+import Log from "./models/Log.js";
 import { getConfig } from "./lib/config.js";
 import { IEvent } from "./models/Event.js";
 

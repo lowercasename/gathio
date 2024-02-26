@@ -27,6 +27,11 @@ function editEventGroupForm() {
             eventGroupURL: window.groupData.url,
             hostName: window.groupData.hostName,
             creatorEmail: window.groupData.creatorEmail,
+            publicCheckbox: window.groupData.showOnPublicList,
+        },
+        init() {
+            // Set checkboxes
+            this.data.publicCheckbox = window.groupData.showOnPublicList;
         },
         errors: [],
         submitting: false,

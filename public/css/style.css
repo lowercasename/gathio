@@ -381,7 +381,7 @@ li.hidden-attendee .attendee-name {
     }
 }
 
-@media (min-width: 577px) {
+@media (min-width: 576px) {
     #sidebar {
         border-right: 2px solid #e0e0e0;
         min-height: 100vh;
@@ -422,7 +422,7 @@ li.hidden-attendee .attendee-name {
 }
 
 .list-group-item-action:hover {
-    background-color: #d4edda;
+    background-color: #f2f8ff;
 }
 
 .code {
@@ -547,4 +547,39 @@ img.group-preview__image {
 .slider.slider--open {
     opacity: 1;
     pointer-events: auto;
+}
+
+ul#sidebar__nav {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+ul#sidebar__nav li {
+    padding: 0 1rem 0.5rem 1rem;
+    text-align: center;
+}
+
+ul#sidebar__nav a {
+    display: block;
+    width: 100%;
+}
+
+@media (min-width: 576px) {
+    ul#sidebar__nav {
+        flex-direction: column;
+    }
+    ul#sidebar__nav li {
+        width: 100%;
+        padding: 0 0 0.5rem 0;
+    }
+    ul#sidebar__nav li:has(a:not(.btn)):not(:last-child) {
+        border-bottom: 1px solid #e0e0e0;
+    }
 }

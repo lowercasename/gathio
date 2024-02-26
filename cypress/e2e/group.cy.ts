@@ -1,14 +1,8 @@
-const groupData = {
-    eventGroupName: "Test Group",
-    eventGroupDescription: "Test Group Description",
-    eventGroupURL: "https://example.com",
-    hostName: "Test Host",
-    creatorEmail: "test@example.com",
-};
+import groupData from "../fixtures/groupData.json";
 
 describe("Groups", () => {
     beforeEach(() => {
-        cy.createGroup(groupData);
+        cy.createGroup(groupData, false);
     });
     it("creates a new group", function () {
         cy.get("#eventGroupName").should("have.text", groupData.eventGroupName);
