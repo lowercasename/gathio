@@ -65,6 +65,8 @@ jobs:
               with:
                   start: pnpm start
                   browser: chrome
+              env:
+                  CYPRESS: true
 
             - name: Upload screenshots
               uses: actions/upload-artifact@v3
