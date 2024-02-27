@@ -1,80 +1,115 @@
-/*
-body, html {
-  min-height: 100vh;
-}
-*/
+/* TYPOGRAPHY */
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap");
 
-/* FONTS */
-
-@font-face {
-    font-family: "Fredoka One";
-    font-style: normal;
+h1,
+h2,
+h3 {
+    font-family: "Fredoka", sans-serif;
     font-weight: 400;
-    src: url("../fonts/fredoka-one-v7-latin-regular.eot"); /* IE9 Compat Modes */
-    src:
-        local("Fredoka One"),
-        local("FredokaOne-Regular"),
-        url("../fonts/fredoka-one-v7-latin-regular.eot?#iefix")
-            format("embedded-opentype"),
-        /* IE6-IE8 */ url("../fonts/fredoka-one-v7-latin-regular.woff2")
-            format("woff2"),
-        /* Super Modern Browsers */
-            url("../fonts/fredoka-one-v7-latin-regular.woff") format("woff"),
-        /* Modern Browsers */ url("../fonts/fredoka-one-v7-latin-regular.ttf")
-            format("truetype"),
-        /* Safari, Android, iOS */
-            url("../fonts/fredoka-one-v7-latin-regular.svg#FredokaOne")
-            format("svg"); /* Legacy iOS */
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
 }
 
-@media (max-width: 576px) {
-    #container {
-        height: auto !important;
-        overflow-x: hidden;
-    }
+.lead {
+    font-family: "Fredoka", sans-serif;
+    font-weight: 300;
+    font-optical-sizing: auto;
+    font-style: normal;
 }
 
-#content {
+/* LAYOUT */
+
+html {
+    width: 100%;
+}
+
+body {
+    background: #f8f8f8;
     display: flex;
+    flex-direction: column;
     min-height: 100vh;
+    align-items: center;
+}
+
+body > #container {
+    min-height: 100vh;
+    width: 100%;
+    max-width: 75rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 0;
+}
+
+#container > #content {
+    overflow: hidden;
+    border: 1px solid #eaeaea;
+    background: #ffffff;
+    display: flex;
     flex-direction: column;
 }
-#bodyContainer {
-    flex: 1;
+
+#container > #content > main {
+    position: relative;
 }
 
-#fixedContainer {
-    position: sticky;
-    top: 0;
+#container > #content > main.page {
+    padding: 1rem;
 }
 
-#footerContainer {
+#container > #content > main.event > *:not(.event-header-image) {
+    margin: 0 1rem;
+}
+
+#container > #content > footer {
+    margin-top: auto;
     border-top: 1px solid #e0e0e0;
     text-align: center;
-    padding: 5px 0;
+    padding: 0.25rem 0;
+    background: #fdfdfd;
 }
 
-#footerContainer p {
+#container > #content > footer p {
     margin-bottom: 0.25rem;
 }
 
-#sidebar {
-    background: #f5f5f5;
-    border-bottom: 2px solid #e0e0e0;
+@media (min-width: 768px) {
+    body > #container {
+        padding: 1rem;
+        grid-template-columns: 1fr 4fr;
+        gap: 1rem;
+    }
+    #container > #content {
+        border-radius: 1rem;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+    }
+    #container > #content > main.page {
+        padding: 2rem;
+    }
 }
 
+@media (min-width: 992px) {
+    body > #container {
+        grid-template-columns: 1fr 5fr;
+    }
+}
+
+/* SIDEBAR */
+
 #sidebar h1 {
-    font-family: "Fredoka One", sans-serif;
+    font-family: "Fredoka", sans-serif;
     font-weight: 700;
+    font-optical-sizing: auto;
+    font-style: normal;
     text-align: center;
     letter-spacing: -0.5px;
     font-size: 3rem;
     color: transparent !important;
-    margin-bottom: 0;
+    margin-bottom: 1rem;
 }
 
 #sidebar h1 a {
-    background: rgb(33, 37, 41);
+    background: rgb(69, 69, 69);
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent !important;
@@ -89,10 +124,51 @@ body, html {
     color: transparent !important;
 }
 
-#content {
-    background: #ffffff;
-    box-shadow: -8px 0 6px -6px rgba(0, 0, 0, 0.3);
+ul#sidebar__nav {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
 }
+
+ul#sidebar__nav li {
+    padding: 0 1rem 0.5rem 1rem;
+    text-align: center;
+}
+
+ul#sidebar__nav a {
+    display: block;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    #sidebar {
+        padding-top: 1rem;
+    }
+    ul#sidebar__nav {
+        flex-direction: column;
+    }
+    ul#sidebar__nav li {
+        width: 100%;
+        padding: 0 0 0.5rem 0;
+    }
+    ul#sidebar__nav li:has(a:not(.btn)):not(:last-child) {
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .sidebar-sticky-wrapper {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 1rem;
+    }
+}
+
+/* EVENTS */
 
 #genericEventImageContainer {
     height: 150px;
@@ -109,7 +185,7 @@ body, html {
         rgba(255, 255, 255, 1) 100%
     );
     position: absolute;
-    width: 97%;
+    width: 100%;
     height: 150px;
 }
 
@@ -135,6 +211,20 @@ body, html {
     height: 300px;
 }
 
+#event__basics {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    #event__basics {
+        grid-template-columns: 3fr 1fr;
+    }
+}
+
 #eventName {
     padding: 0 0 0 10px;
     width: 100%;
@@ -153,19 +243,6 @@ body, html {
 #eventFromNow::first-letter {
     text-transform: capitalize;
 }
-
-#eventActions {
-    padding-left: 0;
-    margin-top: 1rem;
-}
-
-/*
-.location, .eventLink {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-}
-*/
 
 .attendeesList {
     margin: 0;
@@ -220,7 +297,6 @@ body, html {
 }
 
 .eventInformation > li {
-    /*  line-height: 2.1em;*/
     margin-bottom: 0.8em;
 }
 
@@ -253,7 +329,64 @@ body, html {
     padding-left: 20px;
 }
 
+.attendee-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: "";
+    overflow: hidden;
+    max-width: 62px;
+    color: #fff;
+}
+
+li.hidden-attendee .attendee-name {
+    color: #555;
+}
+
+.remove-attendee {
+    color: #fff;
+}
+
+.remove-attendee:hover {
+    color: #016418;
+}
+
+#eventAttendees h5 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+#eventAttendees h5 .btn-group {
+    margin-top: 0.5rem;
+}
+
+@media (min-width: 576px) {
+    #eventAttendees h5 {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    #eventAttendees h5 .btn-group {
+        margin-top: 0;
+    }
+}
+
+.edit-buttons {
+    text-align: right;
+}
+
+@media (max-width: 1199.98px) {
+    .edit-buttons {
+        text-align: left;
+    }
+}
+
+.code {
+    font-family: "Courier New", Courier, monospace;
+    overflow-wrap: anywhere;
+}
+
 /* IMAGE UPLOAD FORM */
+
 .image-preview {
     max-width: 920px;
     width: 100%;
@@ -293,9 +426,7 @@ body, html {
     border-radius: 5px;
 }
 
-.datepickers-container {
-    z-index: 1600 !important; /* has to be larger than 1050 */
-}
+/* FORMS */
 
 #newEventFormContainer,
 #importEventFormContainer,
@@ -332,116 +463,6 @@ body, html {
     .group-preview__text
     p.text-muted {
     color: white !important;
-}
-
-.attendee-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: "";
-    overflow: hidden;
-    max-width: 62px;
-    color: #fff;
-}
-
-li.hidden-attendee .attendee-name {
-    color: #555;
-}
-
-.remove-attendee {
-    color: #fff;
-}
-
-.remove-attendee:hover {
-    color: #016418;
-}
-
-#eventAttendees h5 {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-#eventAttendees h5 .btn-group {
-    margin-top: 0.5rem;
-}
-
-.edit-buttons {
-    text-align: right;
-}
-
-@media (max-width: 1199.98px) {
-    .edit-buttons {
-        text-align: left;
-    }
-}
-
-@media (min-width: 1120px) {
-    #eventActions {
-        margin-top: 0;
-        padding-left: 1rem;
-    }
-}
-
-@media (min-width: 576px) {
-    #sidebar {
-        border-right: 2px solid #e0e0e0;
-        min-height: 100vh;
-    }
-    body {
-        background: #f5f5f5; /* Old browsers */
-        background: -moz-linear-gradient(
-            left,
-            #f5f5f5 0%,
-            #f5f5f5 50%,
-            #ffffff 51%,
-            #ffffff 100%
-        ); /* FF3.6-15 */
-        background: -webkit-linear-gradient(
-            left,
-            #f5f5f5 0%,
-            #f5f5f5 50%,
-            #ffffff 51%,
-            #ffffff 100%
-        ); /* Chrome10-25,Safari5.1-6 */
-        background: linear-gradient(
-            to right,
-            #f5f5f5 0%,
-            #f5f5f5 50%,
-            #ffffff 51%,
-            #ffffff 100%
-        ); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-        filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f5f5f5', endColorstr='#ffffff',GradientType=1 ); /* IE6-9 */
-    }
-    #eventAttendees h5 {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-    #eventAttendees h5 .btn-group {
-        margin-top: 0;
-    }
-}
-
-.list-group-item-action:hover {
-    background-color: #f2f8ff;
-}
-
-.code {
-    font-family: "Courier New", Courier, monospace;
-    overflow-wrap: anywhere;
-}
-
-/* FORMS */
-label:not(.form-check-label) {
-    font-weight: 500;
-}
-
-input[type="datetime-local"] {
-    max-width: 20rem;
-}
-
-article.static-page header {
-    margin-bottom: 1rem;
-    border-bottom: 1px solid #e0e0e0;
 }
 
 .select2-selection__rendered,
@@ -549,37 +570,15 @@ img.group-preview__image {
     pointer-events: auto;
 }
 
-ul#sidebar__nav {
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: row;
-    gap: 0.5rem;
-    align-items: center;
-    justify-content: center;
+/* EVENT AND GROUP LISTS */
+
+.list-group-item-action:hover {
+    background-color: #f2f8ff;
+}
+
+/* STATIC PAGES */
+
+article.static-page header {
     margin-bottom: 1rem;
-}
-
-ul#sidebar__nav li {
-    padding: 0 1rem 0.5rem 1rem;
-    text-align: center;
-}
-
-ul#sidebar__nav a {
-    display: block;
-    width: 100%;
-}
-
-@media (min-width: 576px) {
-    ul#sidebar__nav {
-        flex-direction: column;
-    }
-    ul#sidebar__nav li {
-        width: 100%;
-        padding: 0 0 0.5rem 0;
-    }
-    ul#sidebar__nav li:has(a:not(.btn)):not(:last-child) {
-        border-bottom: 1px solid #e0e0e0;
-    }
+    border-bottom: 1px solid #e0e0e0;
 }

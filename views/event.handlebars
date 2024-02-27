@@ -1,10 +1,11 @@
+<main class="event">
 {{#if eventHasCoverImage}}
-  <div id="eventImageContainer" style="background-image: url(/events/{{eventData.image}});"></div>
+  <div class="event-header-image" id="eventImageContainer" style="background-image: url(/events/{{eventData.image}});"></div>
 {{else}}
-  <div id="genericEventImageContainer" style="background-image: url(/images/seigaiha.png);"></div>
+  <div class="event-header-image" id="genericEventImageContainer" style="background-image: url(/images/seigaiha.png);"></div>
 {{/if}}
 <div class="h-event">
-<div class="row">
+<div class="row p-0">
   <div class="col-lg">
       <h3 class="p-name" id="eventName" data-event-id="{{eventData.id}}">{{eventData.name}}</h3>
   </div>
@@ -16,95 +17,93 @@
     {{/if}}
   </div>
 </div>
-<div class="container my-4 pr-0">
-  <div class="row">
-    <div class="col-lg-9 card p-0">
-      <div class="card-body">
-        <ul class="fa-ul eventInformation">
+<div id="event__basics">
+  <div class="card" id="event__data">
+    <div class="card-body">
+      <ul class="fa-ul eventInformation">
+        <li>
+          <span class="fa-li">
+            <i class="fas fa-map-marker-alt"></i>
+          </span>
+          <span class="p-location">{{eventData.location}}</span>
+        </li>
+        <li>
+          <span class="fa-li">
+            <i class="fas fa-fw fa-calendar-day"></i>
+          </span>
+          <span class="dt-duration">{{{displayDate}}}</span>
+          <time class="dt-start" datetime="{{eventStartISO}}"></time>
+          <time class="dt-end" datetime="{{eventEndISO}}"></time>
+          <br>
+          <span class="text-muted">
+            {{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
+          </span>
+        </li>
+        {{#if eventHasHost}}
+          <li id="hosted-by">
+            <span class="fa-li">
+              <i class="fas fa-fw fa-user-circle"></i>
+            </span>
+            <span class="text-muted">Hosted by</span> {{eventData.hostName}}
+          </li>
+        {{/if}}
+        {{#if eventData.eventGroup}}
+          <li id="event-group">
+            <span class="fa-li">
+              <i class="fas fa-fw fa-calendar-alt"></i>
+            </span>
+            <span class="text-muted">Part of</span> <a href="/group/{{eventData.eventGroup.id}}">{{eventData.eventGroup.name}}</a>
+          </li>
+        {{/if}}
+        {{#if eventData.url}}
           <li>
             <span class="fa-li">
-              <i class="fas fa-map-marker-alt"></i>
+              <i class="fas fa-fw fa-link"></i>
             </span>
-            <span class="p-location">{{eventData.location}}</span>
+            <a href="{{eventData.url}}">
+              {{eventData.url}}
+            </a>
           </li>
-          <li>
-            <span class="fa-li">
-              <i class="fas fa-fw fa-calendar-day"></i>
-            </span>
-            <span class="dt-duration">{{{displayDate}}}</span>
-            <time class="dt-start" datetime="{{eventStartISO}}"></time>
-            <time class="dt-end" datetime="{{eventEndISO}}"></time>
-            <br>
-            <span class="text-muted">
-              {{#if eventHasBegun}}{{#unless eventHasConcluded}}Started {{else}}Ended {{/unless}}{{/if}}{{fromNow}}
-            </span>
-          </li>
-          {{#if eventHasHost}}
-            <li id="hosted-by">
-              <span class="fa-li">
-                <i class="fas fa-fw fa-user-circle"></i>
-              </span>
-              <span class="text-muted">Hosted by</span> {{eventData.hostName}}
-            </li>
-          {{/if}}
-          {{#if eventData.eventGroup}}
-            <li id="event-group">
-              <span class="fa-li">
-                <i class="fas fa-fw fa-calendar-alt"></i>
-              </span>
-              <span class="text-muted">Part of</span> <a href="/group/{{eventData.eventGroup.id}}">{{eventData.eventGroup.name}}</a>
-            </li>
-          {{/if}}
-          {{#if eventData.url}}
-            <li>
-              <span class="fa-li">
-                <i class="fas fa-fw fa-link"></i>
-              </span>
-              <a href="{{eventData.url}}">
-                {{eventData.url}}
-              </a>
-            </li>
-          {{/if}}
-          <li>
-            <span class="fa-li">
-              <i class="fas fa-fw fa-share-square"></i>
-            </span>
-            <a class="u-url" href="https://{{domain}}/{{eventData.id}}">https://{{domain}}/{{eventData.id}}</a>
-            <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
-              <i class="fas fa-copy"></i> Copy
-            </button>
-          </li>
-          {{#if isFederated}}
-          <li>
-            <span class="fa-li">
-              <i class="fas fa-fw fa-share-square"></i>
-            </span>
-            @{{eventData.id}}@{{domain}}
-            <button type="button" id="copyAPLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="@{{eventData.id}}@{{domain}}">
-              <i class="fas fa-copy"></i> Copy
-            </button>
-          </li>
-          {{/if}}
-        </ul>
-      </div>
+        {{/if}}
+        <li>
+          <span class="fa-li">
+            <i class="fas fa-fw fa-share-square"></i>
+          </span>
+          <a class="u-url" href="https://{{domain}}/{{eventData.id}}">https://{{domain}}/{{eventData.id}}</a>
+          <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+        </li>
+        {{#if isFederated}}
+        <li>
+          <span class="fa-li">
+            <i class="fas fa-fw fa-share-square"></i>
+          </span>
+          @{{eventData.id}}@{{domain}}
+          <button type="button" id="copyAPLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="@{{eventData.id}}@{{domain}}">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+        </li>
+        {{/if}}
+      </ul>
+    </div> <!-- .card-body -->
+  </div> <!-- .card#event__data -->
+  <aside id="event__actions">
+    <div class="btn-group-vertical d-flex" role="group" aria-label="Event actions">
+      <a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="btn btn-outline-secondary btn-sm">
+        <i class="far fa-calendar-plus"></i> Add to Google Calendar
+      </a>
+      <button type="button" id="exportICS" class="btn btn-outline-secondary btn-sm" data-event-id="{{eventData.id}}">
+        <i class="fas fa-download"></i> Export as ICS
+      </button>
+      <a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-map-marked"></i> Show on Google Maps
+      </a>
+      <a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-map-marked"></i> Show on OpenStreetMap
+      </a>
     </div>
-    <div class="col-lg-3" id="eventActions">
-      <aside class="btn-group-vertical d-flex" role="group" aria-label="Event actions">
-        <a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="btn btn-outline-secondary btn-sm">
-          <i class="far fa-calendar-plus"></i> Add to Google Calendar
-        </a>
-        <button type="button" id="exportICS" class="btn btn-outline-secondary btn-sm" data-event-id="{{eventData.id}}">
-          <i class="fas fa-download"></i> Export as ICS
-        </button>
-        <a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
-          <i class="fas fa-map-marked"></i> Show on Google Maps
-        </a>
-        <a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
-          <i class="fas fa-map-marked"></i> Show on OpenStreetMap
-        </a>
-      </aside>
-    </div>
-  </div>
+  </aside> <!-- #event__actions -->
 </div>
 
 {{#if eventHasConcluded}}
@@ -573,3 +572,4 @@ window.eventData = {{{ json jsonData }}};
   });
 
   </script>
+</main>

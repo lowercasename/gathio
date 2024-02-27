@@ -53,37 +53,33 @@
   </head>
 
   <body>
-    <div class="container h-100">
-      <div class="row" id="container">
-        <div class="col-lg-2 col-md-3 col-sm-4" id="sidebar">
-          {{>sidebar}}
-        </div>
-        <div class="col-sm pt-3" id="content">
-          <div id="bodyContainer">
-            {{{body}}}
-          </div>
-          <div id="footerContainer">
-            {{#if showInstanceInformation}}
-              <p class="small text-muted">
-                <strong>{{siteName}}</strong>
-                {{#each staticPages}}
-                  {{#if @first}}
-                    &middot;
-                  {{/if}}
-
-                  <a href="{{this.path}}">{{this.title}}</a>
-
-                  {{#unless @last}}
-                    &middot;
-                  {{/unless}}
-                {{/each}}
-              </p>
-            {{/if}}
+    <div id="container">
+      <header id="sidebar">
+        {{>sidebar}}
+      </header>
+      <section id="content">
+        {{{body}}}
+        <footer>
+          {{#if showInstanceInformation}}
             <p class="small text-muted">
-              <strong>Gathio</strong> version {{version}} &middot; <a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="https://raphaelkabo.com">Raphael</a> and <a href="https://github.com/lowercasename/gathio/graphs/contributors">contributors</a>
+              <strong>{{siteName}}</strong>
+              {{#each staticPages}}
+                {{#if @first}}
+                  &middot;
+                {{/if}}
+
+                <a href="{{this.path}}">{{this.title}}</a>
+
+                {{#unless @last}}
+                  &middot;
+                {{/unless}}
+              {{/each}}
             </p>
-          </div>
-        </div>
-      </div>
-    </div>
+          {{/if}}
+          <p class="small text-muted">
+            <strong>Gathio</strong> version {{version}} &middot; <a href="https://github.com/lowercasename/gathio">GitHub</a> &middot; Made with <i class="far fa-heart"></i> by <a href="https://raphaelkabo.com">Raphael</a> and <a href="https://github.com/lowercasename/gathio/graphs/contributors">contributors</a>
+          </p>
+        </footer>
+      </section>
+  </div>
 </html>
