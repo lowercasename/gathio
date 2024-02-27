@@ -110,6 +110,7 @@ router.get("/events", async (_: Request, res: Response) => {
     }).lean();
     const updatedEventGroups = eventGroups.map((eventGroup) => {
         return {
+            id: eventGroup.id,
             name: eventGroup.name,
             numberOfEvents: updatedEvents.filter(
                 (event) =>

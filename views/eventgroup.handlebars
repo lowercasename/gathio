@@ -1,9 +1,10 @@
+<main class="event">
 {{#if eventGroupHasCoverImage}}
-  <div id="eventImageContainer" style="background-image: url(/events/{{eventGroupData.image}});"></div>
+  <div class="event-header-image" id="eventImageContainer" style="background-image: url(/events/{{eventGroupData.image}});"></div>
 {{else}}
-  <div id="genericEventImageContainer" style="background-image: url(/images/seigaiha.png);"></div>
+  <div class="event-header-image" id="genericEventImageContainer" style="background-image: url(/images/seigaiha.png);"></div>
 {{/if}}
-<div class="row">
+<div class="row p-0">
   <div class="col-lg">
     <h3 id="eventGroupName" data-event-id="{{eventGroupData.id}}">{{eventGroupData.name}}</h3>
   </div>
@@ -15,6 +16,7 @@
     {{/if}}
   </div>
 </div>
+<div class="event-group">
 {{#if firstLoad}}
 <div class="alert alert-success alert-dismissible fade show mt-4" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -23,73 +25,71 @@
   Welcome to your event group! We've just sent you an email with your secret editing link, which you can also see in the address bar above. Haven't got the email? Check your spam or junk folder. To share your event group, use the link you can see just below this message - that way your attendees won't be able to edit or delete your event group!
 </div>
 {{/if}}
-<div class="container my-4 pr-0">
-  <div class="row">
-    <div class="col-lg-9 card p-0">
-      <div class="card-body">
-        <ul class="fa-ul eventInformation">
-          {{#if eventGroupHasHost}}
-            <li id="hostName">
-              <span class="fa-li">
-                <i class="fas fa-fw fa-user-circle"></i>
-              </span>
-              <span class="text-muted">Hosted by</span> {{eventGroupData.hostName}}
-            </li>
-          {{/if}}
-          {{#if eventGroupData.url}}
-            <li id="eventGroupURL">
-              <span class="fa-li">
-                <i class="fas fa-link"></i>
-              </span>
-              <a href="{{eventGroupData.url}}">
-                {{eventGroupData.url}}
-              </a>
-            </li>
-          {{/if}}
-          <li>
+<div id="event__basics">
+  <div class="card" id="event__information">
+    <div class="card-body">
+      <ul class="fa-ul eventInformation">
+        {{#if eventGroupHasHost}}
+          <li id="hostName">
             <span class="fa-li">
-              <i class="fas fa-share-square"></i>
+              <i class="fas fa-fw fa-user-circle"></i>
             </span>
-            <a href="https://{{domain}}/group/{{eventGroupData.id}}">https://{{domain}}/group/{{eventGroupData.id}}</a>
-            <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}">
-              <i class="fas fa-copy"></i> Copy
-            </button>
+            <span class="text-muted">Hosted by</span> {{eventGroupData.hostName}}
           </li>
-          <li>
+        {{/if}}
+        {{#if eventGroupData.url}}
+          <li id="eventGroupURL">
             <span class="fa-li">
-              <i class="fas fa-rss"></i>
+              <i class="fas fa-link"></i>
             </span>
-            <a
-              href="https://{{domain}}/group/{{eventGroupData.id}}/feed.ics">https://{{domain}}/group/{{eventGroupData.id}}/feed.ics</a>&nbsp;
-            <button type="button" id="copyFeedLink"
-              class="eventInformationAction btn btn-outline-secondary btn-sm"
-              data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}/feed.ics">
-              <i class="fas fa-copy"></i> Copy
-            </button>
-            <p class="text-muted small">Paste this URL into your calendar app
-              to subscribe to a live feed of events from this group.</p>
+            <a href="{{eventGroupData.url}}">
+              {{eventGroupData.url}}
+            </a>
           </li>
-        </ul>
-      </div> <!-- /card -->
-    </div>
-    <div class="col-lg-3" id="eventActions">
-      <aside class="btn-group-vertical d-flex" role="group" aria-label="Event actions">
-        <button type="button" class="btn btn-outline-secondary btn-sm"
-          data-event-id="{{eventGroupData.id}}" data-toggle="modal"
-          data-target="#subscribeModal">
-          <i class="fas fa-envelope"></i> Subscribe to updates
-        </button>
-        <button type="button" id="exportICS" class="btn btn-outline-secondary
-          btn-sm" data-event-id="{{eventGroupData.id}}">
-          <i class="fas fa-download"></i> Export as ICS
-        </button>
-      </aside>
-    </div>
+        {{/if}}
+        <li>
+          <span class="fa-li">
+            <i class="fas fa-share-square"></i>
+          </span>
+          <a href="https://{{domain}}/group/{{eventGroupData.id}}">https://{{domain}}/group/{{eventGroupData.id}}</a>
+          <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+        </li>
+        <li>
+          <span class="fa-li">
+            <i class="fas fa-rss"></i>
+          </span>
+          <a
+            href="https://{{domain}}/group/{{eventGroupData.id}}/feed.ics">https://{{domain}}/group/{{eventGroupData.id}}/feed.ics</a>&nbsp;
+          <button type="button" id="copyFeedLink"
+            class="eventInformationAction btn btn-outline-secondary btn-sm"
+            data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}/feed.ics">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+          <p class="text-muted small">Paste this URL into your calendar app
+            to subscribe to a live feed of events from this group.</p>
+        </li>
+      </ul>
+    </div> <!-- /card -->
   </div>
+  <aside id="event__actions">
+    <div class="btn-group-vertical d-flex" role="group" aria-label="Event group actions">
+      <button type="button" class="btn btn-outline-secondary btn-sm"
+        data-event-id="{{eventGroupData.id}}" data-toggle="modal"
+        data-target="#subscribeModal">
+        <i class="fas fa-envelope"></i> Subscribe to updates
+      </button>
+      <button type="button" id="exportICS" class="btn btn-outline-secondary
+        btn-sm" data-event-id="{{eventGroupData.id}}">
+        <i class="fas fa-download"></i> Export as ICS
+      </button>
+    </div>
+  </aside>
 </div>
 
 {{#if editingEnabled}}
-  <div class="alert alert-info">
+  <div class="alert alert-info mb-4">
     <p>To add an event to this group, copy and paste the two codes below into the 'Event Group' box when creating a new event or editing an existing event.</p>
     <div class="table-responsive">
       <table style="width:100%">
@@ -119,7 +119,7 @@
   {{#if upcomingEventsExist}}
     {{#each events}}
       {{#unless this.eventHasConcluded}}
-        <a href="/{{this.id}}" class="list-group-item list-group-item-action" target="_blank">
+        <a href="/{{this.id}}" class="list-group-item list-group-item-action">
           <i class="fas fa-fw fa-calendar-day"></i>
           <strong>{{this.name}}</strong>
           {{#if this.location}}<span class="ml-2 text-muted"><i class="fas fa-map-marker-alt"></i> {{this.location}}</span>{{/if}}
@@ -131,6 +131,7 @@
       <div class="list-group-item">No events!</div>
   {{/if}}
   </div>
+</div>
 </div>
 
 {{#if editingEnabled}}
@@ -338,3 +339,4 @@ window.groupData = {{{ json jsonData }}};
 
   });
 </script>
+</main>
