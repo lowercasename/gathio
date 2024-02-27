@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "target": "ES2020",
-        "module": "ES2020",
+        "module": "NodeNext",
         "allowJs": true,
         "checkJs": true,
         "removeComments": true,
@@ -15,7 +15,7 @@
         "esModuleInterop": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
-        "moduleResolution": "nodenext",
+        "moduleResolution": "NodeNext",
         "skipLibCheck": true
     },
     "include": ["./src/**/*"]

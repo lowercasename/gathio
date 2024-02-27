@@ -293,8 +293,11 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         }
         let metadata = {
             title: event.name,
-            description: marked
-                .parse(event.description, { renderer: renderPlain() })
+            description: (
+                marked.parse(event.description, {
+                    renderer: renderPlain(),
+                }) as string
+            )
                 .split(" ")
                 .splice(0, 40)
                 .join(" ")
@@ -455,10 +458,11 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
 
         const metadata = {
             title: eventGroup.name,
-            description: marked
-                .parse(eventGroup.description, {
+            description: (
+                marked.parse(eventGroup.description, {
                     renderer: renderPlain(),
-                })
+                }) as string
+            )
                 .split(" ")
                 .splice(0, 40)
                 .join(" ")

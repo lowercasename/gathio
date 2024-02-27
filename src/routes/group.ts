@@ -269,10 +269,11 @@ router.post("/known/groups", async (req: Request, res: Response) => {
             return {
                 id: group.id,
                 name: group.name,
-                description: marked
-                    .parse(group.description, {
+                description: (
+                    marked.parse(group.description, {
                         renderer: renderPlain(),
-                    })
+                    }) as string
+                )
                     .split(" ")
                     .splice(0, 40)
                     .join(" ")

@@ -46,7 +46,7 @@ export const renderPlain = () => {
 };
 
 export const markdownToSanitizedHTML = (markdown: string) => {
-    const html = marked.parse(markdown);
+    const html = marked.parse(markdown) as string;
     const window = new JSDOM("").window;
     const purify = DOMPurify(window);
     const clean = purify.sanitize(html);

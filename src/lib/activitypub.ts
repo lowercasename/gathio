@@ -142,7 +142,10 @@ export const handlePollResponse = async (req: Request, res: Response) => {
         if (!event.attendees?.some((el) => el.id === attributedTo)) {
             const attendeeName =
                 apActor.preferredUsername || apActor.name || attributedTo;
-            const newAttendee: Partial<IAttendee> = {
+            const newAttendee: Pick<
+                IAttendee,
+                "name" | "status" | "id" | "number" | "visibility"
+            > = {
                 name: attendeeName,
                 status: "attending",
                 id: attributedTo,
