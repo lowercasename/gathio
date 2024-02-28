@@ -1,0 +1,11 @@
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-1">Instance settings</h6>
+    </div>
+
+    <ul class="list-group list-group-flush">
+        {{#each instanceRules}}
+        <li class="list-group-item"><i class="{{this.icon}} fa-fw mr-2"></i> {{this.text}}</li>
+        {{/each}}
+    </ul>
+</div>

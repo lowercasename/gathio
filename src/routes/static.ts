@@ -2,9 +2,12 @@ import { Router, Request, Response } from "express";
 import fs from "fs";
 import getConfig, { frontendConfig } from "../lib/config.js";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
+import { getConfigMiddleware } from "../lib/middleware.js";
 
 const config = getConfig();
 const router = Router();
+
+router.use(getConfigMiddleware);
 
 if (config.static_pages?.length) {
     config.static_pages
