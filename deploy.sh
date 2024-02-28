@@ -19,6 +19,4 @@ pm2 reload ecosystem.config.cjs production
 pm2 save
 
 # Build the docs and deploy
-pip install mkdocs
-pip install mkdocs-material
 mkdocs build -d ~/gathio-docs
