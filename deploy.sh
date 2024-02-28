@@ -16,4 +16,9 @@ NODE_ENV=development pnpm install
 # TypeScript and don't expect any more errors.
 pnpm build || true
 pm2 reload ecosystem.config.cjs production
-pm2 save 
+pm2 save
+
+# Build the docs and deploy
+pip install mkdocs
+pip install mkdocs-material
+mkdocs build -d ~/gathio-docs
