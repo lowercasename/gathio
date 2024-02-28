@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import fs from "fs";
 import moment from "moment-timezone";
 import { marked } from "marked";
 import { markdownToSanitizedHTML, renderPlain } from "../util/markdown.js";
@@ -121,11 +122,34 @@ router.get("/events", async (_: Request, res: Response) => {
         };
     });
 
+    // Attempt to pull the instance description from a Markdown file
+    const defaultInstanceDescription =
+        "**{{ siteName }}** is running on Gathio — a simple, federated, privacy-first event hosting platform.";
+    let instanceDescription = defaultInstanceDescription;
+    try {
+        if (fs.existsSync("./static/instance-description.md")) {
+            const fileBody = fs.readFileSync(
+                "./static/instance-description.md",
+                "utf-8",
+            );
+            instanceDescription = markdownToSanitizedHTML(fileBody);
+        }
+        // Replace {{siteName}} with the instance name
+        instanceDescription = instanceDescription.replace(
+            /\{\{ ?siteName ?\}\}/g,
+            res.locals.config?.general.site_name,
+        );
+    } catch (err) {
+        console.log(err);
+    }
+
     res.render("publicEventList", {
         title: "Public events",
         upcomingEvents: upcomingEvents,
         pastEvents: pastEvents,
         eventGroups: updatedEventGroups,
+        instanceDescription,
+        instanceRules: instanceRules(),
         ...frontendConfig(res),
     });
 });

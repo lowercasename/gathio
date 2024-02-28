@@ -1,19 +1,7 @@
 <main class="page">
-<p class="lead">Gathio is a simple, federated, privacy-first event hosting platform.</p>
+<p class="lead text-center">Gathio is a simple, federated, privacy-first event hosting platform.</p>
 
-<div class="card mb-3 border-primary">
-<div class="card-header">
-  This instance, <strong>{{siteName}}</strong>, has the following features:
-</div>
-
-<div class="card-body m-0 p-0">
-  <ul class="list-group list-group-flush">
-    {{#each instanceRules}}
-      <li class="list-group-item"><i class="{{this.icon}} fa-fw mr-2"></i> {{this.text}}</li>
-    {{/each}}
-  </ul>
-</div>
-</div>
+{{> instanceRules }}
 
 <div id="example-event" class="text-center w-100 mt-4 mb-5">
   <img alt ="An example event page for a picnic. The page shows the event's location, host, date and time, and description, as well as buttons to save the event to Google Calendar, export it, and open the location in OpenStreetMap and Google Maps." src="images/example-event-2023.png" class="img-fluid w-75 mx-auto shadow-lg rounded">
