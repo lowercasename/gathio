@@ -2,6 +2,7 @@
 set -e
 
 # Set up and redeploy Gathio. Called by `pm2 deploy`.
+# Working directory is the root of the repo.
 
 # PM2 doesn't load the user env, so this gets nvm into the PATH
 export NVM_DIR=~/.nvm
@@ -19,4 +20,4 @@ pm2 reload ecosystem.config.cjs production
 pm2 save
 
 # Build the docs and deploy
-mkdocs build -d ~/gathio-docs
+mkdocs build -d /var/www/docs.gath.io
