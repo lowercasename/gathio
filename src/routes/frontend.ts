@@ -527,8 +527,7 @@ router.get(
                     eventGroup: eventGroup._id,
                 }).sort("start");
                 const string = exportICal(events, eventGroup.name);
-                res.set("Content-Type", "text/calendar");
-                res.send(string);
+                res.set("Content-Type", "text/calendar").send(string);
             }
         } catch (err) {
             addToLog(
@@ -550,7 +549,7 @@ router.get("/export/event/:eventID", async (req: Request, res: Response) => {
 
         if (event) {
             const string = exportICal([event], event.name);
-            res.send(string);
+            res.set("Content-Type", "text/calendar").send(string);
         }
     } catch (err) {
         addToLog(
@@ -576,7 +575,7 @@ router.get(
                     eventGroup: eventGroup._id,
                 }).sort("start");
                 const string = exportICal(events, eventGroup.name);
-                res.send(string);
+                res.set("Content-Type", "text/calendar").send(string);
             }
         } catch (err) {
             addToLog(

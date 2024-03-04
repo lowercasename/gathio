@@ -642,4 +642,74 @@ router.post(
     },
 );
 
+router.delete(
+    "/event/attendee/:eventID",
+    async (req: Request, res: Response) => {
+        const removalPassword = req.query.p;
+        if (!removalPassword) {
+            return res
+                .status(400)
+                .json({ error: "Please provide a removal password." });
+        }
+        try {
+            const response = await Event.findOne({
+                id: req.params.eventID,
+                "attendees.removalPassword": removalPassword,
+            });
+            if (!response) {
+                return res.status(404).json({
+                    error: "No attendee found with that removal password.",
+                });
+            }
+            const attendee = response?.attendees?.find(
+                (a) => a.removalPassword === removalPassword,
+            );
+            if (!attendee) {
+                return res.status(404).json({
+                    error: "No attendee found with that removal password.",
+                });
+            }
+            const attendeeEmail = attendee.email;
+            const removalResponse = await Event.updateOne(
+                { id: req.params.eventID },
+                { $pull: { attendees: { removalPassword } } },
+            );
+            if (removalResponse.nModified === 0) {
+                return res.status(404).json({
+                    error: "No attendee found with that removal password.",
+                });
+            }
+            addToLog(
+                "unattendEvent",
+                "success",
+                `Attendee removed self from event ${req.params.eventID}`,
+            );
+            if (attendeeEmail && req.app.locals.sendEmails) {
+                await sendEmailFromTemplate(
+                    attendeeEmail,
+                    "You have been removed from an event",
+                    "unattendEvent",
+                    {
+                        eventID: req.params.eventID,
+                        siteName: res.locals.config?.general.site_name,
+                        siteLogo: res.locals.config?.general.email_logo_url,
+                        domain: res.locals.config?.general.domain,
+                    },
+                    req,
+                );
+            }
+            res.sendStatus(200);
+        } catch (e) {
+            addToLog(
+                "removeEventAttendee",
+                "error",
+                `Attempt to remove attendee from event ${req.params.eventID} failed with error: ${e}`,
+            );
+            return res.status(500).json({
+                error: "There has been an unexpected error. Please try again.",
+            });
+        }
+    },
+);
+
 export default router;

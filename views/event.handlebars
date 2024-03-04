@@ -221,7 +221,7 @@
   </div>
 </div>
 
-<div class="modal fade" id="unattendModal" tabindex="-1" role="dialog" aria-labelledby="unattendModalLabel" aria-hidden="true">
+<div class="modal fade" id="unattendModal" tabindex="-1" role="dialog" aria-labelledby="unattendModalLabel" aria-hidden="true" x-data="{ message: {}, password: '' }">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -230,13 +230,13 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="unattendEventForm" action="/unattendevent/{{eventData.id}}" method="post">
+      <form id="unattendEventForm" x-on:submit.prevent="fetch(`/event/attendee/{{eventData.id}}?${new URLSearchParams({ p: password }).toString()}`, { method: 'DELETE' }).then(response => response.ok ? window.location.reload() : response.json()).then(data => message = data)">
       <div class="modal-body">
         <div class="form-group">
           <label for="removalPassword" class="form-label">Your deletion password</label>
           <p class="form-text small">Lost your password? Get in touch with the event organiser.</p>
-          <input type="text" class="form-control" id="removalPassword"
-          name="removalPassword">
+          <div x-bind:class="{ 'alert-danger': message?.error, 'alert-success': message?.success }" class="alert" x-text="message?.error || message?.success" x-show="message?.error || message?.success"></div>
+          <input type="password" class="form-control" id="removalPassword" name="removalPassword" x-model="password" required>
         </div>
       </div>
       <div class="modal-footer">
