@@ -40,9 +40,9 @@
   </div>
   <button
     type="submit"
-    class="d-block mt-3 mx-auto btn btn-primary w-50 mb-4"
+    class="d-block mx-auto button button--primary w-50"
     x-bind:disabled="submitting"
-    x-bind:class="submitting ? 'btn--loading' : ''"
+    x-bind:class="submitting ? 'button--loading' : ''"
     x-text="submitting ? 'Importing...' : 'Import'"
   ></button>
 </form>

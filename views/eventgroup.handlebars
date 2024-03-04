@@ -10,9 +10,9 @@
   </div>
   <div class="col-lg-2 ml-2 edit-buttons">
     {{#if editingEnabled}}
-      <button type="button" id="editGroup" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit group</button>
+      <button type="button" id="editGroup" class="button button--primary text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit group</button>
     {{else}}
-      <button type="button" id="editGroup" class="btn btn-success text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Edit group</button>
+      <button type="button" id="editGroup" class="button button--primary text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Edit group</button>
     {{/if}}
   </div>
 </div>
@@ -52,7 +52,7 @@
             <i class="fas fa-share-square"></i>
           </span>
           <a href="https://{{domain}}/group/{{eventGroupData.id}}">https://{{domain}}/group/{{eventGroupData.id}}</a>
-          <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}">
+          <button type="button" id="copyEventLink" class="eventInformationAction button button--outline-secondary button--sm" data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}">
             <i class="fas fa-copy"></i> Copy
           </button>
         </li>
@@ -63,7 +63,7 @@
           <a
             href="https://{{domain}}/group/{{eventGroupData.id}}/feed.ics">https://{{domain}}/group/{{eventGroupData.id}}/feed.ics</a>&nbsp;
           <button type="button" id="copyFeedLink"
-            class="eventInformationAction btn btn-outline-secondary btn-sm"
+            class="eventInformationAction button button--outline-secondary button--sm"
             data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}/feed.ics">
             <i class="fas fa-copy"></i> Copy
           </button>
@@ -74,14 +74,14 @@
     </div> <!-- /card -->
   </div>
   <aside id="event__actions">
-    <div class="btn-group-vertical d-flex" role="group" aria-label="Event group actions">
-      <button type="button" class="btn btn-outline-secondary btn-sm"
+    <div class="button-stack" role="group" aria-label="Event group actions">
+      <button type="button" class="button button--outline-secondary button--sm"
         data-event-id="{{eventGroupData.id}}" data-toggle="modal"
         data-target="#subscribeModal">
         <i class="fas fa-envelope"></i> Subscribe to updates
       </button>
-      <button type="button" id="exportICS" class="btn btn-outline-secondary
-        btn-sm" data-event-id="{{eventGroupData.id}}">
+      <button type="button" id="exportICS" class="button button--outline-secondary
+        button--sm" data-event-id="{{eventGroupData.id}}">
         <i class="fas fa-download"></i> Export as ICS
       </button>
     </div>
@@ -152,8 +152,8 @@
         <p>This will <strong>not</strong> delete the individual events contained in this group. They can be linked to another group later.</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-danger">Delete event group</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="button button--danger">Delete event group</button>
       </div>
       </form>
     </div>
@@ -184,8 +184,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-success">Subscribe</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="button button--primary">Subscribe</button>
       </div>
       </form>
     </div>
@@ -214,8 +214,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Edit group</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="button button--primary">Edit group</button>
       </div>
       </form>
     </div>

@@ -52,7 +52,7 @@
     <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
     {{#if eventData.image}}
       <div class="form-group my-2">
-        <button type="button" class="btn btn-danger" id="deleteImage">Delete image</button>
+        <button type="button" class="button button--danger" id="deleteImage">Delete image</button>
       </div>
     {{/if}}
   </div>
@@ -109,7 +109,7 @@
             </template> 
           </select>
         </div>
-        <button type="button" class="btn btn-outline-secondary w-100 text-center" x-on:click="manualGroupInputVisible = !manualGroupInputVisible">
+        <button type="button" class="button button--outline-primary w-100 text-center" x-on:click="manualGroupInputVisible = !manualGroupInputVisible">
           Enter group details manually <i class="fas" :class="{'fa-caret-down': !manualGroupInputVisible, 'fa-caret-up': manualGroupInputVisible}"></i>
         </button>
         <div
