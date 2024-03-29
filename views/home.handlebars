@@ -1,7 +1,17 @@
 <main class="page">
-<p class="lead text-center">Gathio is a simple, federated, privacy-first event hosting platform.</p>
+<h2 class="mb-3 pb-2 text-center border-bottom">About {{siteName}}</h2>
+
+{{#if instanceDescription}}
+    <div class="instance-description mb-4">
+        {{{instanceDescription}}}
+    </div>
+{{/if}}
 
 {{> instanceRules }}
+
+<h2 class="mb-3 mt-5 pb-2 text-center border-bottom">About Gathio</h2>
+
+<p class="lead text-center">Gathio is a simple, federated, privacy-first event hosting platform.</p>
 
 <div id="example-event" class="text-center w-100 mt-4 mb-5">
   <img alt ="An example event page for a picnic. The page shows the event's location, host, date and time, and description, as well as buttons to save the event to Google Calendar, export it, and open the location in OpenStreetMap and Google Maps." src="images/example-event-2023.png" class="img-fluid w-75 mx-auto shadow-lg rounded">

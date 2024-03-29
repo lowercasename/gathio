@@ -3,7 +3,11 @@ import fs from "fs";
 import moment from "moment-timezone";
 import { marked } from "marked";
 import { markdownToSanitizedHTML, renderPlain } from "../util/markdown.js";
-import { frontendConfig, instanceRules } from "../lib/config.js";
+import {
+    frontendConfig,
+    instanceDescription,
+    instanceRules,
+} from "../lib/config.js";
 import { addToLog, exportICal } from "../helpers.js";
 import Event from "../models/Event.js";
 import EventGroup, { IEventGroup } from "../models/EventGroup.js";
@@ -27,6 +31,7 @@ router.get("/", (_: Request, res: Response) => {
     return res.render("home", {
         ...frontendConfig(res),
         instanceRules: instanceRules(),
+        instanceDescription: instanceDescription(),
     });
 });
 
@@ -34,6 +39,7 @@ router.get("/about", (_: Request, res: Response) => {
     return res.render("home", {
         ...frontendConfig(res),
         instanceRules: instanceRules(),
+        instanceDescription: instanceDescription(),
     });
 });
 
@@ -122,33 +128,12 @@ router.get("/events", async (_: Request, res: Response) => {
         };
     });
 
-    // Attempt to pull the instance description from a Markdown file
-    const defaultInstanceDescription =
-        "**{{ siteName }}** is running on Gathio — a simple, federated, privacy-first event hosting platform.";
-    let instanceDescription = defaultInstanceDescription;
-    try {
-        if (fs.existsSync("./static/instance-description.md")) {
-            const fileBody = fs.readFileSync(
-                "./static/instance-description.md",
-                "utf-8",
-            );
-            instanceDescription = markdownToSanitizedHTML(fileBody);
-        }
-        // Replace {{siteName}} with the instance name
-        instanceDescription = instanceDescription.replace(
-            /\{\{ ?siteName ?\}\}/g,
-            res.locals.config?.general.site_name,
-        );
-    } catch (err) {
-        console.log(err);
-    }
-
     res.render("publicEventList", {
         title: "Public events",
         upcomingEvents: upcomingEvents,
         pastEvents: pastEvents,
         eventGroups: updatedEventGroups,
-        instanceDescription,
+        instanceDescription: instanceDescription(),
         instanceRules: instanceRules(),
         ...frontendConfig(res),
     });
