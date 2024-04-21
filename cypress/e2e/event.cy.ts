@@ -1,4 +1,5 @@
 import eventData from "../fixtures/eventData.json";
+import crypto from "crypto";
 
 describe("Events", () => {
     beforeEach(() => {
@@ -235,5 +236,78 @@ describe("Events", () => {
         cy.get("#editModal").should("not.be.visible");
 
         cy.get("#event-group").should("contain.text", "Test Group");
+    });
+
+    it("removes you from the event with a one-click unattend link", function () {
+        cy.get("button#attendEvent").click();
+        cy.get("#attendeeName").type("Test Attendee");
+        cy.get("#attendeeNumber").focus().clear();
+        cy.get("#attendeeNumber").type("2");
+        cy.get("#removalPassword")
+            .invoke("val")
+            .then((removalPassword) => {
+                cy.wrap(removalPassword).as("removalPassword");
+                cy.log(this.removalPassword);
+                cy.get("form#attendEventForm").submit();
+                cy.get("#attendees-alert").should(
+                    "contain.text",
+                    "8 spots remaining",
+                );
+                cy.get(".attendeesList").should(
+                    "contain.text",
+                    "Test Attendee (2 people)",
+                );
+                const removalPasswordHash = crypto
+                    .createHash("sha256")
+                    .update(removalPassword)
+                    .digest("hex");
+                const unattendLink = `http://localhost:3000/event/${this.eventID}/unattend/${removalPasswordHash}`;
+                cy.visit(unattendLink);
+                cy.get("#event__message").should(
+                    "contain.text",
+                    "You have been removed from this event.",
+                );
+                cy.get("#attendees-alert").should(
+                    "contain.text",
+                    "10 spots remaining",
+                );
+                cy.get("#eventAttendees").should(
+                    "contain.text",
+                    "No attendees yet!",
+                );
+            });
+    });
+    describe("Query string editing tokens", function () {
+        it("given a valid editing token is in the URL, should add it to localStorage", function () {
+            cy.visit(`/${this.eventID}?${this.editToken}`).then(() => {
+                expect(localStorage.getItem("editTokens")).to.include(
+                    this.editToken.split("=")[1],
+                );
+            });
+        });
+
+        it("given an invalid editing token is in the URL, should delete it from the URL", function () {
+            cy.visit(`/${this.eventID}?e=invalid`).then(() => {
+                expect(localStorage.getItem("editTokens")).to.not.include(
+                    "invalid",
+                );
+            });
+        });
+
+        it("given a valid editing token in localStorage, should add it to the URL", function () {
+            cy.visit(`/${this.eventID}`).then(() => {
+                cy.url().should("include", this.editToken);
+            });
+        });
+
+        it("given an invalid editing token in localStorage, should remove it from localStorage", function () {
+            cy.clearAllLocalStorage();
+            localStorage.setItem("editTokens", "invalid");
+            cy.visit(`/${this.eventID}`).then(() => {
+                expect(localStorage.getItem("editTokens")).to.not.include(
+                    "invalid",
+                );
+            });
+        });
     });
 });
