@@ -441,6 +441,11 @@ ul#sidebar__nav a {
     flex-wrap: wrap;
 }
 
+#event__actions #editEvent {
+    width: 100%;
+    margin-top: 16px;
+}
+
 .attendeesList > li {
     border: 4px solid #0ea130;
     border-radius: 2em;
@@ -616,12 +621,6 @@ li.hidden-attendee .attendee-name {
 }
 
 /* FORMS */
-
-#newEventFormContainer,
-#importEventFormContainer,
-#newEventGroupFormContainer {
-    display: none;
-}
 
 #icsImportLabel {
     overflow: hidden;
