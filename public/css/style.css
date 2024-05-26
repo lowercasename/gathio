@@ -441,7 +441,8 @@ ul#sidebar__nav a {
     flex-wrap: wrap;
 }
 
-#event__actions #editEvent {
+#event__actions #editEvent,
+#event__actions #editGroup {
     width: 100%;
     margin-top: 16px;
 }
