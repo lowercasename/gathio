@@ -73,6 +73,20 @@ const validateEmail = (email: string) => {
     return re.test(email);
 };
 
+// From https://stackoverflow.com/a/43467144
+const validateUrl = (url: string) => {
+    if (!url) {
+        return false;
+    }
+    let validUrl;
+    try {
+        validUrl = new URL(url);
+    } catch (_) {
+        return false;
+    }
+    return validUrl.protocol === "http:" || validUrl.protocol === "https:";
+};
+
 export const validateEventTime = (start: Date, end: Date): Error | boolean => {
     if (moment(start).isAfter(moment(end))) {
         return {
@@ -195,6 +209,14 @@ export const validateEventData = (
             });
         }
     }
+    if (validatedData.eventURL) {
+        if (!validateUrl(validatedData.eventURL)) {
+            errors.push({
+                message: "Event link is invalid.",
+                field: "eventURL",
+            });
+        }
+    }
 
     return {
         data: validatedData,
@@ -223,6 +245,14 @@ export const validateGroupData = (
             errors.push({
                 message: "Email address is invalid.",
                 field: "creatorEmail",
+            });
+        }
+    }
+    if (groupData.eventGroupURL) {
+        if (!validateUrl(groupData.eventGroupURL)) {
+            errors.push({
+                message: "Group link is invalid.",
+                field: "eventGroupURL",
             });
         }
     }

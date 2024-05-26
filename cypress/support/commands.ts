@@ -46,7 +46,7 @@ declare namespace Cypress {
                 hostName: string;
                 creatorEmail: string;
             },
-            isPublic: boolean,
+            isPublic?: boolean,
         ): Chainable<Subject>;
     }
 }

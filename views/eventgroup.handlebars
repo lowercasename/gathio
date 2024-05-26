@@ -10,9 +10,7 @@
   </div>
   <div class="col-lg-2 ml-2 edit-buttons">
     {{#if editingEnabled}}
-      <button type="button" id="editGroup" class="button button--primary text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit group</button>
-    {{else}}
-      <button type="button" id="editGroup" class="button button--primary text-nowrap" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Edit group</button>
+      <button type="button" id="editGroup" class="button button--primary text-nowrap ml-auto d-block" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit group</button>
     {{/if}}
   </div>
 </div>
@@ -85,6 +83,10 @@
         <i class="fas fa-download"></i> Export as ICS
       </button>
     </div>
+
+    {{#unless editingEnabled}}
+        <button type="button" id="editGroup" class="button button--outline-secondary button--sm" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Switch to editing mode</button>
+    {{/unless}}
   </aside>
 </div>
 
@@ -103,12 +105,12 @@
         </tr>
       </table>
     </div>
-    
+
   </div>
 {{/if}}
 
 <div class="card mb-4" id="eventDescription">
-    <h5 class="card-header">About</h5>  
+    <h5 class="card-header">About</h5>
   <div class="card-body">
     {{{parsedDescription}}}
   </div>
@@ -268,7 +270,7 @@ window.groupData = {{{ json jsonData }}};
 
     if (urlParams.has('show_edit')) {
       $('#editModal').modal('show');
-      url.searchParams.delete('show_edit'); 
+      url.searchParams.delete('show_edit');
       history.replaceState(history.state, '', url.href);
     }
 
