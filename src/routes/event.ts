@@ -6,6 +6,7 @@ import {
     generateEditToken,
     generateEventID,
     generateRSAKeypair,
+    hashString,
 } from "../util/generator.js";
 import { validateEventData } from "../util/validation.js";
 import { addToLog } from "../helpers.js";
@@ -709,6 +710,47 @@ router.delete(
                 error: "There has been an unexpected error. Please try again.",
             });
         }
+    },
+);
+
+// Used to one-click unattend an event from an email.
+router.get(
+    "/event/:eventID/unattend/:removalPasswordHash",
+    async (req: Request, res: Response) => {
+        // Find the attendee by the unattendPasswordHash
+        const event = await Event.findOne({ id: req.params.eventID });
+        if (!event) {
+            return res.redirect("/404");
+        }
+        const attendee = event.attendees?.find(
+            (o) =>
+                hashString(o.removalPassword || "") ===
+                req.params.removalPasswordHash,
+        );
+        if (!attendee) {
+            return res.redirect(`/${req.params.eventID}`);
+        }
+        // Remove the attendee from the event
+        event.attendees = event.attendees?.filter(
+            (o) => o.removalPassword !== attendee.removalPassword,
+        );
+        await event.save();
+        // Send email to the attendee
+        if (req.app.locals.sendEmails && attendee.email) {
+            sendEmailFromTemplate(
+                attendee.email,
+                `You have been removed from ${event.name}`,
+                "unattendEvent",
+                {
+                    event,
+                    siteName: res.locals.config?.general.site_name,
+                    siteLogo: res.locals.config?.general.email_logo_url,
+                    domain: res.locals.config?.general.domain,
+                },
+                req,
+            );
+        }
+        return res.redirect(`/${req.params.eventID}?m=unattend`);
     },
 );
 

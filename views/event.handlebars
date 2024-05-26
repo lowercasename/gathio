@@ -17,6 +17,11 @@
     {{/if}}
   </div>
 </div>
+{{#if message}}
+<div class="alert alert-info mt-3 text-center" role="alert" id="event__message">
+    {{message}}
+</div>
+{{/if}}
 <div id="event__basics">
   <div class="card" id="event__data">
     <div class="card-body">
@@ -207,7 +212,7 @@
       </div>
       <div class="form-group">
         <label for="removalPassword">Deletion password</label>
-        <p class="form-text small">You will need this password if you want to remove yourself from the list of event attendees. If you provided your email, you'll receive it by email. Otherwise, write it down now because it will <strong>not be shown again</strong>.</p>
+        <p class="form-text small">You can use this password to remove yourself from the list of event attendees. If you provided your email, you'll receive it by email. Otherwise, write it down now because it will <strong>not be shown again</strong>.</p>
         <input type="text" class="form-control" readonly id="removalPassword"
         name="removalPassword">
       </div>
@@ -456,7 +461,9 @@ window.eventData = {{{ json jsonData }}};
         error: function(response, status, xhr) {
           // The editing token is wrong - remove it
           removeStoredToken(eventID);
-          window.location = window.location.pathname;
+          // Remove the token from the URL
+          url.searchParams.delete('e');
+          window.location = url.href;
         }
       });
     } else if (getStoredToken(eventID)) {
@@ -467,6 +474,9 @@ window.eventData = {{{ json jsonData }}};
         data: { editToken },
         success: function(response, status, xhr) {
           if (xhr.status === 200) {
+            // Redirect to the same URL with the editing token in the URL
+            // We reload the page to force the server to load a page with
+            // the editing form accessible.
             window.location.search = `?e=${editToken}`;
           }
         },
@@ -479,7 +489,12 @@ window.eventData = {{{ json jsonData }}};
 
     if (urlParams.has('show_edit')) {
       $('#editModal').modal('show');
-      url.searchParams.delete('show_edit'); 
+      url.searchParams.delete('show_edit');
+      history.replaceState(history.state, '', url.href);
+    }
+
+    if (urlParams.has('m')) {
+      url.searchParams.delete('m');
       history.replaceState(history.state, '', url.href);
     }
 
@@ -538,7 +553,7 @@ window.eventData = {{{ json jsonData }}};
               .attr('data-validation-allowing', `range[1;${response.data.freeSpots}]`)
               .attr('data-validation-error-msg', `Please enter a number between 1 and ${response.data.freeSpots}`);
           }
-          modal.modal(); 
+          modal.modal();
         })
         .catch((error) => {
           console.error(error);

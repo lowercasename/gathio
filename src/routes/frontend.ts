@@ -12,6 +12,7 @@ import {
 } from "../lib/activitypub.js";
 import MagicLink from "../models/MagicLink.js";
 import { getConfigMiddleware } from "../lib/middleware.js";
+import { getMessage } from "../util/messages.js";
 
 const router = Router();
 
@@ -377,6 +378,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                     image: event.image,
                     editToken: editingEnabled ? eventEditToken : null,
                 },
+                message: getMessage(req.query.m as string),
             });
         }
     } catch (err) {

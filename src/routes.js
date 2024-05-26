@@ -23,6 +23,7 @@ import Event from "./models/Event.js";
 import EventGroup from "./models/EventGroup.js";
 import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
+import { hashString } from "./util/generator.js";
 
 const config = getConfig();
 const domain = config.general.domain;
@@ -713,6 +714,7 @@ router.post("/attendevent/:eventID", async (req, res) => {
                             siteLogo,
                             domain,
                             removalPassword: req.body.removalPassword,
+                            removalPasswordHash: hashString(req.body.removalPassword),
                             cache: true,
                             layout: "email.handlebars",
                         },
