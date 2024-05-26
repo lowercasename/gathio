@@ -217,7 +217,7 @@ describe("Events", () => {
         cy.createGroup({
             eventGroupName: "Test Group",
             eventGroupDescription: "Test Group Description",
-            eventGroupURL: "testgroup",
+            eventGroupURL: "https://example.com",
             hostName: "Test Host",
             creatorEmail: "test@example.com",
         });
