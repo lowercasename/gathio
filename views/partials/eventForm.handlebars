@@ -39,7 +39,8 @@
 <div class="form-group">
   <label for="eventURL">Link</label>
   <div class="form-group ">
-    <input type="url" class="form-control" id="eventURL" name="eventURL" placeholder="For tickets or another event page (optional)." x-model="data.eventURL" >
+    <input type="url" class="form-control" id="eventURL" name="eventURL" placeholder="https://example.com" x-model="data.eventURL">
+    <small class="form-text">For tickets or another event page (optional).</small>
   </div>
 </div>
 <div class="form-group">
@@ -106,7 +107,7 @@
             <option></option>
             <template x-for="group in data.groups">
               <option :value="group.id" x-text="group.name"></option>
-            </template> 
+            </template>
           </select>
         </div>
         <button type="button" class="button button--outline-primary w-100 text-center" x-on:click="manualGroupInputVisible = !manualGroupInputVisible">
