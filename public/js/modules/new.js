@@ -5,48 +5,6 @@ $(document).ready(function () {
             .next("label")
             .html('<i class="far fa-file-alt"></i> ' + file);
     }
-    $("#showNewEventFormButton").click(function () {
-        $("button").removeClass("active");
-        $(
-            "#showImportEventFormButton #showNewEventGroupFormButton",
-        ).removeClass("active");
-        if ($("#newEventFormContainer").is(":visible")) {
-            $("#newEventFormContainer").slideUp("fast");
-        } else {
-            $("#newEventFormContainer").slideDown("fast");
-            $("#importEventFormContainer").slideUp("fast");
-            $("#newEventGroupFormContainer").slideUp("fast");
-            $(this).addClass("active");
-        }
-    });
-    $("#showImportEventFormButton").click(function () {
-        $("button").removeClass("active");
-        $("#showNewEventFormButton #showNewEventGroupFormButton").removeClass(
-            "active",
-        );
-        if ($("#importEventFormContainer").is(":visible")) {
-            $("#importEventFormContainer").slideUp("fast");
-        } else {
-            $("#importEventFormContainer").slideDown("fast");
-            $("#newEventFormContainer").slideUp("fast");
-            $("#newEventGroupFormContainer").slideUp("fast");
-            $(this).addClass("active");
-        }
-    });
-    $("#showNewEventGroupFormButton").click(function () {
-        $("button").removeClass("active");
-        $("#showNewEventFormButton #showImportEventFormButton").removeClass(
-            "active",
-        );
-        if ($("#newEventGroupFormContainer").is(":visible")) {
-            $("#newEventGroupFormContainer").slideUp("fast");
-        } else {
-            $("#newEventGroupFormContainer").slideDown("fast");
-            $("#newEventFormContainer").slideUp("fast");
-            $("#importEventFormContainer").slideUp("fast");
-            $(this).addClass("active");
-        }
-    });
     $("#icsImportControl").change(function () {
         var file = $("#icsImportControl")[0].files[0].name;
         $(this)

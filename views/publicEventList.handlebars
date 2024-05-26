@@ -1,12 +1,21 @@
 <main class="page" x-data="{currentTab: 'events'}">
-<h2 class="mb-4">{{siteName}}</h2>
-<p><strong>{{siteName}}</strong> runs on <a href="/about">Gathio</a> — a simple, federated, privacy-first event hosting platform.</p>
-<ul class="nav nav-pills">
-  <li class="nav-item">
-    <a id="eventsTab" class="nav-link" x-bind:class="currentTab === 'events' && 'active'" aria-current="page" href="#" x-on:click.prevent="currentTab = 'events'">Events</a>
+
+<h2 class="mb-3 pb-2 text-center border-bottom">{{siteName}}</h2>
+
+{{#if instanceDescription}}
+    <div class="instance-description mb-4">
+        {{{instanceDescription}}}
+    </div>
+{{/if}}
+
+{{> instanceRules }}
+
+<ul class="nav d-flex flex-gap--small">
+  <li>
+    <a id="eventsTab" class="button button--lg" x-bind:class="currentTab === 'events' ? 'button--primary' : 'button--secondary'" aria-current="page" href="#" x-on:click.prevent="currentTab = 'events'">Events</a>
   </li>
-  <li class="nav-item">
-    <a id="groupsTab" class="nav-link" x-bind:class="currentTab === 'groups' && 'active'" href="#" x-on:click.prevent="currentTab = 'groups'">Groups</a>
+  <li>
+    <a id="groupsTab" class="button button--lg" x-bind:class="currentTab === 'groups' ? 'button--primary' : 'button--secondary'" href="#" x-on:click.prevent="currentTab = 'groups'">Groups</a>
   </li>
 </ul>
 

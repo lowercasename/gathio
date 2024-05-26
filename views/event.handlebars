@@ -11,9 +11,7 @@
   </div>
   <div class="col-lg-3 ml-2 edit-buttons">
     {{#if editingEnabled}}
-      <button type="button" id="editEvent" class="btn btn-success" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit event</button>
-    {{else}}
-      <button type="button" id="editEvent" class="btn btn-success" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Edit event</button>
+      <button type="button" id="editEvent" class="button button--primary" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit event</button>
     {{/if}}
   </div>
 </div>
@@ -75,7 +73,7 @@
             <i class="fas fa-fw fa-share-square"></i>
           </span>
           <a class="u-url" href="https://{{domain}}/{{eventData.id}}">https://{{domain}}/{{eventData.id}}</a>
-          <button type="button" id="copyEventLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
+          <button type="button" id="copyEventLink" class="eventInformationAction button button--outline-secondary button--sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
             <i class="fas fa-copy"></i> Copy
           </button>
         </li>
@@ -85,7 +83,7 @@
             <i class="fas fa-fw fa-share-square"></i>
           </span>
           @{{eventData.id}}@{{domain}}
-          <button type="button" id="copyAPLink" class="eventInformationAction btn btn-outline-secondary btn-sm" data-clipboard-text="@{{eventData.id}}@{{domain}}">
+          <button type="button" id="copyAPLink" class="eventInformationAction button button--outline-secondary button--sm" data-clipboard-text="@{{eventData.id}}@{{domain}}">
             <i class="fas fa-copy"></i> Copy
           </button>
         </li>
@@ -94,20 +92,24 @@
     </div> <!-- .card-body -->
   </div> <!-- .card#event__data -->
   <aside id="event__actions">
-    <div class="btn-group-vertical d-flex" role="group" aria-label="Event actions">
-      <a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="btn btn-outline-secondary btn-sm">
+    <div class="button-stack" role="group" aria-label="Event actions">
+      <a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="button button--outline-secondary button--sm">
         <i class="far fa-calendar-plus"></i> Add to Google Calendar
       </a>
-      <button type="button" id="exportICS" class="btn btn-outline-secondary btn-sm" data-event-id="{{eventData.id}}">
+      <button type="button" id="exportICS" class="button button--outline-secondary button--sm" data-event-id="{{eventData.id}}">
         <i class="fas fa-download"></i> Export as ICS
       </button>
-      <a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
+      <a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="button button--outline-secondary button--sm">
         <i class="fas fa-map-marked"></i> Show on Google Maps
       </a>
-      <a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="btn btn-outline-secondary btn-sm">
+      <a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="button button--outline-secondary button--sm">
         <i class="fas fa-map-marked"></i> Show on OpenStreetMap
       </a>
     </div>
+
+    {{#unless editingEnabled}}
+        <button type="button" id="editEvent" class="button button--outline-secondary button--sm" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Switch to editing mode</button>
+    {{/unless}}
   </aside> <!-- #event__actions -->
 </div>
 
@@ -136,11 +138,11 @@
 {{#if eventData.usersCanAttend}}
 <div class="card mb-4" id="eventAttendees">
   <h5 class="card-header">Attendees {{#if numberOfAttendees}}({{numberOfAttendees}}){{/if}}
-    <div class="btn-group" role="group" aria-label="Attendance controls">
+    <div class="button--group" role="group" aria-label="Attendance controls">
       {{#unless noMoreSpots}}
-        <button type="button" id="attendEvent" class="btn btn-success" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> Add me</button>
+        <button type="button" id="attendEvent" class="button button--primary" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> Add me</button>
       {{/unless}}
-      <button type="button" id="unattendEvent" class="btn btn-secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
+      <button type="button" id="unattendEvent" class="button button--secondary" data-toggle="modal" data-target="#unattendModal"><i class="fas fa-user-times"></i> Remove me</button>
     </div>
   </h5>
   <div class="card-body text-center">
@@ -218,8 +220,8 @@
       </div>
     </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Add myself</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="button button--primary">Add myself</button>
       </div>
       </form>
     </div>
@@ -245,8 +247,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Remove myself</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="button button--primary">Remove myself</button>
       </div>
       </form>
     </div>
@@ -268,8 +270,8 @@
         <p>Are you sure you want to remove this attendee from the event? This action cannot be undone.</p>
           </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-danger">Remove attendee</button>
+          <button type="button" class="button button--secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="button button--danger">Remove attendee</button>
         </div>
         </form>
       </div>
@@ -286,14 +288,14 @@
     <form id="commentForm" action="/post/comment/{{eventData.id}}/" method="post">
       <label for="commentAuthor">Name</label>
       <div class="form-group">
-        <input type="text" class="form-control" id="commentAuthor" name="commentAuthor" placeholder="Your name" data-validation="required length" data-validation-length="1-60">
+        <input type="text" class="form-control" id="commentAuthor" name="commentAuthor" placeholder="Your name" required>
       </div>
       <label for="commentContent">Comment</label>
       <div class="form-group">
-        <div class="input-group">
-          <textarea class="form-control" id="commentContent" name="commentContent" style="resize: none;" placeholder="What would you like to say?" data-validation="required length" data-validation-length="1-280"></textarea>
+        <div class="d-flex flex-gap">
+          <textarea class="form-control" id="commentContent" name="commentContent" style="resize: none;" placeholder="What would you like to say?" required></textarea>
           <div class="input-group-append">
-            <button type="submit" class="btn btn-primary btn-block h-100" id="postComment">Send <i class="fas fa-chevron-right"></i></button>
+            <button type="submit" class="button button--primary" id="postComment">Send <i class="fas fa-chevron-right"></i></button>
           </div>
         </div>
       </div>
@@ -322,12 +324,12 @@
               {{/if}}
             </div>
             <div class="col-lg-3 commentMetadata text-right">
-              <button type="button" class="btn btn-outline-primary btn-sm openReplyBox">
+              <button type="button" class="button button--outline button--sm openReplyBox">
                 <i class="fas fa-comment"></i> Reply
               </button>
               {{#if ../editingEnabled}}
                 <form class="d-inline" action="/deletecomment/{{../eventData.id}}/{{this._id}}/{{../eventData.editToken}}" method="post">
-                  <button type="submit" class="btn btn-outline-danger btn-sm deleteComment">
+                  <button type="submit" class="button button--outline button--sm deleteComment">
                     <i class="fas fa-trash"></i> Delete
                   </button>
                 </form>
@@ -338,13 +340,13 @@
             <div class="col-md">
               <form id="replyForm" action="/post/reply/{{../eventData.id}}/{{this._id}}" method="post">
                 <div class="form-group">
-                  <input type="text" class="form-control form-control-sm" id="replyAuthor" name="replyAuthor" placeholder="Your name" data-validation="required length" data-validation-length="1-60">
+                  <input type="text" class="form-control form-control-sm" id="replyAuthor" name="replyAuthor" placeholder="Your name" required>
                 </div>
                 <div class="form-group">
-                  <div class="input-group">
-                    <textarea class="form-control form-control-sm" id="replyContent" name="replyContent" style="resize: none;" placeholder="What would you like to reply?" data-validation="required length" data-validation-length="1-280"></textarea>
+                  <div class="d-flex flex-gap">
+                    <textarea class="form-control form-control-sm" id="replyContent" name="replyContent" style="resize: none;" placeholder="What would you like to reply?" required></textarea>
                     <div class="input-group-append">
-                      <button type="submit" class="btn btn-primary btn-block h-100 btn-sm" id="postReply">Reply <i class="fas fa-chevron-right"></i></button>
+                      <button type="submit" class="button button--primary button--sm" id="postReply">Reply <i class="fas fa-chevron-right"></i></button>
                     </div>
                   </div>
                 </div>
@@ -381,8 +383,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Edit event</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="button button--primary">Edit event</button>
       </div>
       </form>
     </div>
@@ -408,8 +410,8 @@
         <p>Are you sure you want to delete this event? This action cannot be undone.</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-danger">Delete event</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="button button--danger">Delete event</button>
       </div>
       </form>
     </div>

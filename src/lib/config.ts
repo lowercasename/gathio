@@ -2,6 +2,7 @@ import fs from "fs";
 import toml from "toml";
 import { exitWithError } from "./process.js";
 import { Response } from "express";
+import { markdownToSanitizedHTML } from "../util/markdown.js";
 
 interface StaticPage {
     title: string;
@@ -150,6 +151,31 @@ export const instanceRules = (): InstanceRule[] => {
               },
     );
     return rules;
+};
+
+export const instanceDescription = (): string => {
+    const config = getConfig();
+    const defaultInstanceDescription =
+        "**{{ siteName }}** is running on Gathio — a simple, federated, privacy-first event hosting platform.";
+    let instanceDescription = defaultInstanceDescription;
+    try {
+        if (fs.existsSync("./static/instance-description.md")) {
+            const fileBody = fs.readFileSync(
+                "./static/instance-description.md",
+                "utf-8",
+            );
+            instanceDescription = markdownToSanitizedHTML(fileBody);
+        }
+        // Replace {{siteName}} with the instance name
+        instanceDescription = instanceDescription.replace(
+            /\{\{ ?siteName ?\}\}/g,
+            config?.general.site_name,
+        );
+        return instanceDescription;
+    } catch (err) {
+        console.log(err);
+        return defaultInstanceDescription;
+    }
 };
 
 // Attempt to load our global config. Will stop the app if the config file

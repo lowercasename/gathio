@@ -7,7 +7,6 @@ $(document).ready(function () {
         label_selected: "Change file",
         no_label: false,
     });
-    autosize($("textarea"));
     if (window.eventData.image) {
         $("#event-image-preview").css(
             "background-image",
@@ -16,6 +15,16 @@ $(document).ready(function () {
         $("#event-image-preview").css("background-size", "cover");
         $("#event-image-preview").css("background-position", "center center");
     }
+});
+
+$('#editModal').on('shown.bs.modal', function (e) {
+  console.log('hii');
+  const ta = document.querySelector("#editModal textarea");
+  ta.style.display = 'none';
+  autosize(ta);
+  ta.style.display = '';
+  // Call the update method to recalculate the size:
+  autosize.update(ta);
 });
 
 function editEventForm() {

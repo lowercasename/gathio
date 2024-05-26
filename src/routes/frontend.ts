@@ -1,8 +1,13 @@
 import { Router, Request, Response } from "express";
+import fs from "fs";
 import moment from "moment-timezone";
 import { marked } from "marked";
 import { markdownToSanitizedHTML, renderPlain } from "../util/markdown.js";
-import { frontendConfig, instanceRules } from "../lib/config.js";
+import {
+    frontendConfig,
+    instanceDescription,
+    instanceRules,
+} from "../lib/config.js";
 import { addToLog, exportICal } from "../helpers.js";
 import Event from "../models/Event.js";
 import EventGroup, { IEventGroup } from "../models/EventGroup.js";
@@ -26,6 +31,7 @@ router.get("/", (_: Request, res: Response) => {
     return res.render("home", {
         ...frontendConfig(res),
         instanceRules: instanceRules(),
+        instanceDescription: instanceDescription(),
     });
 });
 
@@ -33,6 +39,7 @@ router.get("/about", (_: Request, res: Response) => {
     return res.render("home", {
         ...frontendConfig(res),
         instanceRules: instanceRules(),
+        instanceDescription: instanceDescription(),
     });
 });
 
@@ -126,6 +133,8 @@ router.get("/events", async (_: Request, res: Response) => {
         upcomingEvents: upcomingEvents,
         pastEvents: pastEvents,
         eventGroups: updatedEventGroups,
+        instanceDescription: instanceDescription(),
+        instanceRules: instanceRules(),
         ...frontendConfig(res),
     });
 });

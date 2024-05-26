@@ -7,7 +7,6 @@ $(document).ready(function () {
         label_selected: "Change file",
         no_label: false,
     });
-    autosize($("textarea"));
     if (window.groupData.image) {
         $("#group-image-preview").css(
             "background-image",
@@ -17,6 +16,14 @@ $(document).ready(function () {
         $("#group-image-preview").css("background-position", "center center");
     }
     $("#timezone").val(window.groupData.timezone).trigger("change");
+});
+
+$('#editModal').on('shown.bs.modal', function (e) {
+  const ta = document.querySelector("#editModal textarea");
+  ta.style.display = 'none';
+  autosize(ta);
+  ta.style.display = '';
+  autosize.update(ta);
 });
 
 function editEventGroupForm() {
