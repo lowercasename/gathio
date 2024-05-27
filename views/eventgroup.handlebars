@@ -109,31 +109,22 @@
   </div>
 {{/if}}
 
-<div class="card mb-4" id="eventDescription">
-    <h5 class="card-header">About</h5>
-  <div class="card-body">
-    {{{parsedDescription}}}
-  </div>
-</div>
-<div class="card mt-4 mb-4" id="upcomingEvents">
-  <h5 class="card-header">Upcoming events</h5>
-  <div class="list-group list-group-flush">
-  {{#if upcomingEventsExist}}
-    {{#each events}}
-      {{#unless this.eventHasConcluded}}
-        <a href="/{{this.id}}" class="list-group-item list-group-item-action">
-          <i class="fas fa-fw fa-calendar-day"></i>
-          <strong>{{this.name}}</strong>
-          {{#if this.location}}<span class="ml-2 text-muted"><i class="fas fa-map-marker-alt"></i> {{this.location}}</span>{{/if}}
-          <span class="ml-2 text-muted">{{this.displayDate}}</span>
-        </a>
-      {{/unless}}
-    {{/each}}
-  {{else}}
-      <div class="list-group-item">No events!</div>
-  {{/if}}
-  </div>
-</div>
+    <div class="card mb-4" id="eventDescription">
+        <h5 class="card-header">About</h5>
+        <div class="card-body">
+            {{{parsedDescription}}}
+        </div>
+    </div>
+
+    <div class="card mt-4 mb-4" id="upcomingEvents">
+        <h5 class="card-header">Upcoming events</h5>
+        {{> eventList upcomingEvents}}
+    </div>
+
+    <div class="card mt-4 mb-4" id="pastEvents">
+        <h5 class="card-header">Past events</h5>
+        {{> eventList pastEvents}}
+    </div>
 </div>
 
 {{#if editingEnabled}}
