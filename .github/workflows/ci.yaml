@@ -16,7 +16,7 @@ jobs:
             - name: Install pnpm
               uses: pnpm/action-setup@v2
               with:
-                  version: 8
+                  version: 9
 
             - name: Set up config files
               run: cp config/config.example.toml config/config.toml
@@ -46,7 +46,7 @@ jobs:
             - name: Install pnpm
               uses: pnpm/action-setup@v2
               with:
-                  version: 8
+                  version: 9
 
             - name: Set up config files
               run: cp config/config.example.toml config/config.toml
