@@ -18,6 +18,7 @@ import {
 import MagicLink from "../models/MagicLink.js";
 import { getConfigMiddleware } from "../lib/middleware.js";
 import { getMessage } from "../util/messages.js";
+import { EventListEvent, bucketEventsByMonth } from "../lib/event.js";
 
 const router = Router();
 
@@ -89,7 +90,7 @@ router.get("/events", async (_: Request, res: Response) => {
         .populate("eventGroup")
         .lean()
         .sort("start");
-    const updatedEvents = events.map((event) => {
+    const updatedEvents: EventListEvent[] = events.map((event) => {
         const startMoment = moment.tz(event.start, event.timezone);
         const endMoment = moment.tz(event.end, event.timezone);
         const isSameDay = startMoment.isSame(endMoment, "day");
@@ -105,14 +106,16 @@ router.get("/events", async (_: Request, res: Response) => {
                   )}`,
             eventHasConcluded: endMoment.isBefore(moment.tz(event.timezone)),
             eventGroup: event.eventGroup as any as IEventGroup,
+            startMoment,
+            endMoment,
         };
     });
-    const upcomingEvents = updatedEvents.filter(
-        (event) => event.eventHasConcluded === false,
-    );
-    const pastEvents = updatedEvents.filter(
-        (event) => event.eventHasConcluded === true,
-    );
+    const upcomingEventsInMonthBuckets = updatedEvents
+        .filter((event) => event.eventHasConcluded === false)
+        .reduce(bucketEventsByMonth, []);
+    const pastEventsInMonthBuckets = updatedEvents
+        .filter((event) => event.eventHasConcluded === true)
+        .reduce(bucketEventsByMonth, []);
     const eventGroups = await EventGroup.find({
         showOnPublicList: true,
     }).lean();
@@ -130,8 +133,8 @@ router.get("/events", async (_: Request, res: Response) => {
 
     res.render("publicEventList", {
         title: "Public events",
-        upcomingEvents: upcomingEvents,
-        pastEvents: pastEvents,
+        upcomingEvents: upcomingEventsInMonthBuckets,
+        pastEvents: pastEventsInMonthBuckets,
         eventGroups: updatedEventGroups,
         instanceDescription: instanceDescription(),
         instanceRules: instanceRules(),
@@ -425,7 +428,7 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
             .lean()
             .sort("start");
 
-        const updatedEvents = events.map((event) => {
+        const updatedEvents: EventListEvent[] = events.map((event) => {
             const startMoment = moment.tz(event.start, event.timezone);
             const endMoment = moment.tz(event.end, event.timezone);
             const isSameDay = startMoment.isSame(endMoment, "day");
@@ -442,12 +445,18 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
                 eventHasConcluded: endMoment.isBefore(
                     moment.tz(event.timezone),
                 ),
+                startMoment,
+                endMoment,
             };
         });
 
-        const upcomingEventsExist = updatedEvents.some(
-            (e) => !e.eventHasConcluded,
-        );
+        const upcomingEventsInMonthBuckets = updatedEvents
+            .filter((event) => !event.eventHasConcluded)
+            .reduce(bucketEventsByMonth, []);
+
+        const pastEventsInMonthBuckets = updatedEvents
+            .filter((event) => event.eventHasConcluded)
+            .reduce(bucketEventsByMonth, []);
 
         let firstLoad = false;
         if (eventGroup.firstLoad === true) {
@@ -494,8 +503,8 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
             title: eventGroup.name,
             eventGroupData: eventGroup,
             escapedName: escapedName,
-            events: updatedEvents,
-            upcomingEventsExist: upcomingEventsExist,
+            upcomingEvents: upcomingEventsInMonthBuckets,
+            pastEvents: pastEventsInMonthBuckets,
             parsedDescription: parsedDescription,
             editingEnabled: editingEnabled,
             eventGroupHasCoverImage: eventGroupHasCoverImage,

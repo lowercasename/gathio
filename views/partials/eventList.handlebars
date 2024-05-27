@@ -1,0 +1,22 @@
+<div class="list-group list-group-flush">
+{{#if this}}
+    {{#each this}}
+        <div class="list-group-item bg-light">
+            <h5 class="mb-0">{{this.title}}</h5>
+        </div>
+        {{#each this.events}}
+            <a href="/{{this.id}}" class="list-group-item list-group-item-action">
+                <i class="fas fa-fw fa-calendar-day"></i>
+                <strong>{{this.name}}</strong>
+                {{#if this.location}}<span class="ml-2 text-muted"><i class="fas fa-map-marker-alt"></i> {{this.location}}</span>{{/if}}
+                <span class="ml-2 text-muted">{{this.displayDate}}</span>
+                {{#if this.eventGroup}}
+                <span class="badge badge-secondary ml-2">{{this.eventGroup.name}}</span>
+                {{/if}}
+            </a>
+        {{/each}}
+    {{/each}}
+{{else}}
+    <div class="list-group-item">No events!</div>
+{{/if}}
+</div>
