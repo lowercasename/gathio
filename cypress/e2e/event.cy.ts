@@ -98,6 +98,16 @@ describe("Events", () => {
         cy.get("#postComment").click();
         cy.get(".comment").should("contain.text", "Test Author");
         cy.get(".comment").should("contain.text", "Test Comment");
+        // Wait until URL contains the edit token because the page is reloaded
+        // after posting a comment
+        cy.url().should("include", this.editToken);
+        cy.get(".openReplyBox").click();
+        cy.get(".replyContainer").should("be.visible");
+        cy.get("#replyAuthor").type("Test Reply Author");
+        cy.get("#replyContent").type("Test Reply");
+        cy.get("#postReply").click();
+        cy.get(".repliesContainer").should("contain.text", "Test Reply Author");
+        cy.get(".repliesContainer").should("contain.text", "Test Reply");
     });
 
     it("displays the ActivityPub featured post", function () {
