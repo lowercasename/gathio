@@ -189,136 +189,6 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
 
 // BACKEND ROUTES
 
-router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
-    let submittedEditToken = req.params.editToken;
-    EventGroup.findOne({
-        id: req.params.eventGroupID,
-    })
-        .then(async (eventGroup) => {
-            if (eventGroup.editToken === submittedEditToken) {
-                // Token matches
-
-                let linkedEvents = await Event.find({
-                    eventGroup: eventGroup._id,
-                });
-
-                let linkedEventIDs = linkedEvents.map((event) => event._id);
-                let eventGroupImage = false;
-                if (eventGroup.image) {
-                    eventGroupImage = eventGroup.image;
-                }
-
-                EventGroup.deleteOne(
-                    { id: req.params.eventGroupID },
-                    function (err, raw) {
-                        if (err) {
-                            res.send(err);
-                            addToLog(
-                                "deleteEventGroup",
-                                "error",
-                                "Attempt to delete event group " +
-                                req.params.eventGroupID +
-                                " failed with error: " +
-                                err,
-                            );
-                        }
-                    },
-                )
-                    .then(() => {
-                        // Delete image
-                        if (eventGroupImage) {
-                            fs.unlink(
-                                path.join(
-                                    process.cwd(),
-                                    "/public/events/" + eventGroupImage,
-                                ),
-                                (err) => {
-                                    if (err) {
-                                        res.send(err);
-                                        addToLog(
-                                            "deleteEventGroup",
-                                            "error",
-                                            "Attempt to delete event image for event group " +
-                                            req.params.eventGroupID +
-                                            " failed with error: " +
-                                            err,
-                                        );
-                                    }
-                                },
-                            );
-                        }
-                        Event.updateOne(
-                            { _id: { $in: linkedEventIDs } },
-                            { $set: { eventGroup: null } },
-                            { multi: true },
-                        )
-                            .then((response) => {
-                                addToLog(
-                                    "deleteEventGroup",
-                                    "success",
-                                    "Event group " +
-                                    req.params.eventGroupID +
-                                    " deleted",
-                                );
-                                res.writeHead(302, {
-                                    Location: "/",
-                                });
-                                res.end();
-                            })
-                            .catch((err) => {
-                                res.send(
-                                    "Sorry! Something went wrong (error deleting): " +
-                                    err,
-                                );
-                                addToLog(
-                                    "deleteEventGroup",
-                                    "error",
-                                    "Attempt to delete event group " +
-                                    req.params.eventGroupID +
-                                    " failed with error: " +
-                                    err,
-                                );
-                            });
-                    })
-                    .catch((err) => {
-                        res.send(
-                            "Sorry! Something went wrong (error deleting): " +
-                            err,
-                        );
-                        addToLog(
-                            "deleteEventGroup",
-                            "error",
-                            "Attempt to delete event group " +
-                            req.params.eventGroupID +
-                            " failed with error: " +
-                            err,
-                        );
-                    });
-            } else {
-                // Token doesn't match
-                res.send("Sorry! Something went wrong");
-                addToLog(
-                    "deleteEventGroup",
-                    "error",
-                    "Attempt to delete event group " +
-                    req.params.eventGroupID +
-                    " failed with error: token does not match",
-                );
-            }
-        })
-        .catch((err) => {
-            res.send("Sorry! Something went wrong: " + err);
-            addToLog(
-                "deleteEventGroup",
-                "error",
-                "Attempt to delete event group " +
-                req.params.eventGroupID +
-                " failed with error: " +
-                err,
-            );
-        });
-});
-
 router.post("/attendee/provision", async (req, res) => {
     const removalPassword = niceware.generatePassphrase(6).join("-");
     const newAttendee = {
@@ -655,6 +525,7 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
 /*
  * Create an email subscription on an event group.
  */
+// TODO: Prevent subscribing more than once with the same email
 router.post("/subscribe/:eventGroupID", (req, res) => {
     const subscriber = {
         email: req.body.emailAddress,

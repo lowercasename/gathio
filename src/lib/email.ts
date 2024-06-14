@@ -14,6 +14,7 @@ type EmailTemplate =
     | "createEventGroup"
     | "createEventMagicLink"
     | "deleteEvent"
+    | "deleteGroup"
     | "editEvent"
     | "eventGroupUpdated"
     | "subscribed"

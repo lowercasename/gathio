@@ -1,10 +1,13 @@
 import { Router, Response, Request } from "express";
+import fs from "fs";
+import path from "path";
 import multer from "multer";
 import { generateEditToken, generateEventID } from "../util/generator.js";
 import { validateGroupData } from "../util/validation.js";
 import Jimp from "jimp";
 import { addToLog } from "../helpers.js";
 import EventGroup from "../models/EventGroup.js";
+import Event from "../models/Event.js";
 import { sendEmailFromTemplate } from "../lib/email.js";
 import { marked } from "marked";
 import { renderPlain } from "../util/markdown.js";
@@ -308,6 +311,127 @@ router.post(
             if (group) return res.sendStatus(200);
             return res.sendStatus(404);
         });
+    },
+);
+
+router.delete(
+    "/group/:eventGroupID/:editToken",
+    async (req: Request, res: Response) => {
+        try {
+            const submittedEditToken = req.params.editToken;
+
+            const eventGroup = await EventGroup.findOne({
+                id: req.params.eventGroupID,
+            });
+            if (!eventGroup) {
+                addToLog(
+                    "deleteEventGroup",
+                    "error",
+                    `Event group ${req.params.eventGroupID} not found`,
+                );
+                return res.status(404).json({
+                    errors: [
+                        {
+                            message: "Event group not found.",
+                        },
+                    ],
+                });
+            }
+
+            if (eventGroup.editToken !== submittedEditToken) {
+                // Token doesn't match
+                addToLog(
+                    "deleteEventGroup",
+                    "error",
+                    `Attempt to delete event group ${req.params.eventGroupID} failed with error: token does not match`,
+                );
+                return res.status(403).json({
+                    errors: [
+                        {
+                            message: "Edit token is invalid.",
+                        },
+                    ],
+                });
+            }
+
+            // Token matches
+
+            const linkedEvents = await Event.find({
+                eventGroup: eventGroup._id,
+            });
+            const linkedEventIDs = linkedEvents.map((event) => event._id);
+
+            // Delete the event group
+            await EventGroup.deleteOne({ id: req.params.eventGroupID });
+
+            // Delete image if it exists
+            if (eventGroup.image) {
+                try {
+                    await fs.promises.unlink(
+                        path.join(
+                            process.cwd(),
+                            "/public/events/",
+                            eventGroup.image,
+                        ),
+                    );
+                } catch (err) {
+                    res.send(err);
+                    addToLog(
+                        "deleteEventGroup",
+                        "error",
+                        `Attempt to delete event image for event group ${req.params.eventGroupID} failed with error: ${err}`,
+                    );
+                    return;
+                }
+            }
+
+            // Update linked events
+            await Event.updateMany(
+                { _id: { $in: linkedEventIDs } },
+                { $set: { eventGroup: null } },
+            );
+
+            addToLog(
+                "deleteEventGroup",
+                "success",
+                `Event group ${req.params.eventGroupID} deleted`,
+            );
+
+            if (eventGroup.subscribers && req.app.locals.sendEmails) {
+                const subscriberEmails = eventGroup.subscribers.map(
+                    (o) => o.email,
+                ) as string[];
+
+                if (subscriberEmails) {
+                    for (const subscriberEmail of subscriberEmails) {
+                        sendEmailFromTemplate(
+                            subscriberEmail,
+                            `${eventGroup.name} was deleted`,
+                            "deleteGroup",
+                            {
+                                groupName: eventGroup.name,
+                            },
+                            req,
+                        );
+                    }
+                }
+            }
+
+            res.sendStatus(200);
+        } catch (err) {
+            addToLog(
+                "deleteEventGroup",
+                "error",
+                `Attempt to delete event group ${req.params.eventGroupID} failed with error: ${err}`,
+            );
+            return res.status(500).json({
+                errors: [
+                    {
+                        message: err,
+                    },
+                ],
+            });
+        }
     },
 );
 
