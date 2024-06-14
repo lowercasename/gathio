@@ -16,6 +16,7 @@ import Event from "../models/Event.js";
 import EventGroup from "../models/EventGroup.js";
 import {
     broadcastCreateMessage,
+    broadcastDeleteMessage,
     broadcastUpdateMessage,
     createActivityPubActor,
     createActivityPubEvent,
@@ -200,9 +201,6 @@ router.post(
                     {
                         eventID,
                         editToken,
-                        siteName: res.locals.config?.general.site_name,
-                        siteLogo: res.locals.config?.general.email_logo_url,
-                        domain: res.locals.config?.general.domain,
                     },
                     req,
                 );
@@ -234,10 +232,6 @@ router.post(
                             `New event in ${eventGroup.name}`,
                             "eventGroupUpdated",
                             {
-                                siteName: res.locals.config?.general.site_name,
-                                siteLogo:
-                                    res.locals.config?.general.email_logo_url,
-                                domain: res.locals.config?.general.domain,
                                 eventGroupName: eventGroup.name,
                                 eventName: event.name,
                                 eventID: event.id,
@@ -501,9 +495,6 @@ router.put(
                         {
                             diffText,
                             eventID: req.params.eventID,
-                            siteName: res.locals.config?.general.site_name,
-                            siteLogo: res.locals.config?.general.email_logo_url,
-                            domain: res.locals.config?.general.domain,
                         },
                         req,
                     );
@@ -615,9 +606,6 @@ router.post(
                     {
                         eventID,
                         editToken,
-                        siteName: res.locals.config?.general.site_name,
-                        siteLogo: res.locals.config?.general.email_logo_url,
-                        domain: res.locals.config?.general.domain,
                     },
                     req,
                 );
@@ -694,9 +682,6 @@ router.delete(
                     "unattendEvent",
                     {
                         eventID: req.params.eventID,
-                        siteName: res.locals.config?.general.site_name,
-                        siteLogo: res.locals.config?.general.email_logo_url,
-                        domain: res.locals.config?.general.domain,
                     },
                     req,
                 );
@@ -745,9 +730,6 @@ router.get(
                 "unattendEvent",
                 {
                     event,
-                    siteName: res.locals.config?.general.site_name,
-                    siteLogo: res.locals.config?.general.email_logo_url,
-                    domain: res.locals.config?.general.domain,
                 },
                 req,
             );
@@ -851,6 +833,112 @@ router.delete(
                     });
             },
         );
+    },
+);
+
+// Delete an event.
+router.delete(
+    "/event/:eventID/:editToken",
+    async (req: Request, res: Response) => {
+        try {
+            const submittedEditToken = req.params.editToken;
+
+            const event = await Event.findOne({ id: req.params.eventID });
+            if (!event) {
+                addToLog(
+                    "deleteEvent",
+                    "error",
+                    `Event ${req.params.eventID} not found`,
+                );
+                return res.status(404).json({
+                    errors: [
+                        {
+                            message: "Event not found.",
+                        },
+                    ],
+                });
+            }
+
+            if (event.editToken !== submittedEditToken) {
+                // Token doesn't match
+                addToLog(
+                    "deleteEvent",
+                    "error",
+                    `Attempt to delete event ${req.params.eventID} failed with error: token does not match`,
+                );
+                return res.status(403).json({
+                    errors: [
+                        {
+                            message: "Edit token is invalid.",
+                        },
+                    ],
+                });
+            }
+
+            // Token matches
+
+            if (event.activityPubActor) {
+                // Broadcast a Delete profile message to all followers so that
+                // Mastodon servers will at least delete their local profile information
+                const jsonUpdateObject = JSON.parse(event.activityPubActor);
+                broadcastDeleteMessage(
+                    jsonUpdateObject,
+                    event.followers,
+                    req.params.eventID,
+                );
+            }
+
+            await Event.deleteOne({ id: req.params.eventID });
+
+            // Delete image if exists
+            if (event.image) {
+                await fs.promises.unlink(
+                    path.join(process.cwd(), "/public/events/", event.image),
+                );
+            }
+
+            // Log success
+            addToLog(
+                "deleteEvent",
+                "success",
+                `Event ${req.params.eventID} deleted`,
+            );
+
+            if (event.attendees && req.app.locals.sendEmails) {
+                const attendeeEmails = event.attendees
+                    .filter((o) => o.status === "attending" && o.email)
+                    .map((o) => o.email) as string[];
+
+                if (attendeeEmails) {
+                    for (const attendeeEmail of attendeeEmails) {
+                        sendEmailFromTemplate(
+                            attendeeEmail,
+                            `${event.name} was deleted`,
+                            "deleteEvent",
+                            {
+                                eventName: event.name,
+                            },
+                            req,
+                        );
+                    }
+                }
+            }
+
+            return res.sendStatus(200);
+        } catch (err) {
+            addToLog(
+                "deleteEvent",
+                "error",
+                `Attempt to delete event ${req.params.eventID} failed with error: ${err}`,
+            );
+            return res.status(500).json({
+                errors: [
+                    {
+                        message: err,
+                    },
+                ],
+            });
+        }
     },
 );
 

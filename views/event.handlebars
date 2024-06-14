@@ -188,20 +188,20 @@
       <div class="form-group">
         <label for="attendeeName">Your name</label>
         <div class="form-group">
-          <input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." data-validation="required length" data-validation-length="1-30">
+          <input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="Or an alias, perhaps..." required>
         </div>
       </div>
       <div class="form-group">
         <label for="attendeeName">How many people in your party?</label>
         <div class="form-group">
-          <input type="number" class="form-control" id="attendeeNumber" name="attendeeNumber" value="1" data-validation="required number" >
+          <input type="number" class="form-control" id="attendeeNumber" name="attendeeNumber" value="1" required>
         </div>
       </div>
       <div class="form-group">
         <label for="attendeeEmail">Your email (optional)</label>
         <p class="form-text small">If you provide your email, you will receive updates to the event.</p>
         <div class="form-group">
-          <input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3" data-validation="email" data-validation-optional="true">
+          <input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="We won't spam you <3">
         </div>
       </div>
       <div class="form-check">
@@ -395,7 +395,7 @@
 {{> editeventmodal }}
 {{/unless}}
 
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true" x-data="{}">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -404,7 +404,14 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="deleteEventForm" action="/deleteevent/{{eventData.id}}/{{eventData.editToken}}" method="post">
+      <form
+        id="deleteEventForm"
+        x-on:submit.prevent="
+          fetch('/event/{{eventData.id}}/{{eventData.editToken}}', { method: 'DELETE' })
+            .then(response => response.ok ? window.location.href = '/' : response.json())
+            .then(data => console.log(data))
+        "
+      >
       <div class="modal-body">
         <p>Are you sure you want to delete this event? This action cannot be undone.</p>
       </div>
