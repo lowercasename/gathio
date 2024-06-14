@@ -54,9 +54,6 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
         "createEventMagicLink",
         {
             token,
-            siteName: res.locals.config?.general.site_name,
-            siteLogo: res.locals.config?.general.email_logo_url,
-            domain: res.locals.config?.general.domain,
         },
         req,
     );

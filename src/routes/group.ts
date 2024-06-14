@@ -100,9 +100,6 @@ router.post(
                     {
                         eventGroupID: eventGroup.id,
                         editToken: eventGroup.editToken,
-                        siteName: res.locals.config?.general.site_name,
-                        siteLogo: res.locals.config?.general.email_logo_url,
-                        domain: res.locals.config?.general.domain,
                     },
                     req,
                 );
