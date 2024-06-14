@@ -301,4 +301,17 @@ router.post("/known/groups", async (req: Request, res: Response) => {
     }
 });
 
+router.post(
+    "/verifytoken/group/:eventGroupID",
+    (req: Request, res: Response) => {
+        EventGroup.findOne({
+            id: req.params.eventGroupID,
+            editToken: req.body.editToken,
+        }).then((group) => {
+            if (group) return res.sendStatus(200);
+            return res.sendStatus(404);
+        });
+    },
+);
+
 export default router;

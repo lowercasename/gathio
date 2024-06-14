@@ -1,4 +1,6 @@
 import { Router, Response, Request } from "express";
+import fs from "fs";
+import path from "path";
 import multer from "multer";
 import Jimp from "jimp";
 import moment from "moment-timezone";
@@ -751,6 +753,104 @@ router.get(
             );
         }
         return res.redirect(`/${req.params.eventID}?m=unattend`);
+    },
+);
+
+router.post("/verifytoken/event/:eventID", (req: Request, res: Response) => {
+    Event.findOne({
+        id: req.params.eventID,
+        editToken: req.body.editToken,
+    }).then((event) => {
+        if (event) return res.sendStatus(200);
+        return res.sendStatus(404);
+    });
+});
+
+// Delete an image linked to an event.
+router.delete(
+    "/event/:eventID/image/:editToken",
+    async (req: Request, res: Response) => {
+        let submittedEditToken = req.params.editToken;
+        const event = await Event.findOne({
+            id: req.params.eventID,
+        });
+        if (!event) {
+            return res.status(404).json({
+                errors: [
+                    {
+                        message: "Event not found.",
+                    },
+                ],
+            });
+        }
+        if (event.editToken !== submittedEditToken) {
+            // Token doesn't match
+            addToLog(
+                "deleteEventImage",
+                "error",
+                `Attempt to delete event image for event ${req.params.eventID} failed with error: token does not match`,
+            );
+            return res.status(403).json({
+                errors: [
+                    {
+                        message: "Edit token is invalid.",
+                    },
+                ],
+            });
+        }
+        if (!event.image) {
+            return res.status(500).json({
+                errors: [
+                    {
+                        message: "This event doesn't have a linked image.",
+                    },
+                ],
+            });
+        }
+        fs.unlink(
+            path.join(process.cwd(), "/public/events/" + event.image),
+            (err) => {
+                if (err) {
+                    addToLog(
+                        "deleteEventImage",
+                        "error",
+                        `Attempt to delete event image for event ${req.params.eventID} failed with error: ${err}`,
+                    );
+                    return res.status(500).json({
+                        errors: [
+                            {
+                                message: err,
+                            },
+                        ],
+                    });
+                }
+                event.image = "";
+                event
+                    .save()
+                    .then(() => {
+                        addToLog(
+                            "deleteEventImage",
+                            "success",
+                            `Image for event ${req.params.eventID} deleted`,
+                        );
+                        return res.sendStatus(200);
+                    })
+                    .catch((err) => {
+                        addToLog(
+                            "deleteEventImage",
+                            "error",
+                            `Attempt to delete event image for event ${req.params.eventID} failed with error: ${err}`,
+                        );
+                        return res.status(500).json({
+                            errors: [
+                                {
+                                    message: err,
+                                },
+                            ],
+                        });
+                    });
+            },
+        );
     },
 );
 

@@ -18,13 +18,12 @@ $(document).ready(function () {
 });
 
 $('#editModal').on('shown.bs.modal', function (e) {
-  console.log('hii');
-  const ta = document.querySelector("#editModal textarea");
-  ta.style.display = 'none';
-  autosize(ta);
-  ta.style.display = '';
-  // Call the update method to recalculate the size:
-  autosize.update(ta);
+    const ta = document.querySelector("#editModal textarea");
+    ta.style.display = 'none';
+    autosize(ta);
+    ta.style.display = '';
+    // Call the update method to recalculate the size:
+    autosize.update(ta);
 });
 
 function editEventForm() {
@@ -49,6 +48,7 @@ function editEventForm() {
         },
         errors: [],
         submitting: false,
+        deletingImage: false,
         init() {
             // Set up Select2
             this.select2 = $(this.$refs.timezone).select2();
@@ -104,5 +104,20 @@ function editEventForm() {
                 this.submitting = false;
             }
         },
+        async deleteImage() {
+            this.deletingImage = true;
+            const response = await fetch(`/event/${window.eventData.id}/image/${window.eventData.editToken}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) {
+                alert("An error occurred while deleting the image.");
+                this.deletingImage = false;
+                return;
+            }
+            document.querySelector("#event-image-preview").style.backgroundImage = "";
+            document.querySelector("#eventImageContainer").remove();
+            document.querySelector("#genericEventImageContainer").style.display = "block";
+            this.deletingImage = false;
+        }
     };
 }

@@ -1,18 +1,15 @@
 import fs from "fs";
 import express from "express";
 import { customAlphabet } from "nanoid";
-import randomstring from "randomstring";
 import { frontendConfig, getConfig } from "./lib/config.js";
 import { addToLog } from "./helpers.js";
 import moment from "moment-timezone";
 import crypto from "crypto";
 import request from "request";
 import niceware from "niceware";
-import ical from "ical";
 import sgMail from "@sendgrid/mail";
 import nodemailer from "nodemailer";
 import fileUpload from "express-fileupload";
-import Jimp from "jimp";
 import schedule from "node-schedule";
 import {
     broadcastCreateMessage,
@@ -191,84 +188,6 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
 });
 
 // BACKEND ROUTES
-router.post("/verifytoken/event/:eventID", (req, res) => {
-    Event.findOne({
-        id: req.params.eventID,
-        editToken: req.body.editToken,
-    }).then((event) => {
-        if (event) return res.sendStatus(200);
-        return res.sendStatus(404);
-    });
-});
-
-router.post("/verifytoken/group/:eventGroupID", (req, res) => {
-    EventGroup.findOne({
-        id: req.params.eventGroupID,
-        editToken: req.body.editToken,
-    }).then((group) => {
-        if (group) return res.sendStatus(200);
-        return res.sendStatus(404);
-    });
-});
-
-router.post("/deleteimage/:eventID/:editToken", (req, res) => {
-    let submittedEditToken = req.params.editToken;
-    let eventImage;
-    Event.findOne({
-        id: req.params.eventID,
-    }).then((event) => {
-        if (event.editToken === submittedEditToken) {
-            // Token matches
-            if (event.image) {
-                eventImage = event.image;
-            } else {
-                res.status(500).send(
-                    "This event doesn't have a linked image. What are you even doing",
-                );
-            }
-            fs.unlink(
-                path.join(process.cwd(), "/public/events/" + eventImage),
-                (err) => {
-                    if (err) {
-                        res.status(500).send(err);
-                        addToLog(
-                            "deleteEventImage",
-                            "error",
-                            "Attempt to delete event image for event " +
-                            req.params.eventID +
-                            " failed with error: " +
-                            err,
-                        );
-                    }
-                    // Image removed
-                    addToLog(
-                        "deleteEventImage",
-                        "success",
-                        "Image for event " + req.params.eventID + " deleted",
-                    );
-                    event.image = "";
-                    event
-                        .save()
-                        .then((response) => {
-                            res.status(200).send("Success");
-                        })
-                        .catch((err) => {
-                            res.status(500).send(err);
-                            addToLog(
-                                "deleteEventImage",
-                                "error",
-                                "Attempt to delete event image for event " +
-                                req.params.eventID +
-                                " failed with error: " +
-                                err,
-                            );
-                        });
-                },
-            );
-        }
-    });
-});
-
 router.post("/deleteevent/:eventID/:editToken", (req, res) => {
     let submittedEditToken = req.params.editToken;
     let eventImage;
