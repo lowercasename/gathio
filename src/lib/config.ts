@@ -21,7 +21,7 @@ export interface GathioConfig {
         email_logo_url: string;
         show_kofi: boolean;
         show_public_event_list: boolean;
-        mail_service: "nodemailer" | "sendgrid";
+        mail_service: "nodemailer" | "sendgrid" | "none";
         creator_email_addresses: string[];
     };
     database: {
@@ -62,7 +62,7 @@ const defaultConfig: GathioConfig = {
         email_logo_url: "",
         show_public_event_list: false,
         show_kofi: false,
-        mail_service: "nodemailer",
+        mail_service: "none",
         creator_email_addresses: [],
     },
     database: {

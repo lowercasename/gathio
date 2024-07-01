@@ -22,7 +22,7 @@ show_public_event_list = false
 # Which mail service to use to send emails to hosts and attendees. Options are
 # 'nodemailer' or 'sendgrid'. Configure settings for this mail
 # service below.
-mail_service = "nodemailer"
+mail_service = "none"
 # An array of email addresses which are permitted to create events. If this is
 # empty, anyone can create events.
 # For example:

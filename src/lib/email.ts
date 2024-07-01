@@ -66,6 +66,7 @@ export const initEmailService = async (): Promise<boolean> => {
                     "Error verifying Nodemailer transporter. Please check your Nodemailer configuration.",
                 );
             }
+        case "none":
         default:
             console.warn(
                 "You have not configured this Gathio instance to send emails! This means that event creators will not receive emails when their events are created, which means they may end up locked out of editing events. Consider setting up an email service.",
