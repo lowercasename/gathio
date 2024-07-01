@@ -10,6 +10,9 @@ services:
             - mongo
         ports:
             - 3000:3000
+        volumes:
+            # Set the correct path to the config folder
+            - ./gathio-docker:/app/config
     mongo:
         image: mongo:latest
         volumes:

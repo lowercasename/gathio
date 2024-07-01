@@ -91,11 +91,37 @@ the subject](https://www.linode.com/docs/web-servers/nginx/use-nginx-reverse-pro
 ## Docker
 
 The easiest way to run Gathio using Docker is by using the provided `docker-compose` configuration.
-Ensure that the `node_modules` folder does not exist in the `gathio` directory before starting up the
-Docker container.
+
+Ensure that the `node_modules` folder does not exist in the `gathio` directory before
+starting up the Docker container.
+
+Create a directory on your system where you'll keep the Gathio configuration file. Copy the example
+config file into this directory:
 
 ```
-cd gathio
+mkdir ~/docker/gathio-docker
+cp config/config.example.toml ~/docker/gathio-docker/config.toml
+```
+
+Under the `volumes` section of the `docker-compose.yml` configuration, adjust the
+configuration volume to match the folder you created:
+
+```dockerfile
+volumes:
+    - '/home/username/docker/gathio-docker:/app/config
+```
+
+Adjust any settings in the config file, especially the MongoDB URL, which should read as follows for the standard Dockerfile config, and the email service if you want
+to enable it:
+
+```
+mail_service = "nodemailer"
+mongodb_url = "mongodb://mongo:27017/gathio"
+```
+
+Finally, start the Docker stack:
+
+```
 docker-compose up -d --build
 ```
 
