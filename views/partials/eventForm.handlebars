@@ -14,7 +14,7 @@
 <div class="form-group">
   <label for="eventStart" >Starts</label>
   <div class="form-group">
-    <input type="datetime-local" class="form-control" id="eventStart" name="eventStart"  x-model="data.eventStart">
+    <input type="datetime-local" class="form-control" id="eventStart" name="eventStart"  x-model="data.eventStart" x-on:blur="updateEventEnd">
   </div>
 </div>
 <div class="form-group">

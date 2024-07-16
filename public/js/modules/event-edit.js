@@ -18,13 +18,13 @@ $(document).ready(function () {
 });
 
 $('#editModal').on('shown.bs.modal', function (e) {
-  console.log('hii');
-  const ta = document.querySelector("#editModal textarea");
-  ta.style.display = 'none';
-  autosize(ta);
-  ta.style.display = '';
-  // Call the update method to recalculate the size:
-  autosize.update(ta);
+    console.log('hii');
+    const ta = document.querySelector("#editModal textarea");
+    ta.style.display = 'none';
+    autosize(ta);
+    ta.style.display = '';
+    // Call the update method to recalculate the size:
+    autosize.update(ta);
 });
 
 function editEventForm() {
@@ -64,6 +64,11 @@ function editEventForm() {
             this.data.maxAttendeesCheckbox =
                 window.eventData.maxAttendees !== null;
             this.data.publicCheckbox = window.eventData.showOnPublicList;
+        },
+        updateEventEnd() {
+            if (this.data.eventEnd === "" || this.data.eventEnd < this.data.eventStart) {
+                this.data.eventEnd = this.data.eventStart;
+            }
         },
         async submitForm() {
             this.submitting = true;
