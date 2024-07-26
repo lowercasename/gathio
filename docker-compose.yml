@@ -12,7 +12,8 @@ services:
             - 3000:3000
         volumes:
             # Set the correct path to the config folder
-            - ./gathio-docker:/app/config
+            - ./gathio-docker/config:/app/config
+            - ./gathio-docker/events:/app/public/events
     mongo:
         image: mongo:latest
         volumes:
