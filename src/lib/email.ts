@@ -54,6 +54,10 @@ export const initEmailService = async (): Promise<boolean> => {
                     user: config.nodemailer?.smtp_username,
                     pass: config.nodemailer?.smtp_password,
                 },
+                tls: { 
+                    // do not fail on invalid certs
+                    rejectUnauthorized: false,
+                },
             } as SMTPTransport.Options;
             const nodemailerTransporter =
                 nodemailer.createTransport(nodemailerConfig);
