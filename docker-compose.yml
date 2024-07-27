@@ -11,8 +11,9 @@ services:
         ports:
             - 3000:3000
         volumes:
-            # Set the correct path to the config folder
+            # The path to Gathio's config folder - change to match your system
             - ./gathio-docker/config:/app/config
+            # The path to Gathio's user-uploaded event images folder - change to match your system
             - ./gathio-docker/events:/app/public/events
     mongo:
         image: mongo:latest
