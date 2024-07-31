@@ -1,5 +1,3 @@
-version: "3"
-
 volumes:
     mongodb_data_db:
 
@@ -14,7 +12,7 @@ services:
             # The path to Gathio's config folder - change to match your system
             - ./gathio-docker/config:/app/config
             # The path to Gathio's user-uploaded event images folder - change to match your system
-            - ./gathio-docker/events:/app/public/events
+            - ./gathio-docker/images:/app/public/events
     mongo:
         image: mongo:latest
         volumes:
