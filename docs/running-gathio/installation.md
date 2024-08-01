@@ -91,7 +91,8 @@ the subject](https://www.linode.com/docs/web-servers/nginx/use-nginx-reverse-pro
 ## Docker
 
 The easiest way to run Gathio using Docker is by using the provided
-`docker-compose` configuration.
+`docker-compose` configuration. We provide a Docker image at [GitHub
+Container Repository](https://github.com/lowercasename/gathio/pkgs/container/gathio).
 
 Create a directory on your system where you'll keep the Gathio configuration
 file and another where Gathio can store user-uploaded event images. Copy the
@@ -112,19 +113,32 @@ volumes:
 ```
 
 Adjust any settings in the config file, especially the MongoDB URL, which should
-read as follows for the standard Dockerfile config, and the email service if you
+read as follows for the standard Docker Compose config, and the email service if you
 want to enable it:
 
 ```ini
-mail_service = "nodemailer"
 mongodb_url = "mongodb://mongo:27017/gathio"
+mail_service = "nodemailer"
 ```
 
-Finally, start the Docker stack:
+You can copy the `docker-compose.yml` file into that same `gathio-docker` directory
+you created - you don't need any of the source code. Once you're done, your directory
+should look something like this:
+
+```
+gathio-docker
+├── config
+│  └── config.toml
+├── docker-compose.yml
+└── images
+```
+
+Finally, from wherever you've put your `docker-compose.yml` file, start the Docker stack:
 
 ```bash
-docker-compose up -d --build
+cd gathio-docker
+docker-compose up -d
 ```
 
-Gathio should now be running on `http://localhost:3000`, and storing data in a
-Docker volume.
+Gathio should now be running on `http://localhost:3000`, storing data in a
+Docker volume, and storing images on your filesystem.
