@@ -1,4 +1,4 @@
-name: Publish to GHCR
+name: CI / Publish to GHCR
 on:
   workflow_dispatch:
   push:
