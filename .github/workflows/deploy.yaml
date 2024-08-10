@@ -9,14 +9,6 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-
-            - name: Install pnpm
-              uses: pnpm/action-setup@v4
-              with:
-                  version: 9
-
             - name: Set up known_hosts file
               run: |
                   mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
@@ -26,8 +18,6 @@ jobs:
               with:
                   ssh-private-key: ${{ secrets.SSH_KEY }}
 
-            - name: Install PM2
-              run: pnpm install -g pm2
-
-            - name: Deploy
-              run: pnpm run deploy
+            - name: Run deploy script 
+              run: |
+                  ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'cd ${{ secrets.DEPLOY_PATH }} && ./deploy.sh'
