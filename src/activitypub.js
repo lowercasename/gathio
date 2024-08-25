@@ -127,7 +127,7 @@ export function createFeaturedPost(
         type: "Note",
         name: "Test",
         cc: "https://www.w3.org/ns/activitystreams#Public",
-        content: `<p>This is an event that was posted on <a href="https://${domain}/${eventID}">${siteName}</a>. If you follow this account, you'll see updates in your timeline about the event. If your software supports polls, you should get a poll in your DMs asking if you want to RSVP. You can reply and RSVP right from there. If your software has an event calendar built in, you should get an event in your inbox that you can RSVP to like you respond to any event.</p><p>For more information on how to interact with this, <a href="https://github.com/lowercasename/gathio/wiki/Fediverse-Instructions">check out this link</a>.</p>`,
+        content: `<p>This is an event that was posted on <a href="https://${domain}/${eventID}">${siteName}</a>. If you follow this account, you'll see updates in your timeline about the event. If your software supports polls, you should get a poll in your DMs asking if you want to RSVP. You can reply and RSVP right from there. If your software has an event calendar built in, you should get an event in your inbox that you can RSVP to like you respond to any event.</p><p>For more information on how to interact with this, <a href="https://docs.gath.io/using-gathio/fediverse/">check out this link</a>.</p>`,
         attributedTo: `https://${domain}/${eventID}`,
     };
     return featured;
