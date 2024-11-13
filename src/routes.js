@@ -56,11 +56,15 @@ if (config.general.mail_service) {
                 host: config.nodemailer?.smtp_server,
                 port: config.nodemailer?.smtp_port,
                 secure: false, // true for 465, false for other ports
-                auth: {
-                    user: config.nodemailer?.smtp_username,
-                    pass: config.nodemailer?.smtp_password,
-                },
             });
+
+            if (config.nodemailer?.smtp_username) {
+                nodemailerTransporter.auth = {
+                    user: config.nodemailer?.smtp_username,
+                    pass: config.nodemailer?.smtp_password
+                };
+            }
+
             nodemailerTransporter.verify((error, success) => {
                 if (error) {
                     console.log(error);
@@ -372,11 +376,7 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                             function (err, html) {
                                                 const msg = {
                                                     to: attendeeEmails,
-                                                    from: {
-                                                        name: siteName,
-                                                        email: contactEmail,
-                                                        address: contactEmail,
-                                                    },
+                                                    from: contactEmail,
                                                     subject: `${siteName}: ${event.name} was deleted`,
                                                     html,
                                                 };
@@ -721,10 +721,7 @@ router.post("/attendevent/:eventID", async (req, res) => {
                         function (err, html) {
                             const msg = {
                                 to: req.body.attendeeEmail,
-                                from: {
-                                    name: siteName,
-                                    email: contactEmail,
-                                },
+                                from: contactEmail,
                                 subject: `${siteName}: You're RSVPed to ${event.name}`,
                                 html,
                             };
@@ -800,10 +797,7 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
                         function (err, html) {
                             const msg = {
                                 to: req.body.attendeeEmail,
-                                from: {
-                                    name: siteName,
-                                    email: contactEmail,
-                                },
+                                from: contactEmail,
                                 subject: `${siteName}: You have been removed from an event`,
                                 html,
                             };
@@ -872,10 +866,7 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
                         function (err, html) {
                             const msg = {
                                 to: req.body.attendeeEmail,
-                                from: {
-                                    name: siteName,
-                                    email: contactEmail,
-                                },
+                                from: contactEmail,
                                 subject: `${siteName}: You have been removed from an event`,
                                 html,
                             };
@@ -953,10 +944,7 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
                     function (err, html) {
                         const msg = {
                             to: subscriber.email,
-                            from: {
-                                name: siteName,
-                                email: contactEmail,
-                            },
+                            from: contactEmail,
                             subject: `${siteName}: You have subscribed to an event group`,
                             html,
                         };
@@ -1095,10 +1083,7 @@ router.post("/post/comment/:eventID", (req, res) => {
                                         function (err, html) {
                                             const msg = {
                                                 to: attendeeEmails,
-                                                from: {
-                                                    name: siteName,
-                                                    email: contactEmail,
-                                                },
+                                                from: contactEmail,
                                                 subject: `${siteName}: New comment in ${event.name}`,
                                                 html,
                                             };
@@ -1226,10 +1211,7 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                                         function (err, html) {
                                             const msg = {
                                                 to: attendeeEmails,
-                                                from: {
-                                                    name: siteName,
-                                                    email: contactEmail,
-                                                },
+                                                from: contactEmail,
                                                 subject: `${siteName}: New comment in ${event.name}`,
                                                 html,
                                             };
