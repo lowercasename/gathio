@@ -95,6 +95,7 @@ router.post(
             if (groupData.creatorEmail && req.app.locals.sendEmails) {
                 sendEmailFromTemplate(
                     groupData.creatorEmail,
+                    "",
                     `${eventGroup.name}`,
                     "createEventGroup",
                     {
