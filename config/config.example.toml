@@ -20,7 +20,7 @@ show_kofi = false
 # 'Display this event/group on the public event/group list'.
 show_public_event_list = false
 # Which mail service to use to send emails to hosts and attendees. Options are
-# 'nodemailer' or 'sendgrid'. Configure settings for this mail
+# 'nodemailer', 'sendgrid', or 'none'. Configure settings for this mail
 # service below.
 mail_service = "none"
 # An array of email addresses which are permitted to create events. If this is
