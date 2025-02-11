@@ -9,8 +9,7 @@
         "start": "node dist/start.js",
         "dev": "nodemon -e ts,js --watch src --exec \"pnpm run build ; pnpm run start\"",
         "test:dev": "CYPRESS=true pnpm run dev & wait-on http://localhost:3000 && cypress open --e2e --browser chrome",
-        "test": "pnpm run build || true && CYPRESS=true pnpm run start & wait-on http://localhost:3000 && cypress run --e2e --browser chrome",
-        "deploy": "pm2 deploy ecosystem.config.cjs production"
+        "test": "pnpm run build || true && CYPRESS=true pnpm run start & wait-on http://localhost:3000 && cypress run --e2e --browser chrome"
     },
     "engines": {
         "node": ">=16.16.0"
@@ -47,6 +46,7 @@
         "request": "^2.88.2",
         "sanitize-html": "^2.13.0",
         "toml": "^3.0.0",
+        "typescript": "^5.4.5",
         "wait-on": "^7.2.0"
     },
     "devDependencies": {
@@ -60,7 +60,6 @@
         "cypress": "^13.10.0",
         "eslint": "^8.57.0",
         "nodemon": "^2.0.22",
-        "prettier": "^3.2.5",
-        "typescript": "^5.4.5"
+        "prettier": "^3.2.5"
     }
 }

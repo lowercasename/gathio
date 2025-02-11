@@ -30,6 +30,9 @@ import crypto from "crypto";
 import ical from "ical";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
 import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
+import { getConfig } from "../lib/config.js";
+const config = getConfig();
+
 
 const storage = multer.memoryStorage();
 // Accept only JPEG, GIF or PNG images, up to 10MB
@@ -196,6 +199,7 @@ router.post(
             if (eventData.creatorEmail && req.app.locals.sendEmails) {
                 sendEmailFromTemplate(
                     eventData.creatorEmail,
+                    "",
                     `${eventData.eventName}`,
                     "createEvent",
                     {
@@ -229,6 +233,7 @@ router.post(
                     subscribers?.forEach((emailAddress) => {
                         sendEmailFromTemplate(
                             emailAddress,
+                            "",
                             `New event in ${eventGroup.name}`,
                             "eventGroupUpdated",
                             {
@@ -489,6 +494,7 @@ router.put(
                     .map((o) => o.email);
                 if (attendeeEmails?.length) {
                     sendEmailFromTemplate(
+                        config.general.email,
                         attendeeEmails.join(","),
                         `${event.name} was just edited`,
                         "editEvent",
@@ -601,6 +607,7 @@ router.post(
             if (creatorEmail && req.app.locals.sendEmails) {
                 sendEmailFromTemplate(
                     creatorEmail,
+                    "",
                     `${importedEventData.summary}`,
                     "createEvent",
                     {
@@ -678,6 +685,7 @@ router.delete(
             if (attendeeEmail && req.app.locals.sendEmails) {
                 await sendEmailFromTemplate(
                     attendeeEmail,
+                    "",
                     "You have been removed from an event",
                     "unattendEvent",
                     {
@@ -726,6 +734,7 @@ router.get(
         if (req.app.locals.sendEmails && attendee.email) {
             sendEmailFromTemplate(
                 attendee.email,
+                "",
                 `You have been removed from ${event.name}`,
                 "unattendEvent",
                 {

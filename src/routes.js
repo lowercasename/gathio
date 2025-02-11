@@ -53,11 +53,15 @@ if (config.general.mail_service) {
                 host: config.nodemailer?.smtp_server,
                 port: config.nodemailer?.smtp_port,
                 secure: false, // true for 465, false for other ports
-                auth: {
+            });
+
+            if (config.nodemailer?.smtp_username) {
+                nodemailerTransporter.auth = {
                     user: config.nodemailer?.smtp_username,
                     pass: config.nodemailer?.smtp_password,
-                },
-            });
+                };
+            }
+
             nodemailerTransporter.verify((error, success) => {
                 if (error) {
                     console.log(error);
@@ -86,7 +90,10 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
         return;
     }
 
-    const too_old = moment.tz("Etc/UTC").subtract(deleteAfterDays, "days").toDate();
+    const too_old = moment
+        .tz("Etc/UTC")
+        .subtract(deleteAfterDays, "days")
+        .toDate();
     console.log(
         "Old event deletion running! Deleting all events concluding before ",
         too_old,
@@ -109,9 +116,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                                 "deleteOldEvents",
                                 "error",
                                 "Attempt to delete old event " +
-                                id +
-                                " failed with error: " +
-                                err,
+                                    id +
+                                    " failed with error: " +
+                                    err,
                             );
                         });
                 };
@@ -128,9 +135,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                                     "deleteOldEvents",
                                     "error",
                                     "Attempt to delete event image for old event " +
-                                    event.id +
-                                    " failed with error: " +
-                                    err,
+                                        event.id +
+                                        " failed with error: " +
+                                        err,
                                 );
                             }
                             // Image removed
@@ -177,9 +184,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                 "deleteOldEvents",
                 "error",
                 "Attempt to delete old event " +
-                event.id +
-                " failed with error: " +
-                err,
+                    event.id +
+                    " failed with error: " +
+                    err,
             );
         });
 
@@ -202,9 +209,9 @@ router.post("/attendee/provision", async (req, res) => {
             "provisionEventAttendee",
             "error",
             "Attempt to provision attendee in event " +
-            req.query.eventID +
-            " failed with error: " +
-            e,
+                req.query.eventID +
+                " failed with error: " +
+                e,
         );
         return res.sendStatus(500);
     });
@@ -220,9 +227,9 @@ router.post("/attendee/provision", async (req, res) => {
             "provisionEventAttendee",
             "error",
             "Attempt to provision attendee in event " +
-            req.query.eventID +
-            " failed with error: " +
-            e,
+                req.query.eventID +
+                " failed with error: " +
+                e,
         );
         return res.sendStatus(500);
     });
@@ -258,9 +265,9 @@ router.post("/attendevent/:eventID", async (req, res) => {
             "attendEvent",
             "error",
             "Attempt to attend event " +
-            req.params.eventID +
-            " failed with error: " +
-            e,
+                req.params.eventID +
+                " failed with error: " +
+                e,
         );
         return res.sendStatus(500);
     });
@@ -299,7 +306,9 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "attendees.$.name": req.body.attendeeName,
                 "attendees.$.email": req.body.attendeeEmail,
                 "attendees.$.number": req.body.attendeeNumber,
-                "attendees.$.visibility": !!req.body.attendeeVisible ? "public" : "private",
+                "attendees.$.visibility": !!req.body.attendeeVisible
+                    ? "public"
+                    : "private",
             },
         },
     )
@@ -319,17 +328,16 @@ router.post("/attendevent/:eventID", async (req, res) => {
                             siteLogo,
                             domain,
                             removalPassword: req.body.removalPassword,
-                            removalPasswordHash: hashString(req.body.removalPassword),
+                            removalPasswordHash: hashString(
+                                req.body.removalPassword,
+                            ),
                             cache: true,
                             layout: "email.handlebars",
                         },
                         function (err, html) {
                             const msg = {
                                 to: req.body.attendeeEmail,
-                                from: {
-                                    name: siteName,
-                                    email: contactEmail,
-                                },
+                                from: contactEmail,
                                 subject: `${siteName}: You're RSVPed to ${event.name}`,
                                 html,
                             };
@@ -361,9 +369,9 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "addEventAttendee",
                 "error",
                 "Attempt to add attendee to event " +
-                req.params.eventID +
-                " failed with error: " +
-                error,
+                    req.params.eventID +
+                    " failed with error: " +
+                    error,
             );
         });
 });
@@ -405,10 +413,7 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
                         function (err, html) {
                             const msg = {
                                 to: req.body.attendeeEmail,
-                                from: {
-                                    name: siteName,
-                                    email: contactEmail,
-                                },
+                                from: contactEmail,
                                 subject: `${siteName}: You have been removed from an event`,
                                 html,
                             };
@@ -443,9 +448,9 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
                 "removeEventAttendee",
                 "error",
                 "Attempt to remove attendee by admin from event " +
-                req.params.eventID +
-                " failed with error: " +
-                err,
+                    req.params.eventID +
+                    " failed with error: " +
+                    err,
             );
         });
 });
@@ -477,10 +482,7 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
                         function (err, html) {
                             const msg = {
                                 to: req.body.attendeeEmail,
-                                from: {
-                                    name: siteName,
-                                    email: contactEmail,
-                                },
+                                from: contactEmail,
                                 subject: `${siteName}: You have been removed from an event`,
                                 html,
                             };
@@ -515,9 +517,9 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
                 "removeEventAttendee",
                 "error",
                 "Attempt to remove attendee by admin from event " +
-                req.params.eventID +
-                " failed with error: " +
-                err,
+                    req.params.eventID +
+                    " failed with error: " +
+                    err,
             );
         });
 });
@@ -559,10 +561,7 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
                     function (err, html) {
                         const msg = {
                             to: subscriber.email,
-                            from: {
-                                name: siteName,
-                                email: contactEmail,
-                            },
+                            from: contactEmail,
                             subject: `${siteName}: You have subscribed to an event group`,
                             html,
                         };
@@ -592,11 +591,11 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
                 "addSubscription",
                 "error",
                 "Attempt to subscribe " +
-                req.body.emailAddress +
-                " to event group " +
-                req.params.eventGroupID +
-                " failed with error: " +
-                error,
+                    req.body.emailAddress +
+                    " to event group " +
+                    req.params.eventGroupID +
+                    " failed with error: " +
+                    error,
             );
             return res.sendStatus(500);
         });
@@ -623,11 +622,11 @@ router.get("/unsubscribe/:eventGroupID", (req, res) => {
                 "removeSubscription",
                 "error",
                 "Attempt to unsubscribe " +
-                req.query.email +
-                " from event group " +
-                req.params.eventGroupID +
-                " failed with error: " +
-                error,
+                    req.query.email +
+                    " from event group " +
+                    req.params.eventGroupID +
+                    " failed with error: " +
+                    error,
             );
             return res.sendStatus(500);
         });
@@ -701,10 +700,7 @@ router.post("/post/comment/:eventID", (req, res) => {
                                         function (err, html) {
                                             const msg = {
                                                 to: attendeeEmails,
-                                                from: {
-                                                    name: siteName,
-                                                    email: contactEmail,
-                                                },
+                                                from: contactEmail,
                                                 subject: `${siteName}: New comment in ${event.name}`,
                                                 html,
                                             };
@@ -753,9 +749,9 @@ router.post("/post/comment/:eventID", (req, res) => {
                         "addEventComment",
                         "error",
                         "Attempt to add comment to event " +
-                        req.params.eventID +
-                        " failed with error: " +
-                        err,
+                            req.params.eventID +
+                            " failed with error: " +
+                            err,
                     );
                 });
         },
@@ -786,9 +782,9 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                         "addEventReply",
                         "success",
                         "Reply added to comment " +
-                        commentID +
-                        " in event " +
-                        req.params.eventID,
+                            commentID +
+                            " in event " +
+                            req.params.eventID,
                     );
                     // broadcast an identical message to all followers, will show in their home timeline
                     const guidObject = crypto.randomBytes(16).toString("hex");
@@ -832,10 +828,7 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                                         function (err, html) {
                                             const msg = {
                                                 to: attendeeEmails,
-                                                from: {
-                                                    name: siteName,
-                                                    email: contactEmail,
-                                                },
+                                                from: contactEmail,
                                                 subject: `${siteName}: New comment in ${event.name}`,
                                                 html,
                                             };
@@ -884,11 +877,11 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                         "addEventReply",
                         "error",
                         "Attempt to add reply to comment " +
-                        commentID +
-                        " in event " +
-                        req.params.eventID +
-                        " failed with error: " +
-                        err,
+                            commentID +
+                            " in event " +
+                            req.params.eventID +
+                            " failed with error: " +
+                            err,
                     );
                 });
         },
@@ -924,17 +917,17 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
                     .catch((err) => {
                         res.send(
                             "Sorry! Something went wrong (error deleting): " +
-                            err,
+                                err,
                         );
                         addToLog(
                             "deleteComment",
                             "error",
                             "Attempt to delete comment " +
-                            req.params.commentID +
-                            "from event " +
-                            req.params.eventID +
-                            " failed with error: " +
-                            err,
+                                req.params.commentID +
+                                "from event " +
+                                req.params.eventID +
+                                " failed with error: " +
+                                err,
                         );
                     });
             } else {
@@ -944,10 +937,10 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
                     "deleteComment",
                     "error",
                     "Attempt to delete comment " +
-                    req.params.commentID +
-                    "from event " +
-                    req.params.eventID +
-                    " failed with error: token does not match",
+                        req.params.commentID +
+                        "from event " +
+                        req.params.eventID +
+                        " failed with error: token does not match",
                 );
             }
         })
@@ -957,11 +950,11 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
                 "deleteComment",
                 "error",
                 "Attempt to delete comment " +
-                req.params.commentID +
-                "from event " +
-                req.params.eventID +
-                " failed with error: " +
-                err,
+                    req.params.commentID +
+                    "from event " +
+                    req.params.eventID +
+                    " failed with error: " +
+                    err,
             );
         });
 });

@@ -40,9 +40,7 @@ export const initEmailService = async (): Promise<boolean> => {
         case "nodemailer":
             if (
                 !config.nodemailer?.smtp_server ||
-                !config.nodemailer?.smtp_port ||
-                !config.nodemailer?.smtp_username ||
-                !config.nodemailer?.smtp_password
+                !config.nodemailer?.smtp_port
             ) {
                 return exitWithError(
                     "Nodemailer is configured as the email service, but not all required fields are provided. Please provide all required fields in the config file.",
@@ -51,11 +49,19 @@ export const initEmailService = async (): Promise<boolean> => {
             const nodemailerConfig = {
                 host: config.nodemailer?.smtp_server,
                 port: Number(config.nodemailer?.smtp_port) || 587,
-                auth: {
-                    user: config.nodemailer?.smtp_username,
-                    pass: config.nodemailer?.smtp_password,
+                tls: { 
+                    // do not fail on invalid certs
+                    rejectUnauthorized: false,
                 },
             } as SMTPTransport.Options;
+
+            if (config.nodemailer?.smtp_username) {
+                nodemailerConfig.auth = {
+                    user: config.nodemailer?.smtp_username,
+                    pass: config.nodemailer?.smtp_password
+                };
+            }
+
             const nodemailerTransporter =
                 nodemailer.createTransport(nodemailerConfig);
             const nodemailerVerified = await nodemailerTransporter.verify();
@@ -67,6 +73,7 @@ export const initEmailService = async (): Promise<boolean> => {
                     "Error verifying Nodemailer transporter. Please check your Nodemailer configuration.",
                 );
             }
+        case "none":
         default:
             console.warn(
                 "You have not configured this Gathio instance to send emails! This means that event creators will not receive emails when their events are created, which means they may end up locked out of editing events. Consider setting up an email service.",
@@ -77,6 +84,7 @@ export const initEmailService = async (): Promise<boolean> => {
 
 export const sendEmail = async (
     to: string,
+    bcc: string,
     subject: string,
     text: string,
     html?: string,
@@ -86,6 +94,7 @@ export const sendEmail = async (
             try {
                 await sgMail.send({
                     to,
+                    bcc,
                     from: config.general.email,
                     subject: `${config.general.site_name}: ${subject}`,
                     text,
@@ -105,16 +114,26 @@ export const sendEmail = async (
                 const nodemailerConfig = {
                     host: config.nodemailer?.smtp_server,
                     port: Number(config.nodemailer?.smtp_port) || 587,
-                    auth: {
-                        user: config.nodemailer?.smtp_username,
-                        pass: config.nodemailer?.smtp_password,
-                    },
                 } as SMTPTransport.Options;
+
+                if (config.nodemailer?.smtp_username) {
+                    nodemailerConfig.auth = {
+                        user: config.nodemailer?.smtp_username,
+                        pass: config.nodemailer?.smtp_password
+                    };
+                }
+
                 const nodemailerTransporter =
                     nodemailer.createTransport(nodemailerConfig);
                 await nodemailerTransporter.sendMail({
+                    envelope: {
+                        from: config.general.email,
+                        to,
+                        bcc,
+                    },
                     from: config.general.email,
                     to,
+                    bcc,
                     subject,
                     text,
                     html,
@@ -131,6 +150,7 @@ export const sendEmail = async (
 
 export const sendEmailFromTemplate = async (
     to: string,
+    bcc: string,
     subject: string,
     template: EmailTemplate,
     templateData: Record<string, unknown>,
@@ -149,5 +169,5 @@ export const sendEmailFromTemplate = async (
         `${template}/${template}Text`,
         templateData,
     );
-    return await sendEmail(to, subject, text, html);
+    return await sendEmail(to, bcc, subject, text, html);
 };

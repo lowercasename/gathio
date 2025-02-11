@@ -17,11 +17,11 @@ $(document).ready(function () {
     }
 });
 
-$('#editModal').on('shown.bs.modal', function (e) {
+$("#editModal").on("shown.bs.modal", function (e) {
     const ta = document.querySelector("#editModal textarea");
-    ta.style.display = 'none';
+    ta.style.display = "none";
     autosize(ta);
-    ta.style.display = '';
+    ta.style.display = "";
     // Call the update method to recalculate the size:
     autosize.update(ta);
 });
@@ -65,6 +65,14 @@ function editEventForm() {
                 window.eventData.maxAttendees !== null;
             this.data.publicCheckbox = window.eventData.showOnPublicList;
         },
+        updateEventEnd() {
+            if (
+                this.data.eventEnd === "" ||
+                this.data.eventEnd < this.data.eventStart
+            ) {
+                this.data.eventEnd = this.data.eventStart;
+            }
+        },
         async submitForm() {
             this.submitting = true;
             this.errors = [];
@@ -106,18 +114,25 @@ function editEventForm() {
         },
         async deleteImage() {
             this.deletingImage = true;
-            const response = await fetch(`/event/${window.eventData.id}/image/${window.eventData.editToken}`, {
-                method: "DELETE",
-            });
+            const response = await fetch(
+                `/event/${window.eventData.id}/image/${window.eventData.editToken}`,
+                {
+                    method: "DELETE",
+                },
+            );
             if (!response.ok) {
                 alert("An error occurred while deleting the image.");
                 this.deletingImage = false;
                 return;
             }
-            document.querySelector("#event-image-preview").style.backgroundImage = "";
+            document.querySelector(
+                "#event-image-preview",
+            ).style.backgroundImage = "";
             document.querySelector("#eventImageContainer").remove();
-            document.querySelector("#genericEventImageContainer").style.display = "block";
+            document.querySelector(
+                "#genericEventImageContainer",
+            ).style.display = "block";
             this.deletingImage = false;
-        }
+        },
     };
 }

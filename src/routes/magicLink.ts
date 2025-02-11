@@ -50,6 +50,7 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
 
     sendEmailFromTemplate(
         email,
+        "",
         `Magic link to create an event`,
         "createEventMagicLink",
         {

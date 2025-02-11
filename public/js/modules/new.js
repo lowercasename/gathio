@@ -68,6 +68,11 @@ function newEventForm() {
             this.data.maxAttendeesCheckbox = false;
             this.data.publicCheckbox = false;
         },
+        updateEventEnd() {
+            if (this.data.eventEnd === "" || this.data.eventEnd < this.data.eventStart) {
+                this.data.eventEnd = this.data.eventStart;
+            }
+        },
         async submitForm() {
             this.submitting = true;
             this.errors = [];
