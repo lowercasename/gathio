@@ -83,6 +83,7 @@ export const initEmailService = async (): Promise<boolean> => {
 
 export const sendEmail = async (
     to: string,
+    bcc: string,
     subject: string,
     text: string,
     html?: string,
@@ -92,6 +93,7 @@ export const sendEmail = async (
             try {
                 await sgMail.send({
                     to,
+                    bcc,
                     from: config.general.email,
                     subject: `${config.general.site_name}: ${subject}`,
                     text,
@@ -123,8 +125,14 @@ export const sendEmail = async (
                 const nodemailerTransporter =
                     nodemailer.createTransport(nodemailerConfig);
                 await nodemailerTransporter.sendMail({
+                    envelope: {
+                        from: config.general.email,
+                        to,
+                        bcc,
+                    },
                     from: config.general.email,
                     to,
+                    bcc,
                     subject,
                     text,
                     html,
@@ -141,6 +149,7 @@ export const sendEmail = async (
 
 export const sendEmailFromTemplate = async (
     to: string,
+    bcc: string,
     subject: string,
     template: EmailTemplate,
     templateData: Record<string, unknown>,
@@ -159,5 +168,5 @@ export const sendEmailFromTemplate = async (
         `${template}/${template}Text`,
         templateData,
     );
-    return await sendEmail(to, subject, text, html);
+    return await sendEmail(to, bcc, subject, text, html);
 };
