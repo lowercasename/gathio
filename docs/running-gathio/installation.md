@@ -94,23 +94,42 @@ The easiest way to run Gathio using Docker is by using the provided
 `docker-compose` configuration. We provide a Docker image at [GitHub
 Container Repository](https://github.com/lowercasename/gathio/pkgs/container/gathio).
 
-Create a directory on your system where you'll keep the Gathio configuration
-file and another where Gathio can store user-uploaded event images. Copy the
-example config file into the config directory:
+Clone the Gathio repository onto your system - you'll need a few files from it in a minute.
+
+Create a few directories on your system:
+
+- One where you'll keep the Gathio configuration file
+- One where you'll keep Gathio's static files, such as the instance description
+  and any custom pages you may want to create
+- And another where Gathio can store user-uploaded event images.
 
 ```bash
-mkdir -p ~/docker/gathio-docker/{config,images}
+mkdir -p ~/docker/gathio-docker/{config,images,static}
+```
+
+Copy the example config file from the Gathio repository directory into the Docker config directory,
+renaming it to `config.toml`:
+
+```bash
 cp config/config.example.toml ~/docker/gathio-docker/config/config.toml
 ```
 
-Under the `volumes` section of the `docker-compose.yml` configuration, adjust the
-configuration volume to match the folder you created:
+In the `docker-compose.yml` configuration file, adjust
+the `volumes` configuration to match the three folders you created:
 
 ```dockerfile
 volumes:
     - '/home/username/docker/gathio-docker/config:/app/config'
+    - '/home/username/docker/gathio-docker/static:/app/static'
     - '/home/username/docker/gathio-docker/images:/app/public/events'
 ```
+
+As with all things in the Docker universe, two things seperated by a colon
+means `<thing on host computer>:<thing inside Docker container>`.  So
+here you're saying "any files I put in the folder called
+`/home/username/docker/gathio-docker/config` on my computer will appear inside
+the Docker container at the path `/app/static`. Don't change the paths on the
+Docker container side - only the ones on the host side!
 
 Adjust any settings in the config file, especially the MongoDB URL, which should
 read as follows for the standard Docker Compose config, and the email service if you
@@ -121,19 +140,22 @@ mongodb_url = "mongodb://mongo:27017/gathio"
 mail_service = "nodemailer"
 ```
 
-You can copy the `docker-compose.yml` file into that same `gathio-docker` directory
-you created - you don't need any of the source code. Once you're done, your directory
-should look something like this:
+You can copy the `docker-compose.yml` file into that same `gathio-docker`
+directory you created - you don't need to keep any of the other source code. Once
+you're done, your directory should look something like this:
 
 ```
 gathio-docker
 ├── config
 │  └── config.toml
 ├── docker-compose.yml
-└── images
+├── images
+└── static
+   ├── instance-description.md
+   └── privacy-policy.md
 ```
 
-Finally, from wherever you've put your `docker-compose.yml` file, start the Docker stack:
+Finally, from wherever you've put your `docker-compose.yml` file, start the Docker Compose stack:
 
 ```bash
 cd gathio-docker

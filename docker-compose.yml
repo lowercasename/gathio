@@ -12,6 +12,9 @@ services:
         volumes:
             # The path to Gathio's config folder - change to match your system
             - ./gathio-docker/config:/app/config
+            # The path to Gathio's static, public pages including instance description
+            # and privacy policy - change to match your system
+            - ./gathio-docker/static:/app/static
             # The path to Gathio's user-uploaded event images folder - change to match your system
             - ./gathio-docker/images:/app/public/events
     mongo:
