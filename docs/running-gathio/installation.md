@@ -6,8 +6,8 @@ Gathio can be set up to run on your own server in two ways - as a self-hosted se
 
 ### Prerequisites
 
--   [Node.js](https://nodejs.org/en/) v18 or greater
--   [MongoDB](https://www.mongodb.com/docs/manual/administration/install-on-linux/#std-label-install-mdb-community-edition-linux)
+- [Node.js](https://nodejs.org/en/) v18 or greater
+- [MongoDB](https://www.mongodb.com/docs/manual/administration/install-on-linux/#std-label-install-mdb-community-edition-linux)
 
 ### Ubuntu
 
@@ -15,64 +15,75 @@ Let's suppose we're installing on a fresh Ubuntu system.
 
 First, let's get the code:
 
-```
-$ cd /srv/
-$ sudo git clone https://github.com/lowercasename/gathio/
-```
-
-We'll need to install [pnpm](https://pnpm.io/) for this:
-
-```
-$ curl -fsSL https://get.pnpm.io/install.sh | sh -
+```bash
+cd /srv/
+sudo git clone https://github.com/lowercasename/gathio/
 ```
 
-pnpm installation instructions for [other systems](https://pnpm.io/installation) are available.
+We'll need to install [`pnpm`](https://pnpm.io/) for this. It should be installed somewhere accessible by any user account. You may also have to link `/usr/bin/node` and `/usr/bin/nodejs` to be accessible to all users, too.
+
+```bash
+export PNPM_HOME="/usr/.pnpm"
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+sudo ln -s /usr/.pnpm/pnpm /usr/bin/pnpm
+# you may also have to link /usr/bin/node or /usr/bin/nodejs to your local copy of node
+```
+
+`pnpm` installation instructions for [other systems](https://pnpm.io/installation) are available.
 
 Now, we'll install the dependencies:
 
-```
-$ cd gathio
-$ pnpm install
-$ pnpm build
+```bash
+cd gathio
+pnpm install
+# as "checkJs" is set to "true" in "tsconfig.json", this fails because of type-checking
+#   however, it builds the output folder "dist", so we can ignore the errors and carry on
+pnpm build
 ```
 
 Let's copy the config file in place:
 
-```
-$ cp config/config.example.toml config/config.toml
+```bash
+cp config/config.example.toml config/config.toml
 ```
 
 We can edit this file if needed, as it contains settings which will need to be adjusted to your local setup to successfully format emails.
 
-```
-$ $EDITOR config/config.toml
+```bash
+$EDITOR config/config.toml
 ```
 
 Either way, we'll need to have MongoDB running. Follow the [MongoDB Community Edition Ubuntu instructions](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-ubuntu), which are probably what you want.
 
 Next, let's create a dedicated user:
 
-```
-$ sudo adduser --home /srv/gathio --disabled-login gathio
-$ sudo chown -R gathio:gathio /srv/gathio
-```
-
-Next, we'll copy the systemd service and reload systemd
-
-```
-$ sudo cp gathio.service /etc/systemd/system/
-$ sudo systemctl daemon-reload
+```bash
+sudo adduser --home /srv/gathio --disabled-login gathio
+sudo chown -R gathio:gathio /srv/gathio
+# check user can access pnpm
+cd / && sudo -u gathio /usr/bin/pnpm --version
 ```
 
-Finally, we can start gathio:
+Next, we'll copy the `systemd` service and reload `systemd`
 
+```bash
+sudo cp gathio.service /etc/systemd/system/
+sudo systemctl daemon-reload
 ```
-$ sudo systemctl start gathio
+
+Finally, we can start `gathio`:
+
+```bash
+# start locally in terminal as gathio user
+cd /srv/gathio
+sudo -u gathio /usr/bin/pnpm start
+# start service to run in background
+sudo systemctl start gathio
 ```
 
 It should now be listening on port 3000:
 
-```
+```bash
 $ sudo netstat -tunap | grep LISTEN
 [...]
 tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      952/sshd
@@ -144,7 +155,7 @@ You can copy the `docker-compose.yml` file into that same `gathio-docker`
 directory you created - you don't need to keep any of the other source code. Once
 you're done, your directory should look something like this:
 
-```
+```tree
 gathio-docker
 ├── config
 │  └── config.toml
