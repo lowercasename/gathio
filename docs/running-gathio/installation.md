@@ -72,7 +72,8 @@ Finally, we can start `gathio`:
 
 ```bash
 # start locally in terminal
-(cd /srv/gathio; /usr/bin/pnpm start)
+cd /srv/gathio
+/usr/bin/pnpm start
 # start service to run in background
 sudo systemctl start gathio
 ```
