@@ -74,9 +74,9 @@ sudo systemctl daemon-reload
 Finally, we can start `gathio`:
 
 ```bash
-# start locally in terminal
+# start locally in terminal as gathio user
 cd /srv/gathio
-/usr/bin/pnpm start
+sudo -u gathio /usr/bin/pnpm start
 # start service to run in background
 sudo systemctl start gathio
 ```
