@@ -26,6 +26,7 @@ We'll need to install [`pnpm`](https://pnpm.io/) for this. It should be installe
 export PNPM_HOME="/usr/.pnpm"
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 sudo ln -s /usr/.pnpm/pnpm /usr/bin/pnpm
+# you may also have to link /usr/bin/node or /usr/bin/nodejs to your local copy of node
 ```
 
 `pnpm` installation instructions for [other systems](https://pnpm.io/installation) are available.
@@ -35,6 +36,8 @@ Now, we'll install the dependencies:
 ```bash
 cd gathio
 pnpm install
+# as "checkJs" is set to "true" in "tsconfig.json", this fails because of type-checking
+#   however, it builds the output folder "dist", so we can ignore the errors and carry on
 pnpm build
 ```
 
