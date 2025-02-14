@@ -53,7 +53,16 @@
     <small class="form-text">Recommended dimensions (w x h): 920px by 300px.</small>
     {{#if eventData.image}}
       <div class="form-group my-2">
-        <button type="button" class="button button--danger" id="deleteImage">Delete image</button>
+        <button
+          type="button"
+          class="button button--danger"
+          id="deleteImage"
+          x-on:click="deleteImage"
+          x-bind:disabled="deletingImage"
+          x-bind:class="deletingImage ? 'button--loading' : ''"
+        >
+          Delete image
+        </button>
       </div>
     {{/if}}
   </div>

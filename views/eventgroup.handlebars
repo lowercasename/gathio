@@ -130,7 +130,7 @@
 {{#if editingEnabled}}
 {{> editeventgroupmodal }}
 
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true" x-data="{}">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -139,7 +139,14 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="deleteEventGroupForm" action="/deleteeventgroup/{{eventGroupData.id}}/{{eventGroupData.editToken}}" method="post">
+      <form
+        id="deleteEventGroupForm"
+        x-on:submit.prevent="
+          fetch('/group/{{eventGroupData.id}}/{{eventGroupData.editToken}}', { method: 'DELETE' })
+            .then(response => response.ok ? window.location.href = '/' : response.json())
+            .then(data => console.log(data))
+        "
+      >
       <div class="modal-body">
         <p>Are you sure you want to delete this event group? This action cannot be undone.</p>
         <p>This will <strong>not</strong> delete the individual events contained in this group. They can be linked to another group later.</p>

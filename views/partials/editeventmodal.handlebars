@@ -44,18 +44,6 @@
   </div>
 </div>
 
-<script>
-  $('#deleteImage').click(function () {
-    $.post('/deleteimage/{{eventData.id}}/{{eventData.editToken}}', function (response) {
-      if (response === "Success") {
-        location.reload();
-      } else {
-        alert(response);
-      }
-    });
-  })
-</script>
-
 <script type="text/javascript" src="/js/generate-timezones.js"></script>
 <script type="text/javascript" src="/js/modules/event-edit.js"></script>
 <script src="/js/modules/group-linker.js"></script>
