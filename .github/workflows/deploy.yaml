@@ -12,7 +12,7 @@ jobs:
             - name: Set up known_hosts file
               run: |
                   mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
-                  ssh-keyscan -t rsa ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+                  ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
             - uses: webfactory/ssh-agent@v0.9.1
               with:
