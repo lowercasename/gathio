@@ -14,7 +14,7 @@ jobs:
                   mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
                   ssh-keyscan -t rsa ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-            - uses: webfactory/ssh-agent@v0.7.0
+            - uses: webfactory/ssh-agent@v0.9.1
               with:
                   ssh-private-key: ${{ secrets.SSH_KEY }}
 
