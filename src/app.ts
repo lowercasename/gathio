@@ -125,12 +125,6 @@ async function initializeApp() {
         console.error('handlebars-i18next helper is not properly loaded');
     }
 
-
-    (hbsInstance.handlebars as typeof Handlebars).registerHelper('pluralize', function(count: number, key: string, options: any) {
-        const translation = i18next.t(key, { count: count });
-        return translation;
-    });
-
     app.engine("handlebars", hbsInstance.engine);
     app.set("view engine", "handlebars");
     app.set("hbsInstance", hbsInstance);

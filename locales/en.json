@@ -101,6 +101,7 @@
   "eventpwd": "Event password",
   "fixerrors": "Please fix these errors:",
   "forgotpwd": "Forgot password",
+  "frontend.elnumber": "({{count}} people)",
   "frontend.eventattendees": "people",
   "group.about": "About",
   "group.addevent": "To link an existing event to this group, copy and paste the two codes below into the 'Event Group' box when creating a new event or editing an existing event.",

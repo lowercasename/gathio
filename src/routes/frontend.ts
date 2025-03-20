@@ -19,6 +19,7 @@ import MagicLink from "../models/MagicLink.js";
 import { getConfigMiddleware } from "../lib/middleware.js";
 import { getMessage } from "../util/messages.js";
 import { EventListEvent, bucketEventsByMonth } from "../lib/event.js";
+import i18next from "i18next";
 
 const router = Router();
 
@@ -257,7 +258,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                     el.id = el._id;
                 }
                 if (el.number && el.number > 1) {
-                    el.name = `${el.name} (${el.number} people)`;
+                    el.name = `${el.name} ${i18next.t("frontend.elnumber", { count: el.number })}`;
                 }
                 return {
                     ...el,
