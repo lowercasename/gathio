@@ -41,6 +41,7 @@
         "jimp": "^0.16.13",
         "jsdom": "^22.1.0",
         "marked": "^12.0.2",
+        "moment": "^2.30.1",
         "moment-timezone": "^0.5.45",
         "mongoose": "^5.13.22",
         "multer": "1.4.5-lts.1",

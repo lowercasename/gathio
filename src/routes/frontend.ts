@@ -50,7 +50,7 @@ router.get("/new", (req: Request, res: Response) => {
         return res.render("createEventMagicLink", frontendConfig(res));
     }
     return res.render("newevent", {
-        title: "New event",
+        title: i18next.t("frontend.newevent"),
         ...frontendConfig(res),
     });
 });
@@ -76,7 +76,7 @@ router.get("/new/:magicLinkToken", async (req: Request, res: Response) => {
         });
     }
     res.render("newevent", {
-        title: "New event",
+        title: i18next.t("frontend.newevent"),
         ...frontendConfig(res),
         magicLinkToken: req.params.magicLinkToken,
         creatorEmail: magicLink.email,
@@ -92,7 +92,6 @@ router.get("/events", async (_: Request, res: Response) => {
         .lean()
         .sort("start");
     const updatedEvents: EventListEvent[] = events.map((event) => {
-        moment.locale(i18next.language);
         const startMoment = moment.tz(event.start, event.timezone);
         const endMoment = moment.tz(event.end, event.timezone);
         const isSameDay = startMoment.isSame(endMoment, "day");
@@ -156,7 +155,6 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         }
         const parsedLocation = event.location.replace(/\s+/g, "+");
         let displayDate;
-        moment.locale(i18next.language);
         const dateformat = i18next.t("frontend.dateformat");
         const timeformat = i18next.t('frontend.timeformat');
         if (moment.tz(event.end, event.timezone).isSame(event.start, "day")) {

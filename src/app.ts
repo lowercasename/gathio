@@ -31,6 +31,7 @@ import {
     activityPubContentType,
     alternateActivityPubContentType,
 } from "./lib/activitypub.js";
+import moment from "moment";
 
 const app = express();
 
@@ -124,6 +125,10 @@ async function initializeApp() {
     } else {
         console.error('handlebars-i18next helper is not properly loaded');
     }
+
+    i18next.on('languageChanged', function(lng) {
+        moment.locale(lng);
+    });
 
     app.engine("handlebars", hbsInstance.engine);
     app.set("view engine", "handlebars");
