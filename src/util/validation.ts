@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import moment from "moment-timezone";
 
 type Error = {
@@ -90,26 +91,26 @@ const validateUrl = (url: string) => {
 export const validateEventTime = (start: Date, end: Date): Error | boolean => {
     if (moment(start).isAfter(moment(end))) {
         return {
-            message: "Start time must be before end time.",
+            message: i18next.t('validation.eventtime.startisafter'),
             field: "eventStart",
         };
     }
     if (moment(start).isBefore(moment())) {
         return {
-            message: "Start time must be in the future.",
+            message: i18next.t('validation.eventtime.startisbefore'),
             field: "eventStart",
         };
     }
     if (moment(end).isBefore(moment())) {
         return {
-            message: "End time must be in the future.",
+            message: i18next.t('validation.eventtime.endisbefore'),
             field: "eventEnd",
         };
     }
     // Duration cannot be longer than 1 year
     if (moment(end).diff(moment(start), "years") > 1) {
         return {
-            message: "Event duration cannot be longer than 1 year.",
+            message: i18next.t("validation.eventtime.endyears"),
             field: "eventEnd",
         };
     }
@@ -130,25 +131,25 @@ export const validateEventData = (
     const errors: Error[] = [];
     if (!validatedData.eventName) {
         errors.push({
-            message: "Event name is required.",
+            message: i18next.t('validation.eventdata.eventname'),
             field: "eventName",
         });
     }
     if (!validatedData.eventLocation) {
         errors.push({
-            message: "Event location is required.",
+            message: i18next.t("validation.eventdata.eventlocation"),
             field: "eventLocation",
         });
     }
     if (!validatedData.eventStart) {
         errors.push({
-            message: "Event start time is required.",
+            message: i18next.t("validation.eventdata.eventstart"),
             field: "eventStart",
         });
     }
     if (!validatedData.eventEnd) {
         errors.push({
-            message: "Event end time is required.",
+            message: i18next.t("validation.eventdata.eventend"),
             field: "eventEnd",
         });
     }
@@ -163,26 +164,26 @@ export const validateEventData = (
     }
     if (!validatedData.timezone) {
         errors.push({
-            message: "Event timezone is required.",
+            message: i18next.t("validation.eventdata.timezone"),
             field: "timezone",
         });
     }
     if (!validatedData.eventDescription) {
         errors.push({
-            message: "Event description is required.",
+            message: i18next.t("validation.eventdata.eventdescription"),
             field: "eventDescription",
         });
     }
     if (validatedData.eventGroupBoolean) {
         if (!validatedData.eventGroupID) {
             errors.push({
-                message: "Event group ID is required.",
+                message: i18next.t("validation.eventdata.eventgroupboolean"),
                 field: "eventGroupID",
             });
         }
         if (!validatedData.eventGroupEditToken) {
             errors.push({
-                message: "Event group edit token is required.",
+                message: i18next.t("validation.eventdata.eventgroupedittoken"),
                 field: "eventGroupEditToken",
             });
         }
@@ -190,13 +191,13 @@ export const validateEventData = (
     if (validatedData.maxAttendeesBoolean) {
         if (!validatedData.maxAttendees) {
             errors.push({
-                message: "Max number of attendees is required.",
+                message: i18next.t("validation.eventdata.maxattendeesboolean"),
                 field: "maxAttendees",
             });
         }
         if (isNaN(validatedData.maxAttendees)) {
             errors.push({
-                message: "Max number of attendees must be a number.",
+                message: i18next.t("validation.eventdata.maxattendees"),
                 field: "maxAttendees",
             });
         }
@@ -204,7 +205,7 @@ export const validateEventData = (
     if (validatedData.creatorEmail) {
         if (!validateEmail(validatedData.creatorEmail)) {
             errors.push({
-                message: "Email address is invalid.",
+                message: i18next.t("validation.eventdata.creatoremail"),
                 field: "creatorEmail",
             });
         }
@@ -212,7 +213,7 @@ export const validateEventData = (
     if (validatedData.eventURL) {
         if (!validateUrl(validatedData.eventURL)) {
             errors.push({
-                message: "Event link is invalid.",
+                message: i18next.t("validation.eventdata.eventurl"),
                 field: "eventURL",
             });
         }
@@ -230,20 +231,20 @@ export const validateGroupData = (
     const errors: Error[] = [];
     if (!groupData.eventGroupName) {
         errors.push({
-            message: "Event group name is required.",
+            message: i18next.t("validation.groupdata.eventgroupname"),
             field: "eventGroupName",
         });
     }
     if (!groupData.eventGroupDescription) {
         errors.push({
-            message: "Event group description is required.",
+            message: i18next.t("validation.groupdata.eventgroupdescription"),
             field: "eventGroupDescription",
         });
     }
     if (groupData.creatorEmail) {
         if (!validateEmail(groupData.creatorEmail)) {
             errors.push({
-                message: "Email address is invalid.",
+                message: i18next.t("validation.groupdata.creatoremail"),
                 field: "creatorEmail",
             });
         }
@@ -251,7 +252,7 @@ export const validateGroupData = (
     if (groupData.eventGroupURL) {
         if (!validateUrl(groupData.eventGroupURL)) {
             errors.push({
-                message: "Group link is invalid.",
+                message: i18next.t("validation.groupdata.eventgroupurl"),
                 field: "eventGroupURL",
             });
         }
