@@ -197,6 +197,8 @@
   "publiclist.groups": "Groups",
   "publiclist.nogroups": "No groups!",
   "publiclist.numoevents": "{{this.numberOfEvents}} {{plural this.numberOfEvents \"event(s)\"}}",
+  "publiclist.pastevents": "Past events",
+  "publiclist.upcomingevents": "Upcoming events",
   "recommendeddimensions": "Recommended dimensions (w x h): 920px by 300px.",
   "reply": "Reply",
   "replycontent": "What would you like to reply?",
