@@ -174,12 +174,9 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                             .tz(event.end, event.timezone)
                             .format(timeformat),
                     timezone:
-                        i18next.t('frontend.sameday.timezone', 
-                            { tz:
-                                moment
-                                    .tz(event.end, event.timezone)
-                                    .format('(z)',)
-                            } )
+                        moment
+                            .tz(event.end, event.timezone)
+                            .format(' (z)',)
                 });
         } else {
             displayDate = i18next.t("frontend.displaydate-days",
