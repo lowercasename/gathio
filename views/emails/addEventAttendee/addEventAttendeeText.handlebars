@@ -1,13 +1,12 @@
-You just marked yourself as attending an event on {{siteName}}. Thank you! We'll send you another email if there are any updates to the event. Your email will be automatically removed from the database once the event finishes.
+{{t "mail.addeventattendee.preface" }}
 
-Follow this link to open the event page any time: https://{{domain}}/{{eventID}}
+{{t "mail.addeventattendee.eventlink" }}: https://{{domain}}/{{eventID}}
 
-Need to remove yourself from this event? Click this link: https://{{domain}}/event/{{eventID}}/unattend/{{removalPasswordHash}}
+{{t "mail.addeventattendee.removelink" }}: https://{{domain}}/event/{{eventID}}/unattend/{{removalPasswordHash}}
 
-You can also head to the event page and use this deletion password: {{removalPassword}}
+{{t "mail.addeventattendee.removepassword" }}: {{removalPassword}}
 
-Love,
-
+{{t "mail.love" }}
 {{siteName}}
 
-If you didn't mark yourself as attending an event on {{siteName}}, someone may have accidentally typed your email instead of theirs. If you don't want to attend this event, use the deletion password above to remove yourself from the event page.
+{{t "mail.dontknow" }}

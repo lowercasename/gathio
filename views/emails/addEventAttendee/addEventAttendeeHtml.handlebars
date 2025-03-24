@@ -1,9 +1,9 @@
-<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">You just marked yourself as attending an event on {{siteName}}. Thank you! We'll send you another email if there are any updates to the event. Your email will be automatically removed from the database once the event finishes.</p>
-<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Follow this link to open the event page any time: <a href="https://{{domain}}/{{eventID}}">https://{{domain}}/{{eventID}}</a></p>
-<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Need to remove yourself from this event? <a href="https://{{domain}}/event/{{eventID}}/unattend/{{removalPasswordHash}}">Click this link</a>.</p>
-<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">You can also head to the event page and use this <strong>deletion password</strong>: {{removalPassword}}</p>
-<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Love,</p>
+<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">{{t "mail.addeventattendee.preface" }}</p>
+<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">{{t "mail.addeventattendee.eventlink" }}: <a href="https://{{domain}}/{{eventID}}">https://{{domain}}/{{eventID}}</a></p>
+<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">{{t "mail.addeventattendee.toremove" }}: <a href="https://{{domain}}/event/{{eventID}}/unattend/{{removalPasswordHash}}">{{t "mail.addeventattendee.clicktocancel" }}</a>.</p>
+<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">{{{t "mail.addeventattendee.removapasswordhtml" }}}: {{removalPassword}}</p>
+<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">{{t "mail.love" }}</p>
 <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">{{siteName}}</p>
 <hr/>
-<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;"><strong>Hold up - I have no idea what this email is about!</strong></p>
-<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">If you didn't mark yourself as attending an event on {{siteName}}, someone may have accidentally typed your email instead of theirs. If you don't want to attend this event, use the <strong>deletion password</strong> above to remove yourself from the event page.</p>
+<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;"><strong>{{t "mail.holdup" }}</strong></p>
+<p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">{{{t "mail.addeventattendee.dontknowhtml" }}}</p>

@@ -24,6 +24,7 @@ import EventGroup from "./models/EventGroup.js";
 import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
 import { hashString } from "./util/generator.js";
+import i18next from "i18next";
 
 const config = getConfig();
 const domain = config.general.domain;
@@ -377,7 +378,7 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                                 const msg = {
                                                     to: attendeeEmails,
                                                     from: contactEmail,
-                                                    subject: `${siteName}: ${event.name} was deleted`,
+                                                    subject: `${siteName} : ` + i18next.t("routes.deleteeventsubject", {eventName: event.name}),
                                                     html,
                                                 };
                                                 switch (mailService) {
@@ -722,7 +723,7 @@ router.post("/attendevent/:eventID", async (req, res) => {
                             const msg = {
                                 to: req.body.attendeeEmail,
                                 from: contactEmail,
-                                subject: `${siteName}: You're RSVPed to ${event.name}`,
+                                subject: `${siteName} : ` + i18next.t("routes.addeventattendeesubject", {eventName: event.name}),
                                 html,
                             };
                             switch (mailService) {
@@ -798,7 +799,7 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
                             const msg = {
                                 to: req.body.attendeeEmail,
                                 from: contactEmail,
-                                subject: `${siteName}: You have been removed from an event`,
+                                subject: `${siteName} : ` + i18next.t("routes.removeeventattendeesubject"),
                                 html,
                             };
                             switch (mailService) {
@@ -867,7 +868,7 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
                             const msg = {
                                 to: req.body.attendeeEmail,
                                 from: contactEmail,
-                                subject: `${siteName}: You have been removed from an event`,
+                                subject: `${siteName} : ` + i18next.t("routes.removeeventattendeesubject"),
                                 html,
                             };
                             switch (mailService) {
@@ -945,7 +946,7 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
                         const msg = {
                             to: subscriber.email,
                             from: contactEmail,
-                            subject: `${siteName}: You have subscribed to an event group`,
+                            subject: `${siteName} : ` + i18next.t("routes.subscribedsubject"),
                             html,
                         };
                         switch (mailService) {
@@ -1084,7 +1085,7 @@ router.post("/post/comment/:eventID", (req, res) => {
                                             const msg = {
                                                 to: attendeeEmails,
                                                 from: contactEmail,
-                                                subject: `${siteName}: New comment in ${event.name}`,
+                                                subject: `${siteName} : ` + i18next.t("routes.addeventcommentsubject", { eventName: event.name }),
                                                 html,
                                             };
                                             switch (mailService) {
@@ -1212,7 +1213,7 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                                             const msg = {
                                                 to: attendeeEmails,
                                                 from: contactEmail,
-                                                subject: `${siteName}: New comment in ${event.name}`,
+                                                subject: `${siteName} : ` + i18next.t("routes.addeventcommentsubject", { eventName: event.name }),
                                                 html,
                                             };
                                             switch (mailService) {
