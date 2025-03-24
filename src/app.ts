@@ -61,7 +61,7 @@ async function initializeApp() {
             supportedLngs: ['en','en-US', 'ja'],
             nonExplicitSupportedLngs: true,
             load: 'languageOnly',
-            debug: true,
+            debug: false,
             detection: {
                 order: ['header', 'cookie'],
                 lookupHeader: 'accept-language',
@@ -80,24 +80,24 @@ async function initializeApp() {
         const currentLanguage = i18next.language;
         i18next.changeLanguage(req.language);
         const newLanguage = i18next.language;
-        console.log('Language Change:', {
-            header: req.headers['accept-language'],
-            detected: req.language,
-            currentLanguage: currentLanguage,
-            newLanguage: newLanguage
-        });
+//        console.log('Language Change:', {
+//            header: req.headers['accept-language'],
+//            detected: req.language,
+//            currentLanguage: currentLanguage,
+//            newLanguage: newLanguage
+//        });
         next();
     });
 
-    // デバッグ用
-    app.use((req, res, next) => {
-        console.log('Language Detection:', {
-            header: req.headers['accept-language'],
-            detected: req.language,
-            i18next: i18next.language
-        });
-        next();
-    });
+//    // デバッグ用
+//    app.use((req, res, next) => {
+//        console.log('Language Detection:', {
+//            header: req.headers['accept-language'],
+//            detected: req.language,
+//            i18next: i18next.language
+//        });
+//        next();
+//    });
 
     // View engine //
     const hbsInstance: ExpressHandlebars = hbs.create({
