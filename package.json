@@ -1,7 +1,7 @@
 {
     "name": "gathio",
     "version": "1.5.0",
-    "group.p.eventgroupdescription": "A simple, federated, privacy-first event hosting platform",
+    "description": "A simple, federated, privacy-first event hosting platform",
     "main": "index.js",
     "type": "module",
     "scripts": {
