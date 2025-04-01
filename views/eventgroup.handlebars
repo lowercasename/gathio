@@ -10,7 +10,7 @@
   </div>
   <div class="col-lg-2 ml-2 edit-buttons">
     {{#if editingEnabled}}
-      <button type="button" id="editGroup" class="button button--primary text-nowrap ml-auto d-block" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{t "group.edit" }}</button>
+      <button type="button" id="editGroup" class="button button--primary text-nowrap ml-auto d-block" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{t "views.eventgroup.edit" }}</button>
     {{/if}}
   </div>
 </div>
@@ -20,7 +20,7 @@
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
-  {{{t "group.welcome" }}}
+  {{{t "views.eventgroup.welcome" }}}
 </div>
 {{/if}}
 <div id="event__basics">
@@ -32,7 +32,7 @@
             <span class="fa-li">
               <i class="fas fa-fw fa-user-circle"></i>
             </span>
-            <span class="text-muted">{{{t "group.hostedby" }}}
+            <span class="text-muted">{{{t "views.eventgroup.hostedby" }}}
           </li>
         {{/if}}
         {{#if eventGroupData.url}}
@@ -51,7 +51,7 @@
           </span>
           <a href="https://{{domain}}/group/{{eventGroupData.id}}">https://{{domain}}/group/{{eventGroupData.id}}</a>
           <button type="button" id="copyEventLink" class="eventInformationAction button button--outline-secondary button--sm" data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}">
-            <i class="fas fa-copy"></i> {{t "copy" }}
+            <i class="fas fa-copy"></i> {{t "common.copy" }}
           </button>
         </li>
         <li>
@@ -63,9 +63,9 @@
           <button type="button" id="copyFeedLink"
             class="eventInformationAction button button--outline-secondary button--sm"
             data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}/feed.ics">
-            <i class="fas fa-copy"></i> {{t "copy" }}
+            <i class="fas fa-copy"></i> {{t "common.copy" }}
           </button>
-          <p class="text-muted small">{{t "group.feedlinkdesc" }}</p>
+          <p class="text-muted small">{{t "views.eventgroup.feedlinkdesc" }}</p>
         </li>
       </ul>
     </div> <!-- /card -->
@@ -75,31 +75,31 @@
       <button type="button" class="button button--outline-secondary button--sm"
         data-event-id="{{eventGroupData.id}}" data-toggle="modal"
         data-target="#subscribeModal">
-        <i class="fas fa-envelope"></i> {{t "group.subscribetitle" }}
+        <i class="fas fa-envelope"></i> {{t "views.eventgroup.subscribetitle" }}
       </button>
       <button type="button" id="exportICS" class="button button--outline-secondary
         button--sm" data-event-id="{{eventGroupData.id}}">
-        <i class="fas fa-download"></i> {{t "group.ICSexport" }}
+        <i class="fas fa-download"></i> {{t "views.eventgroup.ICSexport" }}
       </button>
     </div>
 
     {{#unless editingEnabled}}
-        <button type="button" id="editGroup" class="button button--outline-secondary button--sm" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{t "group.editmode" }}</button>
+        <button type="button" id="editGroup" class="button button--outline-secondary button--sm" data-event-id="{{eventGroupData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{t "views.eventgroup.editmode" }}</button>
     {{/unless}}
   </aside>
 </div>
 
 {{#if editingEnabled}}
   <div class="alert alert-info mb-4">
-    <p>{{t "group.addevent" }}</p>
+    <p>{{t "views.eventgroup.addevent" }}</p>
     <div class="table-responsive">
       <table style="width:100%">
         <tr style="border-bottom:1px solid rgba(0,0,0,0.2)">
-          <td><strong>{{t "group.p.eventgroupid" }}</strong></td>
+          <td><strong>{{t "common.eventgroupid" }}</strong></td>
           <td><span class="code" id="eventGroupID">{{eventGroupData.id}}</span></td>
         </tr>
         <tr>
-          <td><strong>{{t "group.editpswd" }}</strong></td>
+          <td><strong>{{t "views.eventgroup.editpswd" }}</strong></td>
           <td><span class="code" id="eventGroupEditToken">{{eventGroupData.editToken}}</span></td>
         </tr>
       </table>
@@ -109,19 +109,19 @@
 {{/if}}
 
     <div class="card mb-4" id="eventDescription">
-        <h5 class="card-header">{{t "group.about" }}</h5>
+        <h5 class="card-header">{{t "views.eventgroup.about" }}</h5>
         <div class="card-body">
             {{{parsedDescription}}}
         </div>
     </div>
 
     <div class="card mt-4 mb-4" id="upcomingEvents">
-        <h5 class="card-header">{{t "upcomingevents" }}</h5>
+        <h5 class="card-header">{{t "views.eventgroup.upcomingevents" }}</h5>
         {{> eventList upcomingEvents}}
     </div>
 
     <div class="card mt-4 mb-4" id="pastEvents">
-        <h5 class="card-header">{{t "pastevents" }}</h5>
+        <h5 class="card-header">{{t "views.eventgroup.pastevents" }}</h5>
         {{> eventList pastEvents}}
     </div>
 </div>
@@ -140,12 +140,12 @@
       </div>
       <form id="deleteEventGroupForm" action="/deleteeventgroup/{{eventGroupData.id}}/{{eventGroupData.editToken}}" method="post">
       <div class="modal-body">
-        <p>{{t "group.delconfirm" }}</p>
-        <p>{{{t "group.deldesc" }}}</p>
+        <p>{{t "views.eventgroup.delconfirm" }}</p>
+        <p>{{{t "views.eventgroup.deldesc" }}}</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="button button--secondary" data-dismiss="modal">{{t "close" }}</button>
-        <button type="submit" class="button button--danger">{{t "group.del" }}</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">{{t "common.close" }}</button>
+        <button type="submit" class="button button--danger">{{t "views.eventgroup.del" }}</button>
       </div>
       </form>
     </div>
@@ -159,7 +159,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="subscribeModalLabel">{{t "group.subscribe" }}</h5>
+        <h5 class="modal-title" id="subscribeModalLabel">{{t "views.eventgroup.subscribe" }}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -167,7 +167,7 @@
       <form id="subscribeForm" action="/subscribe/{{eventGroupData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <p class="form-text small">{{t "group.subscribedesc" }}</p>
+          <p class="form-text small">{{t "views.eventgroup.subscribedesc" }}</p>
         </div>
         <div class="form-group">
           <input type="email" class="form-control" id="emailAddress"
@@ -175,8 +175,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="button button--secondary" data-dismiss="modal">{{t "close" }}</button>
-        <button type="submit" class="button button--primary">{{t "group.subscribebutton" }}</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">{{t "common.close" }}</button>
+        <button type="submit" class="button button--primary">{{t "views.eventgroup.subscribebutton" }}</button>
       </div>
       </form>
     </div>
@@ -187,7 +187,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editTokenModalLabel">{{t "edittoken" }}</h5>
+        <h5 class="modal-title" id="editTokenModalLabel">{{t "views.edittaken" }}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -195,9 +195,9 @@
       <form id="verifyTokenForm" action="/verifytoken/group/{{eventGroupData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <p class="form-text small">{{t "edittokendesc" }}</p>
+          <p class="form-text small">{{t "views.edittokendesc" }}</p>
           <div class="form-group">
-            <input type="text" class="form-control" id="editToken" name="editToken" placeholder="{{t "right" }}" data-validation="required">
+            <input type="text" class="form-control" id="editToken" name="editToken" placeholder="{{t "views.right" }}" data-validation="required">
           </div>
           <div class="form-group">
               <div class="alert alert-danger" style="display:none;"></div>
@@ -205,8 +205,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="button button--secondary" data-dismiss="modal">{{t "close" }}</button>
-        <button type="submit" class="button button--primary">{{t "group.edit" }}</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">{{t "common.close" }}</button>
+        <button type="submit" class="button button--primary">{{t "views.eventgroup.edit" }}</button>
       </div>
       </form>
     </div>
@@ -273,12 +273,12 @@ window.groupData = {{{ json jsonData }}};
       })
     })
     $("#copyEventLink").click(function(){
-      $(this).html('<i class="fas fa-copy"></i> {{t "copied" }}!');
-      setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> {{t "copy" }}');}, 5000);
+      $(this).html('<i class="fas fa-copy"></i> {{t "common.copied" }}!');
+      setTimeout(function(){ $("#copyEventLink").html('<i class="fas fa-copy"></i> {{t "common.copy" }}');}, 5000);
     });
     $("#copyFeedLink").click(function(){
-      $(this).html('<i class="fas fa-copy"></i> {{t "copied" }}');
-      setTimeout(function(){ $("#copyFeedLink").html('<i class="fas fa-copy"></i> {{t "copy" }}');}, 5000);
+      $(this).html('<i class="fas fa-copy"></i> {{t "common.copied" }}');
+      setTimeout(function(){ $("#copyFeedLink").html('<i class="fas fa-copy"></i> {{t "common.copy" }}');}, 5000);
     });
 
       $('#verifyTokenForm').on('submit', function(e) {
@@ -296,7 +296,7 @@ window.groupData = {{{ json jsonData }}};
                 }
             },
             error: function(response, status, xhr) {
-               form.find('.alert').text('{{t "incorrectpwd" }}').show();
+               form.find('.alert').text('{{t "views.incorrectpswd" }}').show();
             }
         });
       });

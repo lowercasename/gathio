@@ -17,7 +17,7 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
             ...frontendConfig(res),
             message: {
                 type: "danger",
-                text: i18next.t("ml.provideemail"),
+                text: i18next.t("routes.magiclink.provideemail"),
             },
         });
         return;
@@ -32,7 +32,7 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
             ...frontendConfig(res),
             message: {
                 type: "success",
-                text: i18next.t("ml.thanks"),
+                text: i18next.t("routes.magiclink.thanks"),
             },
         });
         return;
@@ -52,7 +52,7 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
     sendEmailFromTemplate(
         email,
         "",
-        i18next.t("ml.mailsubject"),
+        i18next.t("routes.magiclink.mailsubject"),
         "createEventMagicLink",
         {
             token,
@@ -66,7 +66,7 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
         ...frontendConfig(res),
         message: {
             type: "success",
-            text: i18next.t("ml.thanks"),
+            text: i18next.t("routes.magiclink.thanks"),
         },
     });
 });

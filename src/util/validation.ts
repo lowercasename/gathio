@@ -110,7 +110,7 @@ export const validateEventTime = (start: Date, end: Date): Error | boolean => {
     // Duration cannot be longer than 1 year
     if (moment(end).diff(moment(start), "years") > 1) {
         return {
-            message: i18next.t("validation.eventtime.endyears"),
+            message: i18next.t("util.validation.eventtime.endyears"),
             field: "eventEnd",
         };
     }
@@ -137,19 +137,19 @@ export const validateEventData = (
     }
     if (!validatedData.eventLocation) {
         errors.push({
-            message: i18next.t("validation.eventdata.eventlocation"),
+            message: i18next.t("util.validation.eventdata.eventlocation"),
             field: "eventLocation",
         });
     }
     if (!validatedData.eventStart) {
         errors.push({
-            message: i18next.t("validation.eventdata.eventstart"),
+            message: i18next.t("util.validation.eventdata.eventstart"),
             field: "eventStart",
         });
     }
     if (!validatedData.eventEnd) {
         errors.push({
-            message: i18next.t("validation.eventdata.eventend"),
+            message: i18next.t("util.validation.eventdata.eventend"),
             field: "eventEnd",
         });
     }
@@ -164,26 +164,26 @@ export const validateEventData = (
     }
     if (!validatedData.timezone) {
         errors.push({
-            message: i18next.t("validation.eventdata.timezone"),
+            message: i18next.t("util.validation.eventdata.timezone"),
             field: "timezone",
         });
     }
     if (!validatedData.eventDescription) {
         errors.push({
-            message: i18next.t("validation.eventdata.eventdescription"),
+            message: i18next.t("util.validation.eventdata.eventdescription"),
             field: "eventDescription",
         });
     }
     if (validatedData.eventGroupBoolean) {
         if (!validatedData.eventGroupID) {
             errors.push({
-                message: i18next.t("validation.eventdata.eventgroupboolean"),
+                message: i18next.t("util.validation.eventdata.eventgroupboolean"),
                 field: "eventGroupID",
             });
         }
         if (!validatedData.eventGroupEditToken) {
             errors.push({
-                message: i18next.t("validation.eventdata.eventgroupedittoken"),
+                message: i18next.t("util.validation.eventdata.eventgroupedittoken"),
                 field: "eventGroupEditToken",
             });
         }
@@ -191,13 +191,13 @@ export const validateEventData = (
     if (validatedData.maxAttendeesBoolean) {
         if (!validatedData.maxAttendees) {
             errors.push({
-                message: i18next.t("validation.eventdata.maxattendeesboolean"),
+                message: i18next.t("util.validation.eventdata.maxattendeesboolean"),
                 field: "maxAttendees",
             });
         }
         if (isNaN(validatedData.maxAttendees)) {
             errors.push({
-                message: i18next.t("validation.eventdata.maxattendees"),
+                message: i18next.t("util.validation.eventdata.maxattendees"),
                 field: "maxAttendees",
             });
         }
@@ -205,7 +205,7 @@ export const validateEventData = (
     if (validatedData.creatorEmail) {
         if (!validateEmail(validatedData.creatorEmail)) {
             errors.push({
-                message: i18next.t("validation.eventdata.creatoremail"),
+                message: i18next.t("util.validation.eventdata.creatoremail"),
                 field: "creatorEmail",
             });
         }
@@ -213,7 +213,7 @@ export const validateEventData = (
     if (validatedData.eventURL) {
         if (!validateUrl(validatedData.eventURL)) {
             errors.push({
-                message: i18next.t("validation.eventdata.eventurl"),
+                message: i18next.t("util.validation.eventdata.eventurl"),
                 field: "eventURL",
             });
         }
@@ -231,20 +231,20 @@ export const validateGroupData = (
     const errors: Error[] = [];
     if (!groupData.eventGroupName) {
         errors.push({
-            message: i18next.t("validation.groupdata.eventgroupname"),
+            message: i18next.t("util.validation.groupdata.eventgroupname"),
             field: "eventGroupName",
         });
     }
     if (!groupData.eventGroupDescription) {
         errors.push({
-            message: i18next.t("validation.groupdata.eventgroupdescription"),
+            message: i18next.t("util.validation.groupdata.eventgroupdescription"),
             field: "eventGroupDescription",
         });
     }
     if (groupData.creatorEmail) {
         if (!validateEmail(groupData.creatorEmail)) {
             errors.push({
-                message: i18next.t("validation.groupdata.creatoremail"),
+                message: i18next.t("util.validation.groupdata.creatoremail"),
                 field: "creatorEmail",
             });
         }
@@ -252,7 +252,7 @@ export const validateGroupData = (
     if (groupData.eventGroupURL) {
         if (!validateUrl(groupData.eventGroupURL)) {
             errors.push({
-                message: i18next.t("validation.groupdata.eventgroupurl"),
+                message: i18next.t("util.validation.groupdata.eventgroupurl"),
                 field: "eventGroupURL",
             });
         }

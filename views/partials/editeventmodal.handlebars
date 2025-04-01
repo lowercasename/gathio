@@ -7,7 +7,7 @@
   <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editModalLabel">{{{t "event.p.edit" }}}</h5>
+        <h5 class="modal-title" id="editModalLabel">{{{t "views.event.p.edit" }}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -19,25 +19,25 @@
 
           <div class="form-group">
             <div class="card border-danger mb-3">
-              <div class="card-header text-danger">{{t "event.p.delthis" }}</div>
+              <div class="card-header text-danger">{{t "views.event.p.delthis" }}</div>
               <div class="card-body text-danger">
                 <button type="button" id="deleteEvent" class="button button--danger" data-toggle="modal"
                   data-target="#deleteModal" data-event-id="{{eventData.id}}"><i class="fas fa-trash"></i>
-                  {{t "del" }}</button>
+                  {{t "views.del" }}</button>
               </div>
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="button button--secondary" data-dismiss="modal">{{t "close" }}</button>
+        <button type="button" class="button button--secondary" data-dismiss="modal">{{t "common.close" }}</button>
         <button
           type="submit"
           class="button button--primary"
           @click="submitForm"
           x-bind:disabled="submitting"
           x-bind:class="submitting ? 'button--loading' : ''"
-          x-text="submitting ? '{{t "saving" }}' : '{{t "save" }}'"
+          x-text="submitting ? '{{t "views.partials.saving" }}' : '{{t "views.partials.save" }}'"
         ></button>
       </div>
     </div>

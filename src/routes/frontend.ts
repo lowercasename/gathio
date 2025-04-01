@@ -71,7 +71,7 @@ router.get("/new/:magicLinkToken", async (req: Request, res: Response) => {
             ...frontendConfig(res),
             message: {
                 type: "danger",
-                text: i18next.t("magiclink-invalid"),
+                text: i18next.t("routes.magiclink-invalid"),
             },
         });
     }

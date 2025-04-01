@@ -1,100 +1,100 @@
 <input type="hidden" name="magicLinkToken" value="{{magicLinkToken}}" x-ref="magicLinkToken">
 <div class="form-group">
-  <label for="eventName" >{{t "event.p.eventname" }}</label>
+  <label for="eventName" >{{t "views.event.p.eventname" }}</label>
   <div class="form-group ">
-    <input type="text" class="form-control" id="eventName" name="eventName" placeholder="{{t "snappy" }}" x-model="data.eventName" >
+    <input type="text" class="form-control" id="eventName" name="eventName" placeholder="{{t "views.partials.snappy" }}" x-model="data.eventName" >
   </div>
 </div>
 <div class="form-group">
-  <label for="eventLocation" >{{t "event.p.eventlocation" }}</label>
+  <label for="eventLocation" >{{t "views.event.p.eventlocation" }}</label>
   <div class="form-group ">
-    <input type="text" class="form-control" id="eventLocation" name="eventLocation" placeholder="{{t "event.locationdesc" }}" x-model="data.eventLocation">
+    <input type="text" class="form-control" id="eventLocation" name="eventLocation" placeholder="{{t "views.event.locationdesc" }}" x-model="data.eventLocation">
   </div>
 </div>
 <div class="form-group">
-  <label for="eventStart" >{{t "event.p.eventstart" }}</label>
+  <label for="eventStart" >{{t "views.event.p.eventstart" }}</label>
   <div class="form-group">
     <input type="datetime-local" class="form-control" id="eventStart" name="eventStart"  x-model="data.eventStart" x-on:blur="updateEventEnd">
   </div>
 </div>
 <div class="form-group">
-  <label for="eventEnd" >{{t "event.p.eventend" }}</label>
+  <label for="eventEnd" >{{t "views.event.p.eventend" }}</label>
   <div class="form-group ">
     <input type="datetime-local" class="form-control" id="eventEnd" name="eventEnd"  x-model="data.eventEnd">
   </div>
 </div>
 <div class="form-group">
-  <label for="timezone" >{{t "event.p.timezone" }}</label>
+  <label for="timezone" >{{t "views.event.p.timezone" }}</label>
   <div class="form-group ">
     <select class="select2" id="timezone" name="timezone" x-ref="timezone"></select>
   </div>
 </div>
 <div class="form-group">
-  <label for="eventDescription" >{{t "event.p.eventdescription" }}</label>
+  <label for="eventDescription" >{{t "views.event.p.eventdescription" }}</label>
   <div class="form-group ">
-    <textarea class="form-control expand" id="eventDescription" name="eventDescription" placeholder="{{t "event.editlater" }}" x-model="data.eventDescription" ></textarea>
-    <small class="form-text">{{{t "mdsupport" }}}</small>
+    <textarea class="form-control expand" id="eventDescription" name="eventDescription" placeholder="{{t "views.event.editlater" }}" x-model="data.eventDescription" ></textarea>
+    <small class="form-text">{{{t "views.partials.mdsupport" }}}</small>
   </div>
 </div>
 <div class="form-group">
-  <label for="eventURL">{{t "event.p.eventurl" }}</label>
+  <label for="eventURL">{{t "views.event.p.eventurl" }}</label>
   <div class="form-group ">
     <input type="url" class="form-control" id="eventURL" name="eventURL" placeholder="https://example.com" x-model="data.eventURL">
-    <small class="form-text">{{t "event.p.eventurldesc" }}</small>
+    <small class="form-text">{{t "views.event.p.eventurldesc" }}</small>
   </div>
 </div>
 <div class="form-group">
-  <label for="eventImage" >{{t "coverimg" }}</label>
+  <label for="eventImage" >{{t "common.coverimg" }}</label>
   <div class="form-group ">
     <div class="image-preview" id="event-image-preview">
-      <label for="image-upload" id="event-image-label">{{t "choosefile" }}</label>
+      <label for="image-upload" id="event-image-label">{{t "views.partials.choosefile" }}</label>
       <input type="file" name="imageUpload" id="event-image-upload" accept="image/jpeg,image/gif,image/png" x-ref="eventImageUpload" />
     </div>
-    <small class="form-text">{{t "recommendeddimensions" }}</small>
+    <small class="form-text">{{t "views.partials.recommendeddimensions" }}</small>
     {{#if eventData.image}}
       <div class="form-group my-2">
-        <button type="button" class="button button--danger" id="deleteImage">{{t "imgdel" }}</button>
+        <button type="button" class="button button--danger" id="deleteImage">{{t "views.partials.delimg" }}</button>
       </div>
     {{/if}}
   </div>
 </div>
 <div class="form-group">
-  <label for="hostName" >{{t "event.p.hostname" }}</label>
+  <label for="hostName" >{{t "views.event.p.hostname" }}</label>
   <div class="form-group ">
-    <input type="text" class="form-control" id="hostName" name="hostName" placeholder="{{t "event.p.hostnamedesc" }}" x-model="data.hostName" >
+    <input type="text" class="form-control" id="hostName" name="hostName" placeholder="{{t "views.event.p.hostnamedesc" }}" x-model="data.hostName" >
   </div>
 </div>
 <div class="form-group">
-  <label for="creatorEmail" >{{t "event.p.creatoremail" }}</label>
+  <label for="creatorEmail" >{{t "views.event.p.creatoremail" }}</label>
   <div class="form-group ">
-    <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="{{t "wontshow" }}" x-model.fill="data.creatorEmail" {{#if creatorEmail}}value="{{creatorEmail}}" readonly{{/if}}>
-    <small class="form-text">{{t "creatoremaildesc" }}</small>
+    <input type="email" class="form-control" id="creatorEmail" name="creatorEmail" placeholder="{{t "views.partials.wontshow" }}" x-model.fill="data.creatorEmail" {{#if creatorEmail}}value="{{creatorEmail}}" readonly{{/if}}>
+    <small class="form-text">{{t "views.partials.creatoremaildesc" }}</small>
   </div>
 </div>
 <div class="form-group">
-  <label>{{t "event.options" }}</label>
+  <label>{{t "views.event.options" }}</label>
   <div >
     {{#if showPublicEventList}}
       <div class="form-check">
         <input class="form-check-input" type="checkbox" id="publicEventCheckbox" name="publicCheckbox" x-model="data.publicCheckbox">
         <label class="form-check-label" for="publicEventCheckbox">
-          {{t "event.p.publicevent" }}
+          {{t "views.event.p.publicevent" }}
         </label>
       </div>
     {{/if}}
     <div class="form-check">
       <input class="form-check-input" type="checkbox" id="eventGroupCheckbox" name="eventGroupCheckbox" x-model="data.eventGroupCheckbox">
       <label class="form-check-label" for="eventGroupCheckbox">
-        {{t "event.p.eventgroup" }}
+        {{t "views.event.p.eventgroup" }}
       </label>
     </div>
     <div class="card my-2" id="eventGroupData" x-show="data.eventGroupCheckbox">
       <div class="card-header">
-        <strong>{{t "event.p.eventgroupdata" }}</strong>
+        <strong>{{t "views.event.p.eventgroupdata" }}</strong>
       </div>
       <div class="card-body" x-data="eventGroupLinker()">
         <div class="form-group-label" x-show="data.groups.length > 0">
-          <label>{{t "event.p.eventgrouplinker" }}</label>
+          <label>{{t "views.event.p.eventgrouplinker" }}</label>
         </div>
         <div class="form-group" x-show="data.groups.length > 0">
           <select
@@ -111,7 +111,7 @@
           </select>
         </div>
         <button type="button" class="button button--outline-primary w-100 text-center" x-on:click="manualGroupInputVisible = !manualGroupInputVisible">
-          {{t "event.p.groupbutton" }} <i class="fas" :class="{'fa-caret-down': !manualGroupInputVisible, 'fa-caret-up': manualGroupInputVisible}"></i>
+          {{t "views.event.p.groupbutton" }} <i class="fas" :class="{'fa-caret-down': !manualGroupInputVisible, 'fa-caret-up': manualGroupInputVisible}"></i>
         </button>
         <div
           class="form-group slider"
@@ -120,15 +120,15 @@
           :style="manualGroupInputVisible && {height: $el.scrollHeight+`px`}"
           :aria-hidden="!manualGroupInputVisible"
         >
-          <label for="eventGroupID" class="mt-2">{{t "group.p.eventgroupid" }}</label>
+          <label for="eventGroupID" class="mt-2">{{t "common.eventgroupid" }}</label>
           <div class="form-group">
             <input type="text" class="form-control text-monospace" id="eventGroupID" name="eventGroupID" x-model="data.eventGroupID" x-on:input="resetGroupSelector">
-            <small class="form-text">{{t "event.p.eventgroupid" }}</small>
+            <small class="form-text">{{t "views.event.p.eventgroupid" }}</small>
           </div>
-          <label for="eventGroupEditToken">{{t "group.p.eventgroupedittoken" }}</label>
+          <label for="eventGroupEditToken">{{t "views.partials.eventform.eventgroupedittoken" }}</label>
           <div class="form-group mb-0">
             <input type="text" class="form-control text-monospace" id="eventGroupEditToken" name="eventGroupEditToken" x-model="data.eventGroupEditToken" x-on:input="resetGroupSelector">
-            <small class="form-text">{{t "event.p.eventgroupedittoken" }}</small>
+            <small class="form-text">{{t "views.event.p.eventgroupedittoken" }}</small>
           </div>
         </div>
       </div>
@@ -136,27 +136,27 @@
     <div class="form-check">
       <input class="form-check-input" type="checkbox" id="interactionCheckbox" name="interactionCheckbox" x-model="data.interactionCheckbox">
       <label class="form-check-label" for="interactionCheckbox">
-        {{t "interaction" }}
+        {{t "views.interaction" }}
       </label>
     </div>
     <div class="form-check">
       <input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox" x-model="data.joinCheckbox">
       <label class="form-check-label" for="joinCheckbox">
-        {{t "join" }}
+        {{t "views.join" }}
       </label>
     </div>
     <div class="form-check" id="maxAttendeesCheckboxContainer" x-show="data.joinCheckbox">
       <input class="form-check-input" type="checkbox" id="maxAttendeesCheckbox" name="maxAttendeesCheckbox" x-model="data.maxAttendeesCheckbox">
       <label class="form-check-label" for="maxAttendeesCheckbox">
-        {{t "event.p.maxattendeestitle" }}
+        {{t "views.event.p.maxattendeestitle" }}
       </label>
     </div>
   </div>
 </div>
 <div class="form-group" id="maxAttendeesContainer" x-show="data.maxAttendeesCheckbox && data.joinCheckbox">
-  <label for="maxAttendees" >{{t "event.p.maxattendees" }}</label>
+  <label for="maxAttendees" >{{t "views.event.p.maxattendees" }}</label>
   <div class="form-group ">
-    <input type="number" class="form-control" id="maxAttendees" name="maxAttendees" placeholder="{{t "event.enternum" }}" x-model="data.maxAttendees" >
+    <input type="number" class="form-control" id="maxAttendees" name="maxAttendees" placeholder="{{t "views.event.enternum" }}" x-model="data.maxAttendees" >
   </div>
 </div>
 <div class="form-group">
@@ -166,7 +166,7 @@
       role="alert"
       x-show="errors.length > 0"
     >
-      <p><i class="fas fa-exclamation-triangle"></i> {{t "fixerrors" }}</p>
+      <p><i class="fas fa-exclamation-triangle"></i> {{t "views.partials.fixerrors" }}</p>
       <ul>
         <template x-for="error in errors">
           <li x-html="error.message"></li>
