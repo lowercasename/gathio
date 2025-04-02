@@ -1,6 +1,6 @@
 <h4 class="mb-2">{{t "views.newevent.importevent" }}</h4>
 <p>
-  {{t "views.newevent.p.importdesc" }}
+  {{t "views.partials.importeventform.importdesc" }}
 </p>
 
 <img class="img-thumbnail mb-3 d-block mx-auto" src="/images/facebook-export.png" alt="Image showing the location of the export option on Facebook" />
@@ -43,6 +43,6 @@
     class="d-block mx-auto button button--primary w-50"
     x-bind:disabled="submitting"
     x-bind:class="submitting ? 'button--loading' : ''"
-    x-text="submitting ? '{{t "views.newevent.p.importing" }}' : '{{t "views.newevent.p.import" }}'"
+    x-text="submitting ? '{{t "views.partials.importeventform.importing" }}' : '{{t "views.partials.importeventform.import" }}'"
   ></button>
 </form>

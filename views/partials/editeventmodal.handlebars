@@ -7,7 +7,7 @@
   <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editModalLabel">{{{t "views.event.p.edit" }}}</h5>
+        <h5 class="modal-title" id="editModalLabel">{{{t "views.partials.editevent.edit" }}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -19,7 +19,7 @@
 
           <div class="form-group">
             <div class="card border-danger mb-3">
-              <div class="card-header text-danger">{{t "views.event.p.delthis" }}</div>
+              <div class="card-header text-danger">{{t "views.partials.editevent.delthis" }}</div>
               <div class="card-body text-danger">
                 <button type="button" id="deleteEvent" class="button button--danger" data-toggle="modal"
                   data-target="#deleteModal" data-event-id="{{eventData.id}}"><i class="fas fa-trash"></i>

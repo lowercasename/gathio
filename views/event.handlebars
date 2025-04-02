@@ -552,7 +552,7 @@ window.eventData = {{{ json jsonData }}};
           if (response.data.freeSpots !== undefined) {
             modal.find('#attendeeNumber')
               .attr('data-validation-allowing', `range[1;${response.data.freeSpots}]`)
-              .attr('data-validation-error-msg', `{{t "views.event.views.event.numlimit" }}`);
+              .attr('data-validation-error-msg', `{{t "views.event.numlimit" }}`);
           }
           modal.modal();
         })
