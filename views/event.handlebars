@@ -149,7 +149,7 @@
       {{#if noMoreSpots}}
         <div class="alert alert-warning text-center" id="attendees-alert">{{t "event.capacity" }}</div>
       {{else}}
-        <div class="alert alert-warning text-center" id="attendees-alert">{{t "event.remaining" }}</div>
+        <div class="alert alert-warning text-center" id="attendees-alert">{{plural "event.remaining" spotsRemaining }}</div>
       {{/if}}
     {{/if}}
     {{#if numberOfAttendees}}
@@ -165,7 +165,7 @@
       </ul>
       {{#unless editingEnabled}}
         {{#if numberOfHiddenAttendees}}
-          <div class="hidden-attendees-message">{{numberOfHiddenAttendees}} hidden attendee{{plural numberOfHiddenAttendees ""}}</div>
+          <div class="hidden-attendees-message">{{plural "event.hiddenattendee" numberOfHiddenAttendees }}</div>
         {{/if}}
       {{/unless}}
     {{else}}

@@ -1,5 +1,6 @@
 import express from "express";
-import hbs from "express-handlebars";
+import hbs, { ExpressHandlebars } from "express-handlebars";
+import Handlebars from 'handlebars';
 import cookieParser from "cookie-parser";
 import i18next from "i18next";
 import Backend from "i18next-fs-backend";
@@ -98,31 +99,20 @@ async function initializeApp() {
     });
 
     // View engine //
-    const hbsInstance = hbs.create({
+    const hbsInstance: ExpressHandlebars = hbs.create({
         defaultLayout: "main",
         partialsDir: ["views/partials/"],
         layoutsDir: "views/layouts/",
         helpers: {
-            plural: function (number: number, text: string) {
-                var singular = number === 1;
-                // If no text parameter was given, just return a conditional s.
-                if (typeof text !== "string") return singular ? "" : "s";
-                // Split with regex into group1/group2 or group1(group3)
-                var match = text.match(/^([^()\/]+)(?:\/(.+))?(?:\((\w+)\))?/);
-                // If no match, just append a conditional s.
-                if (!match) return text + (singular ? "" : "s");
-                // We have a good match, so fire away
-                return (
-                    (singular && match[1]) || // Singular case
-                    match[2] || // Plural case: 'bagel/bagels' --> bagels
-                    match[1] + (match[3] || "s")
-                ); // Plural case: 'bagel(s)' or 'bagel' --> bagels
-            },
             json: function (context: any) {
                 return JSON.stringify(context);
             },
             // i18nextヘルパーを追加
-            ...getI18nHelpers()
+            ...getI18nHelpers(),
+            plural: function (key: string, count: number, options: any) { // ★plural ヘルパーを登録
+                const translation = i18next.t(key, { count: count });
+                return translation;
+            }
         },
     });
 
@@ -134,6 +124,12 @@ async function initializeApp() {
     } else {
         console.error('handlebars-i18next helper is not properly loaded');
     }
+
+
+    (hbsInstance.handlebars as typeof Handlebars).registerHelper('pluralize', function(count: number, key: string, options: any) {
+        const translation = i18next.t(key, { count: count });
+        return translation;
+    });
 
     app.engine("handlebars", hbsInstance.engine);
     app.set("view engine", "handlebars");
