@@ -46,19 +46,6 @@ async function initializeApp() {
     // Cookies //
     app.use(cookieParser());
 
-    // カスタム言語検出ミドルウェア
-    // app.use((req, res, next) => {
-    //     const acceptLanguage = req.headers['accept-language'];
-    //     if (acceptLanguage && acceptLanguage.includes('ja')) {
-    //         res.cookie('i18next', 'ja', {
-    //             maxAge: 365 * 24 * 60 * 60 * 1000,
-    //             httpOnly: true,
-    //             sameSite: 'lax'
-    //         });
-    //     }
-    //     next();
-    // });
-
     // i18next configuration
     await i18next
         .use(Backend)

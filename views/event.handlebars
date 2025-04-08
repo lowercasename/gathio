@@ -108,7 +108,7 @@
     </div>
 
     {{#unless editingEnabled}}
-        <button type="button" id="editEvent" class="button button--outline-secondary button--sm" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> Switch to editing mode</button>
+        <button type="button" id="editEvent" class="button button--outline-secondary button--sm" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{t "group.editmode" }}</button>
     {{/unless}}
   </aside> <!-- #event__actions -->
 </div>
@@ -128,7 +128,7 @@
 </div>
 {{/if}}
 <div class="card mb-4" id="eventDescription">
-  <h5 class="card-header">{{t "about" }}</h5>
+  <h5 class="card-header">{{t "event.about" }}</h5>
   <div class="card-body p-summary">
     {{{parsedDescription}}}
   </div>
@@ -159,7 +159,7 @@
         {{/each}}
         {{#if editingEnabled}}
           {{#each hiddenAttendees}}
-            <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}} class="hidden-attendee"><span class="attendee-name">{{this.name}} (hidden from public list)</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="{{t "event.removeuser" }}"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+            <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}} class="hidden-attendee"><span class="attendee-name">{{this.name}} {{t "event.hidden" }}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="{{t "event.removeuser" }}"><i class="fas fa-user-times"></i></a>{{/if}}</li>
           {{/each}}
         {{/if}}
       </ul>
@@ -201,7 +201,7 @@
         <label for="attendeeEmail">{{t "event.attendeeemail" }}</label>
         <p class="form-text small">{{t "joinemaildesc" }}</p>
         <div class="form-group">
-          <input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="{{t "event.nospam" }} <3" data-validation="email" data-validation-optional="true">
+          <input type="email" class="form-control" id="attendeeEmail" name="attendeeEmail" placeholder="{{t "event.nospam" }}" data-validation="email" data-validation-optional="true">
         </div>
       </div>
       <div class="form-check">
@@ -259,8 +259,7 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="removeAttendeeModalLabel">
-            {{{t "event.removeattendeedesc" }}}</h5>
+          <h5 class="modal-title" id="removeAttendeeModalLabel">{{{t "event.removeattendeedesc" }}}</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
