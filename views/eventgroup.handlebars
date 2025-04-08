@@ -79,7 +79,7 @@
       </button>
       <button type="button" id="exportICS" class="button button--outline-secondary
         button--sm" data-event-id="{{eventGroupData.id}}">
-        <i class="fas fa-download"></i> {{t "ICSexport" }}
+        <i class="fas fa-download"></i> {{t "group.ICSexport" }}
       </button>
     </div>
 
@@ -109,7 +109,7 @@
 {{/if}}
 
     <div class="card mb-4" id="eventDescription">
-        <h5 class="card-header">{{t "about" }}</h5>
+        <h5 class="card-header">{{t "group.about" }}</h5>
         <div class="card-body">
             {{{parsedDescription}}}
         </div>
@@ -133,7 +133,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="deleteModalLabel">{{t "delete" }} '{{eventGroupData.name}}'</h5>
+        <h5 class="modal-title" id="deleteModalLabel">{{t "del" }} '{{eventGroupData.name}}'</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -141,7 +141,7 @@
       <form id="deleteEventGroupForm" action="/deleteeventgroup/{{eventGroupData.id}}/{{eventGroupData.editToken}}" method="post">
       <div class="modal-body">
         <p>{{t "group.delconfirm" }}</p>
-        <p>{{t "group.deldesc" }}</p>
+        <p>{{{t "group.deldesc" }}}</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="button button--secondary" data-dismiss="modal">{{t "close" }}</button>

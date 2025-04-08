@@ -29,7 +29,7 @@
         role="alert"
         x-show="errors.length > 0"
       >
-        <p><i class="fas fa-exclamation-triangle"></i> Please fix these errors:</p>
+        <p><i class="fas fa-exclamation-triangle"></i> {{t "fixerrors" }}</p>
         <ul>
           <template x-for="error in errors">
             <li x-html="error.message"></li>

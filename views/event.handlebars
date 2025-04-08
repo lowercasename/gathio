@@ -11,7 +11,7 @@
   </div>
   <div class="col-lg-3 ml-2 edit-buttons">
     {{#if editingEnabled}}
-      <button type="button" id="editEvent" class="button button--primary ml-auto d-block" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{t "eventedit"}}</button>
+      <button type="button" id="editEvent" class="button button--primary ml-auto d-block" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{t "event.edit" }}</button>
     {{/if}}
   </div>
 </div>
@@ -123,8 +123,8 @@
     <span aria-hidden="true">&times;</span>
   </button>
   <p>{{t "event.welcome" }}</p>
-  <p>{{t "event.attention" }}</p>
-  <p>{{t "event.share" }}</p>
+  <p>{{{t "event.attention" }}}</p>
+  <p>{{{t "event.share" }}}</p>
 </div>
 {{/if}}
 <div class="card mb-4" id="eventDescription">
@@ -136,7 +136,7 @@
 
 {{#if eventData.usersCanAttend}}
 <div class="card mb-4" id="eventAttendees">
-  <h5 class="card-header">{{t "event.attendees" }} {{#if numberOfAttendees}}({{numberOfAttendees}}){{/if}}
+  <h5 class="card-header">{{t "event.attendees" }} {{#if numberOfAttendees}}{{t "event.numberofattende" }}{{/if}}
     <div class="button--group" role="group" aria-label="Attendance controls">
       {{#unless noMoreSpots}}
         <button type="button" id="attendEvent" class="button button--primary" data-event-id="{{eventData.id}}"><i class="fas fa-user-plus"></i> {{t "event.addme" }}</button>
@@ -207,13 +207,13 @@
       <div class="form-check">
         <input class="form-check-input" type="checkbox" id="attendeeVisible" name="attendeeVisible" checked>
         <label class="form-check-label" for="attendeeVisible">
-          Show my name in the public list of attendees
+          {{t "event.attendeevisible" }}
         </label>
-        <p class="form-text small">If you choose to hide your name, only the event organiser will be able to see it.</p>
+        <p class="form-text small">{{t "event.attendeevisibledesc" }}</p>
       </div>
       <div class="form-group">
         <label for="removalPassword">{{t "event.removepswd" }}</label>
-        <p class="form-text small">{{t "event.removepswddesc" }}</p>
+        <p class="form-text small">{{{t "event.removepswddesc" }}}</p>
         <input type="text" class="form-control" readonly id="removalPassword"
         name="removalPassword">
       </div>
@@ -259,7 +259,8 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="removeAttendeeModalLabel">{{t "event.removeattendeedesc" }}</h5>
+          <h5 class="modal-title" id="removeAttendeeModalLabel">
+            {{{t "event.removeattendeedesc" }}}</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
