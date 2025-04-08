@@ -2,10 +2,10 @@
     <h1><a href="/">gathio</a></h1>
 
     <ul id="sidebar__nav">
-        <li><a class="button button--primary" href="/new"><i class="far fa-calendar-plus"></i> Create an event</a></li>
+        <li><a class="button button--primary" href="/new"><i class="far fa-calendar-plus"></i> {{t "sidebar.createevent" }}</a></li>
         {{#if showPublicEventList}}
-            <li><a href="/events">View events</a></li>
-            <li><a href="/about">About</a></li>
+            <li><a href="/events">{{t "sidebar.events" }}</a></li>
+            <li><a href="/about">{{t "about" }}</a></li>
         {{/if}}
     </ul>
 </div>

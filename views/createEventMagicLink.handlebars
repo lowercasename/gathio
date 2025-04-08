@@ -1,5 +1,5 @@
 <main class="page">
-  <h2 class="mb-4">Request a link to create a new event</h2>
+  <h2 class="mb-4">{{t "ml.requestml" }}</h2>
 
   <form
     action="/magic-link/event/create"
@@ -8,7 +8,7 @@
     hx-target="article"
   >
     <p>
-      The administrator of this instance has limited event creation to a set of specific email addresses. If your email address is allowed to create events, you will be sent a magic link. If not, you won't receive anything.
+      {{t "ml.requestmldesc" }}
     </p>
     <p>
       If you run into any issues, please contact the instance administrator.
@@ -19,11 +19,11 @@
       </div>
     {{/if}}
     <div class="form-group">
-      <label for="email">Email address</label>
-    <input type="email" class="form-control" id="email" placeholder="Email address" required name="email">
+      <label for="email">{{t "emailaddr" }}</label>
+    <input type="email" class="form-control" id="email" placeholder="{{t "emailaddr" }}" required name="email">
     </div>
     <div class="form-group text-center">
-      <button type="submit" class="button button--primary w-50">Request magic link</button>
+      <button type="submit" class="button button--primary w-50">{{t "ml.requestmlbutton" }}</button>
     </div>
   </form>
 </main>

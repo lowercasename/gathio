@@ -1,6 +1,6 @@
-<h4 class="mb-2">Import an existing event</h4>
+<h4 class="mb-2">{{t newevent.importevent }}</h4>
 <p>
-  Upload an .ics file here to instantly create an event. You can save a Facebook event as an .ics file by clicking on the context menu next to the 'Import' and 'Edit' buttons on the event page and choosing the 'Export Event' option. Then select the 'Save to calendar' option and save the file on your computer.
+  {{t "newevent.p.importdesc" }}
 </p>
 
 <img class="img-thumbnail mb-3 d-block mx-auto" src="/images/facebook-export.png" alt="Image showing the location of the export option on Facebook" />
@@ -11,15 +11,15 @@
     <div class="custom-file" id="icsImportContainer">
     <input required name="icsImportControl" type="file" class="custom-file-input" id="icsImportControl" aria-describedby="fileHelp" accept="text/calendar" x-ref="icsImportControl"/>
     <label name="icsImportLabel" class="custom-file-label" id="icsImportLabel" for="icsImportControl">
-       <i class="far fa-file-alt"></i> Select file
+       <i class="far fa-file-alt"></i> {{t "selectfile" }}
     </label>
   </div>
   </div>
   <div class="form-group">
-    <label for="creatorEmail" class="form-label">Your email</label>
+    <label for="creatorEmail" class="form-label">{{t "youremail" }}</label>
     <div class="form-group">
-      <input type="email" class="form-control" id="importCreatorEmail" name="creatorEmail" placeholder="Will not be shown anywhere (optional)." x-model.fill="data.creatorEmail" {{#if creatorEmail}}value="{{creatorEmail}}" readonly{{/if}}>
-    <small class="form-text">If you provide your email, we will send your secret editing password here, and use it to notify you of updates to the event.</small>
+      <input type="email" class="form-control" id="importCreatorEmail" name="creatorEmail" placeholder="{{t "wontshow" }}" x-model.fill="data.creatorEmail" {{#if creatorEmail}}value="{{creatorEmail}}" readonly{{/if}}>
+    <small class="form-text">{{t "creatoremaildesc" }}</small>
     </div>
   </div>
   <div class="form-group">
@@ -43,6 +43,6 @@
     class="d-block mx-auto button button--primary w-50"
     x-bind:disabled="submitting"
     x-bind:class="submitting ? 'button--loading' : ''"
-    x-text="submitting ? 'Importing...' : 'Import'"
+    x-text="submitting ? '{{t "newevent.p.importing" }}' : '{{t "newevent.p.import" }}'"
   ></button>
 </form>

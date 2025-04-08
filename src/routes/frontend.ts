@@ -8,7 +8,7 @@ import {
     instanceDescription,
     instanceRules,
 } from "../lib/config.js";
-import { addToLog, exportICal } from "../helpers.js";
+import { addToLog, exportIcal } from "../helpers.js";
 import Event from "../models/Event.js";
 import EventGroup, { IEventGroup } from "../models/EventGroup.js";
 import {
@@ -546,7 +546,7 @@ router.get(
                 const events = await Event.find({
                     eventGroup: eventGroup._id,
                 }).sort("start");
-                const string = exportICal(events, eventGroup.name);
+                const string = exportIcal(events, eventGroup.name);
                 res.set("Content-Type", "text/calendar").send(string);
             }
         } catch (err) {
@@ -568,7 +568,7 @@ router.get("/export/event/:eventID", async (req: Request, res: Response) => {
         }).populate("eventGroup");
 
         if (event) {
-            const string = exportICal([event], event.name);
+            const string = exportIcal([event], event.name);
             res.set("Content-Type", "text/calendar").send(string);
         }
     } catch (err) {
@@ -594,7 +594,7 @@ router.get(
                 const events = await Event.find({
                     eventGroup: eventGroup._id,
                 }).sort("start");
-                const string = exportICal(events, eventGroup.name);
+                const string = exportIcal(events, eventGroup.name);
                 res.set("Content-Type", "text/calendar").send(string);
             }
         } catch (err) {

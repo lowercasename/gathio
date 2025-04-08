@@ -12,39 +12,39 @@
 
 <ul class="nav d-flex flex-gap--small">
   <li>
-    <a id="eventsTab" class="button button--lg" x-bind:class="currentTab === 'events' ? 'button--primary' : 'button--secondary'" aria-current="page" href="#" x-on:click.prevent="currentTab = 'events'">Events</a>
+    <a id="eventsTab" class="button button--lg" x-bind:class="currentTab === 'events' ? 'button--primary' : 'button--secondary'" aria-current="page" href="#" x-on:click.prevent="currentTab = 'events'">{{t "publiclist.events" }}</a>
   </li>
   <li>
-    <a id="groupsTab" class="button button--lg" x-bind:class="currentTab === 'groups' ? 'button--primary' : 'button--secondary'" href="#" x-on:click.prevent="currentTab = 'groups'">Groups</a>
+    <a id="groupsTab" class="button button--lg" x-bind:class="currentTab === 'groups' ? 'button--primary' : 'button--secondary'" href="#" x-on:click.prevent="currentTab = 'groups'">{{t "publiclist.groups" }}</a>
   </li>
 </ul>
 
 <div x-show="currentTab === 'events'">
     <div class="card mt-4 mb-4" id="upcomingEvents">
-        <h5 class="card-header">Upcoming events</h5>
+        <h5 class="card-header">{{t "upcomingevents" }}</h5>
         {{> eventList upcomingEvents }}
     </div>
 
     <div class="card mt-4 mb-4" id="pastEvents">
-        <h5 class="card-header">Past events</h5>
+        <h5 class="card-header">{{t "pastevents" }}</h5>
         {{> eventList pastEvents }}
     </div>
 </div>
 
 <div x-show="currentTab === 'groups'">
     <div class="card mt-4 mb-4" id="eventGroups">
-    <h5 class="card-header">Event groups</h5>
+    <h5 class="card-header">{{t "eventgroups" }}</h5>
     <div class="list-group list-group-flush">
     {{#if eventGroups}}
         {{#each eventGroups}}
         <a href="/group/{{this.id}}" class="list-group-item list-group-item-action">
             <i class="fas fa-fw fa-calendar-alt"></i>
             <strong>{{this.name}}</strong>
-            <span class="badge badge-secondary ml-2">{{this.numberOfEvents}} {{plural this.numberOfEvents "event(s)"}}</span>
+            <span class="badge badge-secondary ml-2">{{{t "publiclist.numoevents" }}}</span>
         </a>
         {{/each}}
     {{else}}
-        <div class="list-group-item">No groups!</div>
+        <div class="list-group-item">{{t "publiclist.nogroups" }}</div>
     {{/if}}
 </div>
 
