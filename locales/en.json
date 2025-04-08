@@ -36,7 +36,7 @@
   "group.subscribe": "Subscribe to '{{eventGroupData.name}}'",
   "group.subscribedesc": "Enter your email address to receive updates\nwhenever a new event is created in this group.",
   "group.subscribebutton": "Subscribe",
-  "home.privacy": "There are no accounts on Gathio. When you create an event, we generate a password which allows you to edit the event. Send all your guests the public link, and all your co-hosts the secret editing link containing the password.",
+  "home.privacy": "Also, Gathio doesn't show you ads, doesn't sell your data, and never sends you unnecessary emails.",
   "home.attention": "But remember: all events are visible to anyone who knows the link, so probably don't use Gathio to plot your surprise birthday party or revolution. Or whatever, you do you.",
   "emailaddr": "Email address",
   "forgotpwd": "Forgot password",
@@ -174,5 +174,6 @@
   "newevent.p.importing": "Importing...",
   "newevent.p.importdesc": "Upload an .ics file here to instantly create an event. You can save a Facebook event as an .ics file by clicking on the context menu next to the 'Import' and 'Edit' buttons on the event page and choosing the 'Export Event' option. Then select the 'Save to calendar' option and save the file on your computer.",
   "instancesettings": "Instance Settings",
-  "sidebar.createevent": "Create an event"
+  "sidebar.createevent": "Create an event",
+  "newevent.createnew": "Create an event"
 }

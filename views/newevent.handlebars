@@ -6,10 +6,10 @@
       <button type="button" id="showNewEventFormButton" class="button w-100" x-bind:class="currentTab === 'event' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'event'"><i class="fas fa-calendar-day"></i> {{t "newevent.neweventbutton" }}</button>
     </div>
     <div class="col-lg-4 p-2">
-      <button type="button" id="showImportEventFormButton" class="button w-100" x-bind:class="currentTab === 'importEvent' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'importEvent'"><i class="fas fa-file-import"></i> {{t newevent.importevent }}</button>
+      <button type="button" id="showImportEventFormButton" class="button w-100" x-bind:class="currentTab === 'importEvent' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'importEvent'"><i class="fas fa-file-import"></i> {{t "newevent.importevent" }}</button>
     </div>
     <div class="col-lg-4 p-2">
-      <button type="button" id="showNewEventGroupFormButton" class="button w-100" x-bind:class="currentTab === 'group' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'group'"><i class="fas fa-calendar-alt"></i> {{t newevent.neweventgroup }} </button>
+      <button type="button" id="showNewEventGroupFormButton" class="button w-100" x-bind:class="currentTab === 'group' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'group'"><i class="fas fa-calendar-alt"></i> {{t "newevent.neweventgroup" }} </button>
     </div>
   </div>
 </div>
@@ -19,7 +19,7 @@
 </div>
 
 <div id="newEventFormContainer" x-show="currentTab === 'event'" style="display: none">
-  <h4 class="mb-2">{{t "newevent" }}</h4>
+  <h4 class="mb-2">{{t "newevent.createnew" }}</h4>
   <form
     id="newEventForm"
     enctype="multipart/form-data"
