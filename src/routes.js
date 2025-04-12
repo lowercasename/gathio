@@ -53,18 +53,19 @@ if (config.general.mail_service) {
             sendEmails = true;
             break;
         case "nodemailer":
-            nodemailerTransporter = nodemailer.createTransport({
+            const nodemailerConfig = {
                 host: config.nodemailer?.smtp_server,
-                port: config.nodemailer?.smtp_port,
-                secure: false, // true for 465, false for other ports
-            });
+                port: Number(config.nodemailer?.smtp_port) || 587,
+            };
 
             if (config.nodemailer?.smtp_username) {
-                nodemailerTransporter.auth = {
+                nodemailerConfig.auth = {
                     user: config.nodemailer?.smtp_username,
                     pass: config.nodemailer?.smtp_password
                 };
             }
+
+            nodemailerTransporter = nodemailer.createTransport(nodemailerConfig);
 
             nodemailerTransporter.verify((error, success) => {
                 if (error) {
