@@ -28,6 +28,7 @@ export interface GathioConfig {
         mongodb_url: string;
     };
     nodemailer?: {
+        smtp_url?: string;
         smtp_server: string;
         smtp_port: string;
         smtp_username: string;
