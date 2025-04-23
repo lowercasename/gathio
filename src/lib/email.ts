@@ -1,10 +1,10 @@
-import { Request } from "express";
 import sgMail from "@sendgrid/mail";
 import nodemailer, { Transporter } from "nodemailer";
 import { getConfig } from "./config.js";
 import SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import { exitWithError } from "./process.js";
 import { renderTemplate } from "./handlebars.js";
+import { ExpressHandlebars } from "express-handlebars";
 const config = getConfig();
 
 type EmailTemplate =
@@ -36,10 +36,12 @@ export const initEmailService = async (): Promise<boolean> => {
             sgMail.setApiKey(config.sendgrid.api_key);
             console.log("Sendgrid is ready to send emails.");
             return true;
-        case "nodemailer":
-            let nodemailerTransporter:Transporter|undefined = undefined;
+        case "nodemailer": {
+            let nodemailerTransporter: Transporter | undefined = undefined;
             if (config.nodemailer?.smtp_url) {
-                nodemailerTransporter = nodemailer.createTransport(config.nodemailer?.smtp_url);
+                nodemailerTransporter = nodemailer.createTransport(
+                    config.nodemailer?.smtp_url,
+                );
             } else {
                 if (
                     !config.nodemailer?.smtp_server ||
@@ -52,7 +54,7 @@ export const initEmailService = async (): Promise<boolean> => {
                 const nodemailerConfig = {
                     host: config.nodemailer?.smtp_server,
                     port: Number(config.nodemailer?.smtp_port) || 587,
-                    tls: { 
+                    tls: {
                         // do not fail on invalid certs
                         rejectUnauthorized: false,
                     },
@@ -61,10 +63,11 @@ export const initEmailService = async (): Promise<boolean> => {
                 if (config.nodemailer?.smtp_username) {
                     nodemailerConfig.auth = {
                         user: config.nodemailer?.smtp_username,
-                        pass: config.nodemailer?.smtp_password
+                        pass: config.nodemailer?.smtp_password,
                     };
                 }
-                nodemailerTransporter = nodemailer.createTransport(nodemailerConfig);
+                nodemailerTransporter =
+                    nodemailer.createTransport(nodemailerConfig);
             }
 
             const nodemailerVerified = await nodemailerTransporter.verify();
@@ -76,6 +79,7 @@ export const initEmailService = async (): Promise<boolean> => {
                     "Error verifying Nodemailer transporter. Please check your Nodemailer configuration.",
                 );
             }
+        }
         case "none":
         default:
             console.warn(
@@ -85,9 +89,33 @@ export const initEmailService = async (): Promise<boolean> => {
     }
 };
 
-export const sendEmail = async (
+export const sendTemplatedEmail = async (
+    hbs: ExpressHandlebars,
     to: string,
     bcc: string,
+    subject: string,
+    template: string,
+    data: object,
+): Promise<boolean> => {
+    const [html, text] = await Promise.all([
+        hbs.renderView(`./views/emails/${template}Html.handlebars`, {
+            cache: true,
+            layout: "email.handlebars",
+            ...data,
+        }),
+        hbs.renderView(`./views/emails/${template}Text.handlebars`, {
+            cache: true,
+            layout: "email.handlebars",
+            ...data,
+        }),
+    ]);
+
+    return await sendEmail(to, bcc, subject, text, html);
+};
+
+export const sendEmail = async (
+    to: string | string[],
+    bcc: string | string[] | undefined,
     subject: string,
     text: string,
     html?: string,
@@ -104,7 +132,7 @@ export const sendEmail = async (
                     html,
                 });
                 return true;
-            } catch (e: any) {
+            } catch (e: Error) {
                 if (e.response) {
                     console.error(e.response.body);
                 } else {
@@ -114,9 +142,11 @@ export const sendEmail = async (
             }
         case "nodemailer":
             try {
-                let nodemailerTransporter:Transporter|undefined = undefined;
+                let nodemailerTransporter: Transporter | undefined = undefined;
                 if (config.nodemailer?.smtp_url) {
-                    nodemailerTransporter = nodemailer.createTransport(config.nodemailer?.smtp_url);
+                    nodemailerTransporter = nodemailer.createTransport(
+                        config.nodemailer?.smtp_url,
+                    );
                 } else {
                     const nodemailerConfig = {
                         host: config.nodemailer?.smtp_server,
@@ -126,11 +156,12 @@ export const sendEmail = async (
                     if (config.nodemailer?.smtp_username) {
                         nodemailerConfig.auth = {
                             user: config.nodemailer?.smtp_username,
-                            pass: config.nodemailer?.smtp_password
+                            pass: config.nodemailer?.smtp_password,
                         };
                     }
 
-                    nodemailerTransporter = nodemailer.createTransport(nodemailerConfig);
+                    nodemailerTransporter =
+                        nodemailer.createTransport(nodemailerConfig);
                 }
                 await nodemailerTransporter.sendMail({
                     envelope: {

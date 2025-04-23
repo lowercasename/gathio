@@ -1,5 +1,4 @@
 import { Router, Request, Response } from "express";
-import fs from "fs";
 import moment from "moment-timezone";
 import { marked } from "marked";
 import { markdownToSanitizedHTML, renderPlain } from "../util/markdown.js";
@@ -25,7 +24,7 @@ const router = Router();
 // Add config middleware to all routes
 router.use(getConfigMiddleware);
 
-router.get("/", (_: Request, res: Response) => {
+router.get("/", (_, res) => {
     if (res.locals.config?.general.show_public_event_list) {
         return res.redirect("/events");
     }
@@ -44,7 +43,7 @@ router.get("/about", (_: Request, res: Response) => {
     });
 });
 
-router.get("/new", (req: Request, res: Response) => {
+router.get("/new", (_: Request, res: Response) => {
     if (res.locals.config?.general.creator_email_addresses?.length) {
         return res.render("createEventMagicLink", frontendConfig(res));
     }

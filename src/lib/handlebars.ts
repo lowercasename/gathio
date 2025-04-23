@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { ExpressHandlebars } from "express-handlebars";
 
 export const renderTemplate = async (
     req: Request,
@@ -21,3 +22,29 @@ export const renderTemplate = async (
             );
     });
 };
+
+export const renderEmail = async (
+    hbsInstance: ExpressHandlebars,
+    templateName: string,
+    data: Record<string, unknown>,
+): Promise<{ html: string, text: string }> => {
+    const [html, text] = await Promise.all([
+        hbsInstance.renderView(
+            `./views/emails/${templateName}Html.handlebars`,
+            {
+                cache: true,
+                layout: "email.handlebars",
+                ...data,
+            }
+        ),
+        hbsInstance.renderView(
+            `./views/emails/${templateName}Text.handlebars`,
+            {
+                cache: true,
+                layout: "email.handlebars",
+                ...data,
+            }
+        ),
+    ]);
+    return { html, text }
+}

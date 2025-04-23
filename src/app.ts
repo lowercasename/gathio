@@ -15,16 +15,28 @@ import {
     activityPubContentType,
     alternateActivityPubContentType,
 } from "./lib/activitypub.js";
+import getConfig from "./lib/config.js";
 
 const app = express();
+const config = getConfig();
 
-app.locals.sendEmails = initEmailService();
+initEmailService().then((sendEmails) => (app.locals.sendEmails = sendEmails));
 
 // View engine //
 const hbsInstance = hbs.create({
     defaultLayout: "main",
     partialsDir: ["views/partials/"],
     layoutsDir: "views/layouts/",
+    runtimeOptions: {
+        data: {
+            domain: config.general.domain,
+            contactEmail: config.general.email,
+            siteName: config.general.site_name,
+            mailService: config.general.mail_service,
+            siteLogo: config.general.email_logo_url,
+            isFederated: config.general.is_federated || true,
+        },
+    },
     helpers: {
         plural: function (number: number, text: string) {
             var singular = number === 1;
@@ -46,6 +58,31 @@ const hbsInstance = hbs.create({
         },
     },
 });
+app.locals.renderEmail = async function renderEmail(
+    template: string,
+    data: object
+) {
+    const [html, text] = await Promise.all([
+        hbsInstance.renderView(
+            `./views/emails/${template}Html.handlebars`,
+            {
+                cache: true,
+                layout: "email.handlebars",
+                ...data,
+            }
+        ),
+        hbsInstance.renderView(
+            `./views/emails/${template}Text.handlebars`,
+            {
+                cache: true,
+                layout: "email.handlebars",
+                ...data,
+            }
+        ),
+    ]);
+    return { html, text }
+}
+
 app.engine("handlebars", hbsInstance.engine);
 app.set("view engine", "handlebars");
 app.set("hbsInstance", hbsInstance);
