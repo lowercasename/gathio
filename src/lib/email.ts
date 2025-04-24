@@ -1,13 +1,15 @@
 import sgMail from "@sendgrid/mail";
+import sgHelpers from "@sendgrid/helpers";
+
 import nodemailer, { Transporter } from "nodemailer";
 import { getConfig } from "./config.js";
 import SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import { exitWithError } from "./process.js";
-import { renderTemplate } from "./handlebars.js";
-import { ExpressHandlebars } from "express-handlebars";
+import { HandlebarsSingleton } from "./handlebars.js";
+
 const config = getConfig();
 
-type EmailTemplate =
+type EmailTemplateName =
     | "addEventAttendee"
     | "addEventComment"
     | "createEvent"
@@ -16,6 +18,7 @@ type EmailTemplate =
     | "deleteEvent"
     | "editEvent"
     | "eventGroupUpdated"
+    | "removeEventAttendee"
     | "subscribed"
     | "unattendEvent";
 
@@ -89,30 +92,6 @@ export const initEmailService = async (): Promise<boolean> => {
     }
 };
 
-export const sendTemplatedEmail = async (
-    hbs: ExpressHandlebars,
-    to: string,
-    bcc: string,
-    subject: string,
-    template: string,
-    data: object,
-): Promise<boolean> => {
-    const [html, text] = await Promise.all([
-        hbs.renderView(`./views/emails/${template}Html.handlebars`, {
-            cache: true,
-            layout: "email.handlebars",
-            ...data,
-        }),
-        hbs.renderView(`./views/emails/${template}Text.handlebars`, {
-            cache: true,
-            layout: "email.handlebars",
-            ...data,
-        }),
-    ]);
-
-    return await sendEmail(to, bcc, subject, text, html);
-};
-
 export const sendEmail = async (
     to: string | string[],
     bcc: string | string[] | undefined,
@@ -132,11 +111,11 @@ export const sendEmail = async (
                     html,
                 });
                 return true;
-            } catch (e: Error) {
-                if (e.response) {
-                    console.error(e.response.body);
+            } catch (e: unknown | sgHelpers.classes.ResponseError) {
+                if (e instanceof sgHelpers.classes.ResponseError) {
+                    console.error('sendgrid error', e.response.body);
                 } else {
-                    console.error(e);
+                    console.error('sendgrid error', e);
                 }
                 return false;
             }
@@ -164,15 +143,10 @@ export const sendEmail = async (
                         nodemailer.createTransport(nodemailerConfig);
                 }
                 await nodemailerTransporter.sendMail({
-                    envelope: {
-                        from: config.general.email,
-                        to,
-                        bcc,
-                    },
                     from: config.general.email,
                     to,
                     bcc,
-                    subject,
+                    subject: `${config.general.site_name}: ${subject}`,
                     text,
                     html,
                 });
@@ -187,25 +161,42 @@ export const sendEmail = async (
 };
 
 export const sendEmailFromTemplate = async (
-    to: string,
-    bcc: string,
+    to: string | string[],
+    bcc: string | string[] | undefined,
     subject: string,
-    template: EmailTemplate,
-    templateData: Record<string, unknown>,
-    req: Request,
+    templateName: EmailTemplateName,
+    templateData: object,
 ): Promise<boolean> => {
-    const html = await renderTemplate(req, `${template}/${template}Html`, {
-        siteName: config.general.site_name,
-        siteLogo: config.general.email_logo_url,
-        domain: config.general.domain,
-        cache: true,
-        layout: "email.handlebars",
-        ...templateData,
-    });
-    const text = await renderTemplate(
-        req,
-        `${template}/${template}Text`,
-        templateData,
-    );
+    const [html, text] = await Promise.all([
+        HandlebarsSingleton.instance.renderView(
+            `./views/emails/${templateName}/${templateName}Html.handlebars`,
+            {
+                domain: config.general.domain,
+                contactEmail: config.general.email,
+                siteName: config.general.site_name,
+                mailService: config.general.mail_service,
+                siteLogo: config.general.email_logo_url,
+                isFederated: config.general.is_federated || true,
+                cache: true,
+                layout: "email.handlebars",
+                ...templateData,
+            }
+        ),
+        HandlebarsSingleton.instance.renderView(
+            `./views/emails/${templateName}/${templateName}Text.handlebars`,
+            {
+                domain: config.general.domain,
+                contactEmail: config.general.email,
+                siteName: config.general.site_name,
+                mailService: config.general.mail_service,
+                siteLogo: config.general.email_logo_url,
+                isFederated: config.general.is_federated || true,
+                cache: true,
+                layout: "email.handlebars",
+                ...templateData,
+            }
+        ),
+    ]);
+
     return await sendEmail(to, bcc, subject, text, html);
 };

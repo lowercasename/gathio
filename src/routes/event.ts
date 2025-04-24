@@ -80,8 +80,8 @@ router.post(
             });
         }
 
-        let eventID = generateEventID();
-        let editToken = generateEditToken();
+        const eventID = generateEventID();
+        const editToken = generateEditToken();
         let eventImageFilename;
         let isPartOfEventGroup = false;
 
@@ -125,7 +125,7 @@ router.post(
         }
 
         // generate RSA keypair for ActivityPub
-        let { publicKey, privateKey } = generateRSAKeypair();
+        const { publicKey, privateKey } = generateRSAKeypair();
 
         const event = new Event({
             id: eventID,
@@ -202,11 +202,7 @@ router.post(
                     {
                         eventID,
                         editToken,
-                        siteName: res.locals.config?.general.site_name,
-                        siteLogo: res.locals.config?.general.email_logo_url,
-                        domain: res.locals.config?.general.domain,
-                    },
-                    req,
+                    }
                 );
             }
             // If the event was added to a group, send an email to any group
@@ -237,17 +233,12 @@ router.post(
                             `New event in ${eventGroup.name}`,
                             "eventGroupUpdated",
                             {
-                                siteName: res.locals.config?.general.site_name,
-                                siteLogo:
-                                    res.locals.config?.general.email_logo_url,
-                                domain: res.locals.config?.general.domain,
                                 eventGroupName: eventGroup.name,
                                 eventName: event.name,
                                 eventID: event.id,
                                 eventGroupID: eventGroup.id,
                                 emailAddress: encodeURIComponent(emailAddress),
-                            },
-                            req,
+                            }
                         );
                     });
                 } catch (err) {
@@ -332,7 +323,7 @@ router.put(
             }
             // Token matches
             // If there is a new image, upload that first
-            let eventID = req.params.eventID;
+            const eventID = req.params.eventID;
             let eventImageFilename = event.image;
             if (req.file?.buffer) {
                 Jimp.read(req.file.buffer)
@@ -452,7 +443,7 @@ router.put(
                 "Event " + req.params.eventID + " edited",
             );
             // send update to ActivityPub subscribers
-            let attendees = updatedEventObject.attendees?.filter((el) => el.id);
+            const attendees = updatedEventObject.attendees?.filter((el) => el.id);
             // broadcast an identical message to all followers, will show in home timeline
             const guidObject = crypto.randomBytes(16).toString("hex");
             const jsonObject = {
@@ -495,21 +486,17 @@ router.put(
             if (req.app.locals.sendEmails) {
                 const attendeeEmails = event.attendees
                     ?.filter((o) => o.status === "attending" && o.email)
-                    .map((o) => o.email);
+                    .map((o) => o.email!);
                 if (attendeeEmails?.length) {
                     sendEmailFromTemplate(
                         config.general.email,
-                        attendeeEmails.join(","),
+                        attendeeEmails,
                         `${event.name} was just edited`,
                         "editEvent",
                         {
                             diffText,
                             eventID: req.params.eventID,
-                            siteName: res.locals.config?.general.site_name,
-                            siteLogo: res.locals.config?.general.email_logo_url,
-                            domain: res.locals.config?.general.domain,
                         },
-                        req,
                     );
                 }
             }
@@ -550,12 +537,12 @@ router.post(
             });
         }
 
-        let eventID = generateEventID();
-        let editToken = generateEditToken();
+        const eventID = generateEventID();
+        const editToken = generateEditToken();
 
-        let iCalObject = ical.parseICS(req.file.buffer.toString("utf8"));
+        const iCalObject = ical.parseICS(req.file.buffer.toString("utf8"));
 
-        let importedEventData = iCalObject[Object.keys(iCalObject)[0]];
+        const importedEventData = iCalObject[Object.keys(iCalObject)[0]];
 
         let creatorEmail: string | undefined;
         if (req.body.creatorEmail) {
@@ -620,11 +607,7 @@ router.post(
                     {
                         eventID,
                         editToken,
-                        siteName: res.locals.config?.general.site_name,
-                        siteLogo: res.locals.config?.general.email_logo_url,
-                        domain: res.locals.config?.general.domain,
                     },
-                    req,
                 );
             }
             return res.json({
@@ -700,11 +683,7 @@ router.delete(
                     "unattendEvent",
                     {
                         eventID: req.params.eventID,
-                        siteName: res.locals.config?.general.site_name,
-                        siteLogo: res.locals.config?.general.email_logo_url,
-                        domain: res.locals.config?.general.domain,
                     },
-                    req,
                 );
             }
             res.sendStatus(200);
@@ -752,11 +731,7 @@ router.get(
                 "unattendEvent",
                 {
                     event,
-                    siteName: res.locals.config?.general.site_name,
-                    siteLogo: res.locals.config?.general.email_logo_url,
-                    domain: res.locals.config?.general.domain,
                 },
-                req,
             );
         }
         return res.redirect(`/${req.params.eventID}?m=unattend`);

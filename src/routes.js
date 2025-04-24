@@ -9,8 +9,6 @@ import crypto from "crypto";
 import request from "request";
 import niceware from "niceware";
 import ical from "ical";
-import sgMail from "@sendgrid/mail";
-import nodemailer from "nodemailer";
 import fileUpload from "express-fileupload";
 import Jimp from "jimp";
 import schedule from "node-schedule";
@@ -19,20 +17,15 @@ import {
     broadcastDeleteMessage,
     processInbox,
 } from "./activitypub.js";
-import { renderEmail } from "./lib/handlebars.js";
 import Event from "./models/Event.js";
 import EventGroup from "./models/EventGroup.js";
 import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
 import { hashString } from "./util/generator.js";
-import { initEmailService, sendEmail } from "./lib/email.js";
+import { initEmailService, sendEmailFromTemplate } from "./lib/email.js";
 
 const config = getConfig();
 const domain = config.general.domain;
-const contactEmail = config.general.email;
-const siteName = config.general.site_name;
-const mailService = config.general.mail_service;
-const siteLogo = config.general.email_logo_url;
 const isFederated = config.general.is_federated || true;
 
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
@@ -329,14 +322,14 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                             "Sending emails to: " +
                                                 attendeeEmails,
                                         );
-                                        renderEmail(
-                                            req.app.get("hbsInstance"),
-                                            "deleteEvent/deleteEvent",
+                                        sendEmailFromTemplate(
+                                            attendeeEmails, 
+                                            '',
+                                            `${event?.name} was deleted`,
+                                            "deleteEvent",
                                             {
                                                 eventName: event?.name,
                                             },
-                                        ).then(
-                                            ({ html, text }) => sendEmail(attendeeEmails, '', `${siteName}: ${event?.name} was deleted`, text, html)
                                         ).catch((e) => {
                                             console.error('error sending attendy email', e.toString());
                                             res.status(500).end();
@@ -634,6 +627,10 @@ router.post("/attendevent/:eventID", async (req, res) => {
         },
     )
         .then((event) => {
+            if (!event) {
+                return res.sendStatus(404);
+            }
+
             addToLog(
                 "addEventAttendee",
                 "success",
@@ -641,9 +638,11 @@ router.post("/attendevent/:eventID", async (req, res) => {
             );
             if (sendEmails) {
                 if (req.body.attendeeEmail) {          
-                    renderEmail(
-                        req.app.get("hbsInstance"),
-                        "addEventAttendee/addEventAttendee",
+                    sendEmailFromTemplate(
+                        req.body.attendeeEmail,
+                        '',
+                        `You're RSVPed to ${event.name}`,
+                        "addEventAttendee",
                         {
                             eventID: req.params.eventID,
                             removalPassword: req.body.removalPassword,
@@ -651,8 +650,6 @@ router.post("/attendevent/:eventID", async (req, res) => {
                                 req.body.removalPassword,
                             ),
                         },
-                    ).then(
-                        ({ html, text }) => sendEmail(req.body.attendeeEmail, '', `${siteName}: You're RSVPed to ${event.name}`, text, html)
                     ).catch((e) => {
                         console.error('error sending addEventAttendee email', e.toString());
                         res.status(500).end();
@@ -686,11 +683,14 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
     ) {
         return res.sendStatus(200);
     }
-    Event.updateOne(
+    Event.findOneAndUpdate(
         { id: req.params.eventID },
         { $pull: { attendees: { _id: req.params.attendeeID } } },
     )
-        .then((response) => {
+        .then((event) => {
+            if (!event) {
+                return res.sendStatus(404);
+            }
             addToLog(
                 "oneClickUnattend",
                 "success",
@@ -699,14 +699,14 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
             if (sendEmails) {
                 // currently this is never called because we don't have the email address
                 if (req.body.attendeeEmail) {
-                    renderEmail(
-                        req.app.get("hbsInstance"),
-                        "removeEventAttendee/removeEventAttendee",
+                    sendEmailFromTemplate(
+                        req.body.attendeeEmail,
+                        '', 
+                        `You have been removed from an event`,
+                        "removeEventAttendee",
                         {
-                            eventName: req.params.eventName,
+                            eventName: event.name,
                         },
-                    ).then(
-                        ({ html, text }) => sendEmail(req.body.attendeeEmail, '', `${siteName}: You have been removed from an event`, text, html)
                     ).catch((e) => {
                         console.error('error sending removeEventAttendeeHtml email', e.toString());
                         res.status(500).end();
@@ -732,11 +732,14 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
 });
 
 router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
-    Event.updateOne(
+    Event.findOneAndUpdate(
         { id: req.params.eventID },
         { $pull: { attendees: { _id: req.params.attendeeID } } },
     )
-        .then((response) => {
+        .then((event) => {
+            if (!event) {
+                return res.sendStatus(404);
+            }
             addToLog(
                 "removeEventAttendee",
                 "success",
@@ -745,14 +748,14 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
             if (sendEmails) {
                 // currently this is never called because we don't have the email address
                 if (req.body.attendeeEmail) {
-                    renderEmail(
-                        req.app.get("hbsInstance"),
-                        "removeEventAttendee/removeEventAttendee",
+                    sendEmailFromTemplate(
+                        req.body.attendeeEmail, 
+                        '', 
+                        `You have been removed from an event`, 
+                        "removeEventAttendee",
                         {
-                            eventName: req.params.eventName,
+                            eventName: event.name,
                         },
-                    ).then(
-                        ({ html, text }) => sendEmail(req.body.attendeeEmail, '', `${siteName}: You have been removed from an event`, text, html)
                     ).catch((e) => {
                         console.error('error sending removeEventAttendeeHtml email', e.toString());
                         res.status(500).end();                  
@@ -798,16 +801,16 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
             eventGroup.subscribers.push(subscriber);
             eventGroup.save();
             if (sendEmails) {
-                renderEmail(
-                    req.app.get("hbsInstance"),
-                    "subscribed/subscribed",
+                sendEmailFromTemplate(
+                    subscriber.email, 
+                    '',
+                    `You have subscribed to an event group`, 
+                    "subscribed",
                     {
                         eventGroupName: eventGroup.name,
                         eventGroupID: eventGroup.id,
                         emailAddress: encodeURIComponent(subscriber.email),
                     },
-                ).then(
-                    ({ html, text }) => sendEmail(subscriber.email, '', `${siteName}: You have subscribed to an event group`, text, html)
                 ).catch((e) => {
                     console.error('error sending removeEventAttendeeHtml email', e.toString());
                     res.status(500).end();                  
@@ -875,7 +878,9 @@ router.post("/post/comment/:eventID", (req, res) => {
             id: req.params.eventID,
         },
         function (err, event) {
-            if (!event) return;
+            if (!event) {
+                return res.sendStatus(404);
+            }
             event.comments.push(newComment);
             event
                 .save()
@@ -914,15 +919,15 @@ router.post("/post/comment/:eventID", (req, res) => {
                                     console.log(
                                         "Sending emails to: " + attendeeEmails,
                                     );
-                                    renderEmail(
-                                        req.app.get("hbsInstance"),
-                                        "addEventComment/addEventComment",
+                                    sendEmailFromTemplate(
+                                        event?.creatorEmail || config.general.email,
+                                        attendeeEmails,
+                                        `New comment in ${event.name}`,
+                                        "addEventComment",
                                         {
                                             eventID: req.params.eventID,
                                             commentAuthor: req.body.commentAuthor,
                                         },
-                                    ).then(
-                                        ({ html, text }) => sendEmail(attendeeEmails, '', `${siteName}: New comment in ${event.name}`, text, html)
                                     ).catch((e) => {
                                         console.error('error sending removeEventAttendeeHtml email', e.toString());
                                         res.status(500).end();                  
@@ -967,7 +972,9 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
             id: req.params.eventID,
         },
         function (err, event) {
-            if (!event) return;
+            if (!event) {
+                return res.sendStatus(404);
+            }
             var parentComment = event.comments.id(commentID);
             parentComment.replies.push(newReply);
             event
@@ -999,6 +1006,9 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                     if (sendEmails) {
                         Event.findOne({ id: req.params.eventID }).then(
                             (event) => {
+                                if (!event) {
+                                    return res.sendStatus(404);
+                                }
                                 const attendeeEmails = event.attendees
                                     .filter(
                                         (o) =>
@@ -1009,15 +1019,15 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                                     console.log(
                                         "Sending emails to: " + attendeeEmails,
                                     );
-                                    renderEmail(
-                                        req.app.get("hbsInstance"),
-                                        "addEventComment/addEventComment",
+                                    sendEmailFromTemplate(
+                                        event?.creatorEmail || config.general.email,
+                                        attendeeEmails,
+                                        `New comment in ${event.name}`,
+                                        "addEventComment",
                                         {
                                             eventID: req.params.eventID,
                                             commentAuthor: req.body.replyAuthor,
                                         },
-                                    ).then(
-                                        ({ html, text }) => sendEmail(attendeeEmails, '', `${siteName}: New comment in ${event.name}`, text, html)
                                     ).catch((e) => {
                                         console.error('error sending removeEventAttendeeHtml email', e.toString());
                                         res.status(500).end();                  

@@ -101,11 +101,7 @@ router.post(
                     {
                         eventGroupID: eventGroup.id,
                         editToken: eventGroup.editToken,
-                        siteName: res.locals.config?.general.site_name,
-                        siteLogo: res.locals.config?.general.email_logo_url,
-                        domain: res.locals.config?.general.domain,
                     },
-                    req,
                 );
             }
 
@@ -182,7 +178,7 @@ router.put(
             }
             // Token matches
             // If there is a new image, upload that first
-            let eventGroupID = req.params.eventGroupID;
+            const eventGroupID = req.params.eventGroupID;
             let eventGroupImageFilename = eventGroup.image;
             if (req.file?.buffer) {
                 Jimp.read(req.file.buffer)
