@@ -22,7 +22,7 @@ import EventGroup from "./models/EventGroup.js";
 import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
 import { hashString } from "./util/generator.js";
-import { initEmailService, sendEmailFromTemplate } from "./lib/email.js";
+import { EmailService } from "./lib/email.js";
 
 const config = getConfig();
 const domain = config.general.domain;
@@ -36,10 +36,6 @@ const nanoid = customAlphabet(
 );
 
 const router = express.Router();
-
-let sendEmails = false;
-initEmailService().then((emailService) => (sendEmails = emailService));
-
 router.use(fileUpload());
 
 // SCHEDULED DELETION
@@ -309,34 +305,30 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                 });
                                 res.end();
 
-                                // Send emails here otherwise they don't exist lol
-                                if (sendEmails) {
-                                    const attendeeEmails = event?.attendees?.filter(
-                                            (o) =>
-                                                o.status === "attending" &&
-                                                o.email,
-                                        )
-                                        .map((o) => o.email || '') || [];
-                                    if (attendeeEmails.length) {
-                                        console.log(
-                                            "Sending emails to: " +
-                                                attendeeEmails,
-                                        );
-                                        sendEmailFromTemplate(
-                                            attendeeEmails, 
-                                            '',
-                                            `${event?.name} was deleted`,
-                                            "deleteEvent",
-                                            {
-                                                eventName: event?.name,
-                                            },
-                                        ).catch((e) => {
-                                            console.error('error sending attendy email', e.toString());
-                                            res.status(500).end();
-                                        });
-                                    } else {
-                                        console.log("Nothing to send!");
-                                    }
+                                const attendeeEmails = event?.attendees?.filter(
+                                        (o) =>
+                                            o.status === "attending" &&
+                                            o.email,
+                                    )
+                                    .map((o) => o.email || '') || [];
+                                if (attendeeEmails.length) {
+                                    console.log(
+                                        "Sending emails to: " +
+                                            attendeeEmails,
+                                    );
+                                    req.emailService.sendEmailFromTemplate({
+                                        to: attendeeEmails, 
+                                        subject: `${event?.name} was deleted`,
+                                        templateName: "deleteEvent",
+                                        templateData: {
+                                            eventName: event?.name,
+                                        },
+                                    }).catch((e) => {
+                                        console.error('error sending attendee email', e.toString());
+                                        res.status(500).end();
+                                    });
+                                } else {
+                                    console.log("Nothing to send!");
                                 }
                             })
                             .catch((err) => {
@@ -636,25 +628,22 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "success",
                 "Attendee added to event " + req.params.eventID,
             );
-            if (sendEmails) {
-                if (req.body.attendeeEmail) {          
-                    sendEmailFromTemplate(
-                        req.body.attendeeEmail,
-                        '',
-                        `You're RSVPed to ${event.name}`,
-                        "addEventAttendee",
-                        {
-                            eventID: req.params.eventID,
-                            removalPassword: req.body.removalPassword,
-                            removalPasswordHash: hashString(
-                                req.body.removalPassword,
-                            ),
-                        },
-                    ).catch((e) => {
-                        console.error('error sending addEventAttendee email', e.toString());
-                        res.status(500).end();
-                    });
-                }
+            if (req.body.attendeeEmail) {          
+                req.emailService.sendEmailFromTemplate({
+                    to: req.body.attendeeEmail,
+                    subject: `You're RSVPed to ${event.name}`,
+                    templateName: "addEventAttendee",
+                    templateData:{
+                        eventID: req.params.eventID,
+                        removalPassword: req.body.removalPassword,
+                        removalPasswordHash: hashString(
+                            req.body.removalPassword,
+                        ),
+                    },
+                }).catch((e) => {
+                    console.error('error sending addEventAttendee email', e.toString());
+                    res.status(500).end();
+                });
             }
             res.redirect(`/${req.params.eventID}`);
         })
@@ -696,22 +685,19 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
                 "success",
                 "Attendee removed via one click unattend " + req.params.eventID,
             );
-            if (sendEmails) {
-                // currently this is never called because we don't have the email address
-                if (req.body.attendeeEmail) {
-                    sendEmailFromTemplate(
-                        req.body.attendeeEmail,
-                        '', 
-                        `You have been removed from an event`,
-                        "removeEventAttendee",
-                        {
-                            eventName: event.name,
-                        },
-                    ).catch((e) => {
-                        console.error('error sending removeEventAttendeeHtml email', e.toString());
-                        res.status(500).end();
-                    });
-                }
+            // currently this is never called because we don't have the email address
+            if (req.body.attendeeEmail) {
+                req.emailService.sendEmailFromTemplate({
+                    to: req.body.attendeeEmail,
+                    subject: `You have been removed from an event`,
+                    templateName: "removeEventAttendee",
+                    templateData:{
+                        eventName: event.name,
+                    },
+                }).catch((e) => {
+                    console.error('error sending removeEventAttendeeHtml email', e.toString());
+                    res.status(500).end();
+                });
             }
             res.writeHead(302, {
                 Location: "/" + req.params.eventID,
@@ -745,22 +731,19 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
                 "success",
                 "Attendee removed by admin from event " + req.params.eventID,
             );
-            if (sendEmails) {
-                // currently this is never called because we don't have the email address
-                if (req.body.attendeeEmail) {
-                    sendEmailFromTemplate(
-                        req.body.attendeeEmail, 
-                        '', 
-                        `You have been removed from an event`, 
-                        "removeEventAttendee",
-                        {
-                            eventName: event.name,
-                        },
-                    ).catch((e) => {
-                        console.error('error sending removeEventAttendeeHtml email', e.toString());
-                        res.status(500).end();                  
-                    });
-                }
+            // currently this is never called because we don't have the email address
+            if (req.body.attendeeEmail) {
+                req.emailService.sendEmailFromTemplate({
+                    to: req.body.attendeeEmail, 
+                    subject: `You have been removed from an event`, 
+                    templateName: "removeEventAttendee",
+                    templateData: {
+                        eventName: event.name,
+                    },
+                }).catch((e) => {
+                    console.error('error sending removeEventAttendeeHtml email', e.toString());
+                    res.status(500).end();                  
+                });
             }
             res.writeHead(302, {
                 Location: "/" + req.params.eventID,
@@ -800,22 +783,20 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
             }
             eventGroup.subscribers.push(subscriber);
             eventGroup.save();
-            if (sendEmails) {
-                sendEmailFromTemplate(
-                    subscriber.email, 
-                    '',
-                    `You have subscribed to an event group`, 
-                    "subscribed",
-                    {
-                        eventGroupName: eventGroup.name,
-                        eventGroupID: eventGroup.id,
-                        emailAddress: encodeURIComponent(subscriber.email),
-                    },
-                ).catch((e) => {
-                    console.error('error sending removeEventAttendeeHtml email', e.toString());
-                    res.status(500).end();                  
-                });
-            }
+            req.emailService.sendEmailFromTemplate({
+                to: subscriber.email, 
+                subject: "You have subscribed to an event group",
+                templateName: "subscribed",
+                templateData:{
+                    eventGroupName: eventGroup.name,
+                    eventGroupID: eventGroup.id,
+                    emailAddress: encodeURIComponent(subscriber.email),
+                },
+            }).catch((e) => {
+                console.error('error sending removeEventAttendeeHtml email', e.toString());
+                res.status(500).end();                  
+            });
+
             return res.redirect(`/group/${eventGroup.id}`);
         })
         .catch((error) => {
@@ -906,38 +887,40 @@ router.post("/post/comment/:eventID", (req, res) => {
                         event.followers,
                         req.params.eventID,
                     );
-                    if (sendEmails) {
-                        Event.findOne({ id: req.params.eventID }).then(
-                            (event) => {
-                                const attendeeEmails = event.attendees
-                                    .filter(
-                                        (o) =>
-                                            o.status === "attending" && o.email,
-                                    )
-                                    .map((o) => o.email || '')  || [];
-                                if (attendeeEmails.length) {
-                                    console.log(
-                                        "Sending emails to: " + attendeeEmails,
-                                    );
-                                    sendEmailFromTemplate(
-                                        event?.creatorEmail || config.general.email,
-                                        attendeeEmails,
-                                        `New comment in ${event.name}`,
-                                        "addEventComment",
-                                        {
-                                            eventID: req.params.eventID,
-                                            commentAuthor: req.body.commentAuthor,
-                                        },
-                                    ).catch((e) => {
-                                        console.error('error sending removeEventAttendeeHtml email', e.toString());
-                                        res.status(500).end();                  
-                                    });
-                                } else {
-                                    console.log("Nothing to send!");
-                                }
-                            },
-                        );
+                    if (!event) {
+                        return res.sendStatus(404);
                     }
+                    
+                    Event.findOne({ id: req.params.eventID }).then(
+                        (event) => {
+                            const attendeeEmails = event.attendees
+                                .filter(
+                                    (o) =>
+                                        o.status === "attending" && o.email,
+                                )
+                                .map((o) => o.email || '')  || [];
+                            if (attendeeEmails.length) {
+                                console.log(
+                                    "Sending emails to: " + attendeeEmails,
+                                );
+                                req.emailService.sendEmailFromTemplate({
+                                    to: event?.creatorEmail || config.general.email,
+                                    bcc: attendeeEmails,
+                                    subject: `New comment in ${event.name}`,
+                                    templateName: "addEventComment",
+                                    templateData:{
+                                        eventID: req.params.eventID,
+                                        commentAuthor: req.body.commentAuthor,
+                                    },
+                                }).catch((e) => {
+                                    console.error('error sending removeEventAttendeeHtml email', e.toString());
+                                    res.status(500).end();                  
+                                });
+                            } else {
+                                console.log("Nothing to send!");
+                            }
+                        },
+                    );
                     res.writeHead(302, {
                         Location: "/" + req.params.eventID,
                     });
@@ -1003,41 +986,39 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                         event.followers,
                         req.params.eventID,
                     );
-                    if (sendEmails) {
-                        Event.findOne({ id: req.params.eventID }).then(
-                            (event) => {
-                                if (!event) {
-                                    return res.sendStatus(404);
-                                }
-                                const attendeeEmails = event.attendees
-                                    .filter(
-                                        (o) =>
-                                            o.status === "attending" && o.email,
-                                    )
-                                    .map((o) => o.email || '') || [];
-                                if (attendeeEmails.length) {
-                                    console.log(
-                                        "Sending emails to: " + attendeeEmails,
-                                    );
-                                    sendEmailFromTemplate(
-                                        event?.creatorEmail || config.general.email,
-                                        attendeeEmails,
-                                        `New comment in ${event.name}`,
-                                        "addEventComment",
-                                        {
-                                            eventID: req.params.eventID,
-                                            commentAuthor: req.body.replyAuthor,
-                                        },
-                                    ).catch((e) => {
-                                        console.error('error sending removeEventAttendeeHtml email', e.toString());
-                                        res.status(500).end();                  
-                                    });
-                                } else {
-                                    console.log("Nothing to send!");
-                                }
-                            },
-                        );
-                    }
+                    Event.findOne({ id: req.params.eventID }).then(
+                        (event) => {
+                            if (!event) {
+                                return res.sendStatus(404);
+                            }
+                            const attendeeEmails = event.attendees
+                                .filter(
+                                    (o) =>
+                                        o.status === "attending" && o.email,
+                                )
+                                .map((o) => o.email || '') || [];
+                            if (attendeeEmails.length) {
+                                console.log(
+                                    "Sending emails to: " + attendeeEmails,
+                                );
+                                req.emailService.sendEmailFromTemplate({
+                                    to: event?.creatorEmail || config.general.email,
+                                    bcc: attendeeEmails,
+                                    subject: `New comment in ${event.name}`,
+                                    templateName: "addEventComment",
+                                    templateData: {
+                                        eventID: req.params.eventID,
+                                        commentAuthor: req.body.replyAuthor,
+                                    },
+                                }).catch((e) => {
+                                    console.error('error sending removeEventAttendeeHtml email', e.toString());
+                                    res.status(500).end();                  
+                                });
+                            } else {
+                                console.log("Nothing to send!");
+                            }
+                        },
+                    );
                     res.writeHead(302, {
                         Location: "/" + req.params.eventID,
                     });

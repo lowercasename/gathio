@@ -22,14 +22,13 @@ import {
     updateActivityPubActor,
     updateActivityPubEvent,
 } from "../activitypub.js";
-import { sendEmailFromTemplate } from "../lib/email.js";
 import crypto from "crypto";
 import ical from "ical";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
 import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
 import { getConfig } from "../lib/config.js";
-const config = getConfig();
 
+const config = getConfig();
 
 const storage = multer.memoryStorage();
 // Accept only JPEG, GIF or PNG images, up to 10MB
@@ -193,21 +192,20 @@ router.post(
             const savedEvent = await event.save();
             addToLog("createEvent", "success", "Event " + eventID + "created");
             // Send email with edit link
-            if (eventData.creatorEmail && req.app.locals.sendEmails) {
-                sendEmailFromTemplate(
-                    eventData.creatorEmail,
-                    "",
-                    `${eventData.eventName}`,
-                    "createEvent",
-                    {
+            if (eventData.creatorEmail) {
+                req.emailService.sendEmailFromTemplate({
+                    to: eventData.creatorEmail,
+                    subject: eventData.eventName,
+                    templateName: "createEvent",
+                    templateData: {
                         eventID,
                         editToken,
                     }
-                );
+                });
             }
             // If the event was added to a group, send an email to any group
             // subscribers
-            if (event.eventGroup && req.app.locals.sendEmails) {
+            if (event.eventGroup) {
                 try {
                     const eventGroup = await EventGroup.findOne({
                         _id: event.eventGroup.toString(),
@@ -227,19 +225,18 @@ router.post(
                         [] as string[],
                     );
                     subscribers?.forEach((emailAddress) => {
-                        sendEmailFromTemplate(
-                            emailAddress,
-                            "",
-                            `New event in ${eventGroup.name}`,
-                            "eventGroupUpdated",
-                            {
+                        req.emailService.sendEmailFromTemplate({
+                            to: emailAddress,
+                            subject: `New event in ${eventGroup.name}`,
+                            templateName: "eventGroupUpdated",
+                            templateData: {
                                 eventGroupName: eventGroup.name,
                                 eventName: event.name,
                                 eventID: event.id,
                                 eventGroupID: eventGroup.id,
                                 emailAddress: encodeURIComponent(emailAddress),
                             }
-                        );
+                        });
                     });
                 } catch (err) {
                     console.error(err);
@@ -247,7 +244,7 @@ router.post(
                         "createEvent",
                         "error",
                         "Attempt to send event group emails failed with error: " +
-                            err,
+                        err,
                     );
                 }
             }
@@ -379,24 +376,24 @@ router.put(
                 eventGroup: isPartOfEventGroup ? eventGroup?._id : null,
                 activityPubActor: event.activityPubActor
                     ? updateActivityPubActor(
-                          JSON.parse(event.activityPubActor),
-                          eventData.eventDescription,
-                          eventData.eventName,
-                          eventData.eventLocation,
-                          eventImageFilename,
-                          startUTC,
-                          endUTC,
-                          eventData.timezone,
-                      )
+                        JSON.parse(event.activityPubActor),
+                        eventData.eventDescription,
+                        eventData.eventName,
+                        eventData.eventLocation,
+                        eventImageFilename,
+                        startUTC,
+                        endUTC,
+                        eventData.timezone,
+                    )
                     : undefined,
                 activityPubEvent: event.activityPubEvent
                     ? updateActivityPubEvent(
-                          JSON.parse(event.activityPubEvent),
-                          eventData.eventName,
-                          startUTC,
-                          endUTC,
-                          eventData.timezone,
-                      )
+                        JSON.parse(event.activityPubEvent),
+                        eventData.eventName,
+                        startUTC,
+                        endUTC,
+                        eventData.timezone,
+                    )
                     : undefined,
             };
             let diffText =
@@ -483,22 +480,20 @@ router.put(
                 }
             }
             // Send update to all attendees
-            if (req.app.locals.sendEmails) {
-                const attendeeEmails = event.attendees
-                    ?.filter((o) => o.status === "attending" && o.email)
-                    .map((o) => o.email!);
-                if (attendeeEmails?.length) {
-                    sendEmailFromTemplate(
-                        config.general.email,
-                        attendeeEmails,
-                        `${event.name} was just edited`,
-                        "editEvent",
-                        {
-                            diffText,
-                            eventID: req.params.eventID,
-                        },
-                    );
-                }
+            const attendeeEmails = event.attendees
+                ?.filter((o) => o.status === "attending" && o.email)
+                .map((o) => o.email!);
+            if (attendeeEmails?.length) {
+                req.emailService.sendEmailFromTemplate({
+                    to: config.general.email,
+                    bcc: attendeeEmails,
+                    subject: `${event.name} was just edited`,
+                    templateName: "editEvent",
+                    templateData: {
+                        diffText,
+                        eventID: req.params.eventID,
+                    },
+                });
             }
             res.sendStatus(200);
         } catch (err) {
@@ -507,9 +502,9 @@ router.put(
                 "editEvent",
                 "error",
                 "Attempt to edit event " +
-                    req.params.eventID +
-                    " failed with error: " +
-                    err,
+                req.params.eventID +
+                " failed with error: " +
+                err,
             );
             return res.status(500).json({
                 errors: [
@@ -598,17 +593,16 @@ router.post(
             await event.save();
             addToLog("createEvent", "success", `Event ${eventID} created`);
             // Send email with edit link
-            if (creatorEmail && req.app.locals.sendEmails) {
-                sendEmailFromTemplate(
-                    creatorEmail,
-                    "",
-                    `${importedEventData.summary}`,
-                    "createEvent",
-                    {
+            if (creatorEmail) {
+                req.emailService.sendEmailFromTemplate({
+                    to: creatorEmail,
+                    subject: importedEventData.summary || "",
+                    templateName: "createEvent",
+                    templateData: {
                         eventID,
                         editToken,
                     },
-                );
+                });
             }
             return res.json({
                 eventID: eventID,
@@ -675,16 +669,15 @@ router.delete(
                 "success",
                 `Attendee removed self from event ${req.params.eventID}`,
             );
-            if (attendeeEmail && req.app.locals.sendEmails) {
-                await sendEmailFromTemplate(
-                    attendeeEmail,
-                    "",
-                    "You have been removed from an event",
-                    "unattendEvent",
-                    {
+            if (attendeeEmail) {
+                await req.emailService.sendEmailFromTemplate({
+                    to: attendeeEmail,
+                    subject: "You have been removed from an event",
+                    templateName: "unattendEvent",
+                    templateData: {
                         eventID: req.params.eventID,
                     },
-                );
+                });
             }
             res.sendStatus(200);
         } catch (e) {
@@ -723,16 +716,15 @@ router.get(
         );
         await event.save();
         // Send email to the attendee
-        if (req.app.locals.sendEmails && attendee.email) {
-            sendEmailFromTemplate(
-                attendee.email,
-                "",
-                `You have been removed from ${event.name}`,
-                "unattendEvent",
-                {
+        if (attendee.email) {
+            req.emailService.sendEmailFromTemplate({
+                to: attendee.email,
+                subject: `You have been removed from ${event.name}`,
+                templateName: "unattendEvent",
+                templateData: {
                     event,
                 },
-            );
+            });
         }
         return res.redirect(`/${req.params.eventID}?m=unattend`);
     },

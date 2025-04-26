@@ -1,6 +1,5 @@
 import { Router, Request, Response } from "express";
 import { frontendConfig } from "../lib/config.js";
-import { sendEmailFromTemplate } from "../lib/email.js";
 import { generateMagicLinkToken } from "../util/generator.js";
 import MagicLink from "../models/MagicLink.js";
 import { getConfigMiddleware } from "../lib/middleware.js";
@@ -48,15 +47,14 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
     // Take this opportunity to delete any expired magic links
     await MagicLink.deleteMany({ expiryTime: { $lt: new Date() } });
 
-    sendEmailFromTemplate(
-        email,
-        "",
-        `Magic link to create an event`,
-        "createEventMagicLink",
-        {
+    req.emailService.sendEmailFromTemplate({
+        to: email,
+        subject: "Magic link to create an event",
+        templateName: "createEventMagicLink",
+        templateData: {
             token
         },
-    );
+    });
     res.render("createEventMagicLink", {
         ...frontendConfig(res),
         message: {

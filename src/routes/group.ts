@@ -5,7 +5,6 @@ import { validateGroupData } from "../util/validation.js";
 import Jimp from "jimp";
 import { addToLog } from "../helpers.js";
 import EventGroup from "../models/EventGroup.js";
-import { sendEmailFromTemplate } from "../lib/email.js";
 import { marked } from "marked";
 import { renderPlain } from "../util/markdown.js";
 import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
@@ -92,17 +91,16 @@ router.post(
             );
 
             // Send email with edit link
-            if (groupData.creatorEmail && req.app.locals.sendEmails) {
-                sendEmailFromTemplate(
-                    groupData.creatorEmail,
-                    "",
-                    `${eventGroup.name}`,
-                    "createEventGroup",
-                    {
+            if (groupData.creatorEmail) {
+                req.emailService.sendEmailFromTemplate({
+                    to: groupData.creatorEmail,
+                    subject: eventGroup.name,
+                    templateName: "createEventGroup",
+                    templateData: {
                         eventGroupID: eventGroup.id,
                         editToken: eventGroup.editToken,
                     },
-                );
+                });
             }
 
             res.status(200).json({
@@ -224,9 +222,9 @@ router.put(
                 "editEventGroup",
                 "error",
                 "Attempt to edit event group " +
-                    req.params.eventGroupID +
-                    " failed with error: " +
-                    err,
+                req.params.eventGroupID +
+                " failed with error: " +
+                err,
             );
             return res.status(500).json({
                 errors: [
