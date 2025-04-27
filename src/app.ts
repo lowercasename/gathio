@@ -13,7 +13,7 @@ import path from 'path';
 const require = createRequire(import.meta.url);
 const handlebarsI18next = require('handlebars-i18next');
 
-// ESモジュールで__dirnameを再現
+// Recreate __dirname in ES module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -37,7 +37,7 @@ const app = express();
 
 app.locals.sendEmails = initEmailService();
 
-// ESモジュールで__dirnameを再現する部分を関数化
+// function to construct __dirname with ES module
 const getLocalesPath = () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
@@ -75,11 +75,12 @@ async function initializeApp() {
 
     app.use(handle(i18next));
 
-    // 言語を明示的に切り替える
+    // to Switch language
     app.use((req, res, next) => {
         const currentLanguage = i18next.language;
         i18next.changeLanguage(req.language);
         const newLanguage = i18next.language;
+// Uncomment for debugging
 //        console.log('Language Change:', {
 //            header: req.headers['accept-language'],
 //            detected: req.language,
@@ -89,7 +90,7 @@ async function initializeApp() {
         next();
     });
 
-//    // デバッグ用
+// Uncomment for debugging
 //    app.use((req, res, next) => {
 //        console.log('Language Detection:', {
 //            header: req.headers['accept-language'],
@@ -108,16 +109,16 @@ async function initializeApp() {
             json: function (context: any) {
                 return JSON.stringify(context);
             },
-            // i18nextヘルパーを追加
+            // add i18next helpers
             ...getI18nHelpers(),
-            plural: function (key: string, count: number, options: any) { // ★plural ヘルパーを登録
+            plural: function (key: string, count: number, options: any) { // Register the plural helper
                 const translation = i18next.t(key, { count: count });
                 return translation;
             }
         },
     });
 
-    // i18nextHelperの呼び出し方法を変更
+    // calling i18nextHelper
     if (typeof handlebarsI18next === 'function') {
         handlebarsI18next(hbsInstance.handlebars, i18next);
     } else if (typeof handlebarsI18next.default === 'function') {
