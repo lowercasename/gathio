@@ -131,7 +131,7 @@ export const validateEventData = (
     const errors: Error[] = [];
     if (!validatedData.eventName) {
         errors.push({
-            message: i18next.t('validation.eventdata.eventname'),
+            message: i18next.t('util.validation.eventdata.eventname'),
             field: "eventName",
         });
     }

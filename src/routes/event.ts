@@ -414,10 +414,10 @@ router.put(
                 "<p>" + i18next.t("routes.event.difftext") + "</p><ul>";
             let displayDate;
             if (event.name !== updatedEvent.name) {
-                diffText += `<li>` + i18next.t("routes.event.namechanged") + updatedEvent.name + `</li>`;
+                diffText += `<li>` + i18next.t("routes.event.namechanged", { eventname: updatedEvent.name} ) + `</li>`;
             }
             if (event.location !== updatedEvent.location) {
-                diffText += `<li>` + i18next.t("routes.event.locationchanged") + updatedEvent.location + `</li>`;
+                diffText += `<li>` + i18next.t("routes.event.locationchanged", { location: updatedEvent.location} ) + `</li>`;
             }
             if (
                 event.start.toISOString() !== updatedEvent.start.toISOString()
@@ -425,19 +425,19 @@ router.put(
                 displayDate = moment
                     .tz(updatedEvent.start, updatedEvent.timezone)
                     .format(i18next.t("common.datetimeformat"));
-                diffText += `<li>` + i18next.t("routes.event.starttimechanged") + displayDate + `</li>`;
+                diffText += `<li>` + i18next.t("routes.event.starttimechanged", { starttime: displayDate }) + `</li>`;
             }
             if (event.end.toISOString() !== updatedEvent.end.toISOString()) {
                 displayDate = moment
                     .tz(updatedEvent.end, updatedEvent.timezone)
                     .format(i18next.t("common.datetimeformat"));
-                diffText += `<li>` + i18next.t("routes.event.endtimechanged") + displayDate + `</li>`;
+                diffText += `<li>` + i18next.t("routes.event.endtimechanged", { endtime: displayDate }) + `</li>`;
             }
             if (event.timezone !== updatedEvent.timezone) {
-                diffText += `<li>` + i18next.t("routes.event.timezonechanged") + updatedEvent.timezone + `</li>`;
+                diffText += `<li>` + i18next.t("routes.event.timezonechanged", { timezone: updatedEvent.timezone }) + `</li>`;
             }
             if (event.description !== updatedEvent.description) {
-                diffText += `<li>` + i18next.t("routes.event.descriptionchanged") + `</li>`;
+                diffText += `<li>` + i18next.t("routes.event.descriptionchanged", { description: updatedEvent.description }) + `</li>`;
             }
             diffText += `</ul>`;
             const updatedEventObject = await Event.findOneAndUpdate(
@@ -502,7 +502,7 @@ router.put(
                     sendEmailFromTemplate(
                         config.general.email,
                         attendeeEmails.join(","),
-                        `${event.name} ` + i18next.t("routes.event.editedsubject"),
+                        i18next.t("routes.event.editedsubject", { eventname: event.name}),
                         "editEvent",
                         {
                             diffText,
