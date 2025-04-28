@@ -25,6 +25,7 @@ import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
 import { hashString } from "./util/generator.js";
 import i18next from "i18next";
+import { initEmailService } from "./lib/email.js";
 
 const config = getConfig();
 const domain = config.general.domain;
@@ -44,46 +45,9 @@ const nanoid = customAlphabet(
 const router = express.Router();
 
 let sendEmails = false;
-let nodemailerTransporter;
-if (config.general.mail_service) {
-    switch (config.general.mail_service) {
-        case "sendgrid":
-            sgMail.setApiKey(config.sendgrid?.api_key);
-            console.log("Sendgrid is ready to send emails.");
-            sendEmails = true;
-            break;
-        case "nodemailer":
-            const nodemailerConfig = {
-                host: config.nodemailer?.smtp_server,
-                port: Number(config.nodemailer?.smtp_port) || 587,
-            };
-
-            if (config.nodemailer?.smtp_username) {
-                nodemailerConfig.auth = {
-                    user: config.nodemailer?.smtp_username,
-                    pass: config.nodemailer?.smtp_password
-                };
-            }
-
-            nodemailerTransporter = nodemailer.createTransport(nodemailerConfig);
-
-            nodemailerTransporter.verify((error, success) => {
-                if (error) {
-                    console.log(error);
-                } else {
-                    console.log(
-                        "Nodemailer SMTP server is ready to send emails.",
-                    );
-                    sendEmails = true;
-                }
-            });
-            break;
-        default:
-            console.error(
-                "You have not configured this Gathio instance to send emails! This means that event creators will not receive emails when their events are created, which means they may end up locked out of editing events. Consider setting up an email service.",
-            );
-    }
-}
+initEmailService().then((emailService) => {
+    sendEmails = emailService
+});
 
 router.use(fileUpload());
 

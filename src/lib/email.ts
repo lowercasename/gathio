@@ -1,6 +1,6 @@
 import { Request } from "express";
 import sgMail from "@sendgrid/mail";
-import nodemailer from "nodemailer";
+import nodemailer, { Transporter } from "nodemailer";
 import { getConfig } from "./config.js";
 import SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import { exitWithError } from "./process.js";
@@ -37,32 +37,36 @@ export const initEmailService = async (): Promise<boolean> => {
             console.log("Sendgrid is ready to send emails.");
             return true;
         case "nodemailer":
-            if (
-                !config.nodemailer?.smtp_server ||
-                !config.nodemailer?.smtp_port
-            ) {
-                return exitWithError(
-                    "Nodemailer is configured as the email service, but not all required fields are provided. Please provide all required fields in the config file.",
-                );
-            }
-            const nodemailerConfig = {
-                host: config.nodemailer?.smtp_server,
-                port: Number(config.nodemailer?.smtp_port) || 587,
-                tls: { 
-                    // do not fail on invalid certs
-                    rejectUnauthorized: false,
-                },
-            } as SMTPTransport.Options;
+            let nodemailerTransporter:Transporter|undefined = undefined;
+            if (config.nodemailer?.smtp_url) {
+                nodemailerTransporter = nodemailer.createTransport(config.nodemailer?.smtp_url);
+            } else {
+                if (
+                    !config.nodemailer?.smtp_server ||
+                    !config.nodemailer?.smtp_port
+                ) {
+                    return exitWithError(
+                        "Nodemailer is configured as the email service, but not all required fields are provided. Please provide all required fields in the config file.",
+                    );
+                }
+                const nodemailerConfig = {
+                    host: config.nodemailer?.smtp_server,
+                    port: Number(config.nodemailer?.smtp_port) || 587,
+                    tls: { 
+                        // do not fail on invalid certs
+                        rejectUnauthorized: false,
+                    },
+                } as SMTPTransport.Options;
 
-            if (config.nodemailer?.smtp_username) {
-                nodemailerConfig.auth = {
-                    user: config.nodemailer?.smtp_username,
-                    pass: config.nodemailer?.smtp_password
-                };
+                if (config.nodemailer?.smtp_username) {
+                    nodemailerConfig.auth = {
+                        user: config.nodemailer?.smtp_username,
+                        pass: config.nodemailer?.smtp_password
+                    };
+                }
+                nodemailerTransporter = nodemailer.createTransport(nodemailerConfig);
             }
 
-            const nodemailerTransporter =
-                nodemailer.createTransport(nodemailerConfig);
             const nodemailerVerified = await nodemailerTransporter.verify();
             if (nodemailerVerified) {
                 console.log("Nodemailer is ready to send emails.");
@@ -110,20 +114,24 @@ export const sendEmail = async (
             }
         case "nodemailer":
             try {
-                const nodemailerConfig = {
-                    host: config.nodemailer?.smtp_server,
-                    port: Number(config.nodemailer?.smtp_port) || 587,
-                } as SMTPTransport.Options;
+                let nodemailerTransporter:Transporter|undefined = undefined;
+                if (config.nodemailer?.smtp_url) {
+                    nodemailerTransporter = nodemailer.createTransport(config.nodemailer?.smtp_url);
+                } else {
+                    const nodemailerConfig = {
+                        host: config.nodemailer?.smtp_server,
+                        port: Number(config.nodemailer?.smtp_port) || 587,
+                    } as SMTPTransport.Options;
 
-                if (config.nodemailer?.smtp_username) {
-                    nodemailerConfig.auth = {
-                        user: config.nodemailer?.smtp_username,
-                        pass: config.nodemailer?.smtp_password
-                    };
+                    if (config.nodemailer?.smtp_username) {
+                        nodemailerConfig.auth = {
+                            user: config.nodemailer?.smtp_username,
+                            pass: config.nodemailer?.smtp_password
+                        };
+                    }
+
+                    nodemailerTransporter = nodemailer.createTransport(nodemailerConfig);
                 }
-
-                const nodemailerTransporter =
-                    nodemailer.createTransport(nodemailerConfig);
                 await nodemailerTransporter.sendMail({
                     envelope: {
                         from: config.general.email,
