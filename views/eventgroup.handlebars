@@ -1,4 +1,9 @@
 <main class="event">
+{{#if editingEnabled}}
+<div class="event__editing-banner">
+    You are currently editing this event. Do not share this link!
+</div>
+{{/if}}
 {{#if eventGroupHasCoverImage}}
   <div class="event-header-image" id="eventImageContainer" style="background-image: url(/events/{{eventGroupData.image}});"></div>
 {{else}}
@@ -47,8 +52,9 @@
         {{/if}}
         <li>
           <span class="fa-li">
-            <i class="fas fa-share-square"></i>
+            <i class="fas fa-users"></i>
           </span>
+          <span class="text-muted">Public link:</span>
           <a href="https://{{domain}}/group/{{eventGroupData.id}}">https://{{domain}}/group/{{eventGroupData.id}}</a>
           <button type="button" id="copyEventLink" class="eventInformationAction button button--outline-secondary button--sm" data-clipboard-text="https://{{domain}}/group/{{eventGroupData.id}}">
             <i class="fas fa-copy"></i> Copy

@@ -1,4 +1,9 @@
-<main class="event">
+<main class="event{{#if editingEnabled}} event--editing{{/if}}">
+{{#if editingEnabled}}
+<div class="event__editing-banner">
+    You are currently editing this event. Do not share this link!
+</div>
+{{/if}}
 {{#if eventHasCoverImage}}
   <div class="event-header-image" id="eventImageContainer" style="background-image: url(/events/{{eventData.image}});"></div>
 {{else}}
@@ -70,8 +75,9 @@
         {{/if}}
         <li>
           <span class="fa-li">
-            <i class="fas fa-fw fa-share-square"></i>
+            <i class="fas fa-fw fa-users"></i>
           </span>
+          <span class="text-muted">Public link:</span>
           <a class="u-url" href="https://{{domain}}/{{eventData.id}}">https://{{domain}}/{{eventData.id}}</a>
           <button type="button" id="copyEventLink" class="eventInformationAction button button--outline-secondary button--sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
             <i class="fas fa-copy"></i> Copy
@@ -79,9 +85,8 @@
         </li>
         {{#if isFederated}}
         <li>
-          <span class="fa-li">
-            <i class="fas fa-fw fa-share-square"></i>
-          </span>
+          <span class="fa-li fa-fw fediverse-icon"><img src="/images/fediverse-icon.svg" alt="Fediverse Icon" /></span>
+          <span class="text-muted">Fediverse link:</span>
           @{{eventData.id}}@{{domain}}
           <button type="button" id="copyAPLink" class="eventInformationAction button button--outline-secondary button--sm" data-clipboard-text="@{{eventData.id}}@{{domain}}">
             <i class="fas fa-copy"></i> Copy
