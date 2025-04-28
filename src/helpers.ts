@@ -1,5 +1,8 @@
-import moment from "moment-timezone";
-import icalGenerator from "ical-generator";
+import mongoose from 'mongoose';
+import moment from 'moment-timezone';
+import icalGenerator from 'ical-generator';
+import i18next from 'i18next';
+import handlebars from 'handlebars';
 import Log from "./models/Log.js";
 import { getConfig } from "./lib/config.js";
 import { IEvent } from "./models/Event.js";
@@ -10,41 +13,61 @@ const siteName = config.general.site_name;
 
 // LOGGING
 export function addToLog(process: string, status: string, message: string) {
-    const logEntry = {
-        status,
-        process,
-        message,
-        timestamp: new Date(),
-    };
-    new Log(logEntry).save().catch(() => {
-        console.log("Error saving log entry!");
-    });
+  const logEntry = {
+    status,
+    process,
+    message,
+    timestamp: new Date(),
+  };
+  new Log(logEntry).save().catch(() => {
+    console.log("Error saving log entry!");
+  });
 }
 
-export function exportICal(events: IEvent[], calendarName: string) {
-    if (!events || events.length < 1) return;
+export function exportIcal(events: IEvent | IEvent[], calendarName?: string) {  // Ical -> ICal
+  // Create a new icalGenerator... generator
+  const cal = icalGenerator({
+    name: calendarName || siteName,
+    timezone: 'UTC'
+  });
 
-    // Create a new icalGenerator... generator
-    const cal = icalGenerator({
-        name: calendarName || siteName,
+  const eventArray = Array.isArray(events) ? events : [events];
+  eventArray.forEach(event => {
+    cal.createEvent({
+      start: moment.tz(event.start, event.timezone),
+      end: moment.tz(event.end, event.timezone),
+      timezone: event.timezone,
+      summary: event.name,
+      description: event.description,
+      organizer: {
+        name: event.hostName || "Anonymous",
+        email: event.creatorEmail || 'anonymous@anonymous.com',
+      },
+      location: event.location,
+      url: 'https://' + domain + '/' + event.id
     });
-    events.forEach((event) => {
-        // Add the event to the generator
-        cal.createEvent({
-            start: moment.tz(event.start, event.timezone),
-            end: moment.tz(event.end, event.timezone),
-            timezone: event.timezone,
-            summary: event.name,
-            description: event.description,
-            organizer: {
-                name: event.hostName || "Anonymous",
-                email: event.creatorEmail || "anonymous@anonymous.com",
-            },
-            location: event.location,
-            url: "https://" + domain + "/" + event.id,
-        });
-    });
-    // Stringify it!
-    const string = cal.toString();
-    return string;
+  });
+
+  return cal.toString();
+}
+
+interface I18nHelpers {
+  t: (key: string, options?: object) => string;
+  tn: (key: string, options?: object) => string;
+  count?: number;
+}
+
+export function getI18nHelpers(): I18nHelpers {
+  return {
+    t: function(key: string, options?: object) {
+      const translation = i18next.t(key, { ...this, ...options });
+      const template = handlebars.compile(translation);
+      return template(this);
+    },
+    tn: function(key: string, options?: object) {
+      const translation = i18next.t(key, { count: this.count, ...options });
+      const template = handlebars.compile(translation);
+      return template(this);
+    }
+  };
 }
