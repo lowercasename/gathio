@@ -1,7 +1,6 @@
 # gathio
 
-| [![Build status](https://github.com/lowercasename/gathio/actions/workflows/ci.yaml/badge.svg)](https://github.com/lowercasename/gathio/actions/workflows/ci.yaml) | [![Build status](https://github.com/lowercasename/gathio/actions/workflows/deploy.yaml/badge.svg)](https://github.com/lowercasename/gathio/actions/workflows/deploy.yaml) |
-| ---- | ---- |
+[![Build status](https://github.com/lowercasename/gathio/actions/workflows/ci.yaml/badge.svg)](https://github.com/lowercasename/gathio/actions/workflows/ci.yaml)
 
 A simple, federated, privacy-first event hosting platform.
 
