@@ -9,8 +9,6 @@ import crypto from "crypto";
 import request from "request";
 import niceware from "niceware";
 import ical from "ical";
-import sgMail from "@sendgrid/mail";
-import nodemailer from "nodemailer";
 import fileUpload from "express-fileupload";
 import Jimp from "jimp";
 import schedule from "node-schedule";
@@ -24,14 +22,10 @@ import EventGroup from "./models/EventGroup.js";
 import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
 import { hashString } from "./util/generator.js";
-import { initEmailService } from "./lib/email.js";
+import { EmailService } from "./lib/email.js";
 
 const config = getConfig();
 const domain = config.general.domain;
-const contactEmail = config.general.email;
-const siteName = config.general.site_name;
-const mailService = config.general.mail_service;
-const siteLogo = config.general.email_logo_url;
 const isFederated = config.general.is_federated || true;
 
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
@@ -42,12 +36,6 @@ const nanoid = customAlphabet(
 );
 
 const router = express.Router();
-
-let sendEmails = false;
-initEmailService().then((emailService) => {
-    sendEmails = emailService
-});
-
 router.use(fileUpload());
 
 // SCHEDULED DELETION
@@ -58,7 +46,10 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
         return;
     }
 
-    const too_old = moment.tz("Etc/UTC").subtract(deleteAfterDays, "days").toDate();
+    const too_old = moment
+        .tz("Etc/UTC")
+        .subtract(deleteAfterDays, "days")
+        .toDate();
     console.log(
         "Old event deletion running! Deleting all events concluding before ",
         too_old,
@@ -81,9 +72,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                                 "deleteOldEvents",
                                 "error",
                                 "Attempt to delete old event " +
-                                id +
-                                " failed with error: " +
-                                err,
+                                    id +
+                                    " failed with error: " +
+                                    err,
                             );
                         });
                 };
@@ -100,9 +91,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                                     "deleteOldEvents",
                                     "error",
                                     "Attempt to delete event image for old event " +
-                                    event.id +
-                                    " failed with error: " +
-                                    err,
+                                        event.id +
+                                        " failed with error: " +
+                                        err,
                                 );
                             }
                             // Image removed
@@ -149,9 +140,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                 "deleteOldEvents",
                 "error",
                 "Attempt to delete old event " +
-                event.id +
-                " failed with error: " +
-                err,
+                    event.id +
+                    " failed with error: " +
+                    err,
             );
         });
 
@@ -204,9 +195,9 @@ router.post("/deleteimage/:eventID/:editToken", (req, res) => {
                             "deleteEventImage",
                             "error",
                             "Attempt to delete event image for event " +
-                            req.params.eventID +
-                            " failed with error: " +
-                            err,
+                                req.params.eventID +
+                                " failed with error: " +
+                                err,
                         );
                     }
                     // Image removed
@@ -227,9 +218,9 @@ router.post("/deleteimage/:eventID/:editToken", (req, res) => {
                                 "deleteEventImage",
                                 "error",
                                 "Attempt to delete event image for event " +
-                                req.params.eventID +
-                                " failed with error: " +
-                                err,
+                                    req.params.eventID +
+                                    " failed with error: " +
+                                    err,
                             );
                         });
                 },
@@ -271,9 +262,9 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                         "deleteEvent",
                                         "error",
                                         "Attempt to delete event " +
-                                        req.params.eventID +
-                                        " failed with error: " +
-                                        err,
+                                            req.params.eventID +
+                                            " failed with error: " +
+                                            err,
                                     );
                                 }
                             },
@@ -293,9 +284,9 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                                     "deleteEvent",
                                                     "error",
                                                     "Attempt to delete event image for event " +
-                                                    req.params.eventID +
-                                                    " failed with error: " +
-                                                    err,
+                                                        req.params.eventID +
+                                                        " failed with error: " +
+                                                        err,
                                                 );
                                             }
                                             // Image removed
@@ -303,8 +294,8 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                                 "deleteEvent",
                                                 "success",
                                                 "Event " +
-                                                req.params.eventID +
-                                                " deleted",
+                                                    req.params.eventID +
+                                                    " deleted",
                                             );
                                         },
                                     );
@@ -314,82 +305,44 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                 });
                                 res.end();
 
-                                // Send emails here otherwise they don't exist lol
-                                if (sendEmails) {
-                                    const attendeeEmails = event.attendees
-                                        .filter(
-                                            (o) =>
-                                                o.status === "attending" &&
-                                                o.email,
-                                        )
-                                        .map((o) => o.email);
-                                    if (attendeeEmails.length) {
-                                        console.log(
-                                            "Sending emails to: " +
+                                const attendeeEmails = event?.attendees?.filter(
+                                        (o) =>
+                                            o.status === "attending" &&
+                                            o.email,
+                                    )
+                                    .map((o) => o.email || '') || [];
+                                if (attendeeEmails.length) {
+                                    console.log(
+                                        "Sending emails to: " +
                                             attendeeEmails,
-                                        );
-                                        req.app.get("hbsInstance").renderView(
-                                            "./views/emails/deleteEvent/deleteEventHtml.handlebars",
-                                            {
-                                                siteName,
-                                                siteLogo,
-                                                domain,
-                                                eventName: event.name,
-                                                cache: true,
-                                                layout: "email.handlebars",
-                                            },
-                                            function (err, html) {
-                                                const msg = {
-                                                    to: attendeeEmails,
-                                                    from: contactEmail,
-                                                    subject: `${siteName}: ${event.name} was deleted`,
-                                                    html,
-                                                };
-                                                switch (mailService) {
-                                                    case "sendgrid":
-                                                        sgMail
-                                                            .sendMultiple(msg)
-                                                            .catch((e) => {
-                                                                console.error(
-                                                                    e.toString(),
-                                                                );
-                                                                res.status(
-                                                                    500,
-                                                                ).end();
-                                                            });
-                                                        break;
-                                                    case "nodemailer":
-                                                        nodemailerTransporter
-                                                            .sendMail(msg)
-                                                            .catch((e) => {
-                                                                console.error(
-                                                                    e.toString(),
-                                                                );
-                                                                res.status(
-                                                                    500,
-                                                                ).end();
-                                                            });
-                                                        break;
-                                                }
-                                            },
-                                        );
-                                    } else {
-                                        console.log("Nothing to send!");
-                                    }
+                                    );
+                                    req.emailService.sendEmailFromTemplate({
+                                        to: attendeeEmails, 
+                                        subject: `${event?.name} was deleted`,
+                                        templateName: "deleteEvent",
+                                        templateData: {
+                                            eventName: event?.name,
+                                        },
+                                    }).catch((e) => {
+                                        console.error('error sending attendee email', e.toString());
+                                        res.status(500).end();
+                                    });
+                                } else {
+                                    console.log("Nothing to send!");
                                 }
                             })
                             .catch((err) => {
                                 res.send(
                                     "Sorry! Something went wrong (error deleting): " +
-                                    err,
+                                        err,
                                 );
                                 addToLog(
                                     "deleteEvent",
                                     "error",
                                     "Attempt to delete event " +
-                                    req.params.eventID +
-                                    " failed with error: " +
-                                    err,
+                                        req.params.eventID +
+                                        " failed with error: " +
+                                        err,
                                 );
                             });
                     },
@@ -401,8 +354,8 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                     "deleteEvent",
                     "error",
                     "Attempt to delete event " +
-                    req.params.eventID +
-                    " failed with error: token does not match",
+                        req.params.eventID +
+                        " failed with error: token does not match",
                 );
             }
         })
@@ -412,9 +365,9 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                 "deleteEvent",
                 "error",
                 "Attempt to delete event " +
-                req.params.eventID +
-                " failed with error: " +
-                err,
+                    req.params.eventID +
+                    " failed with error: " +
+                    err,
             );
         });
 });
@@ -447,9 +400,9 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                                 "deleteEventGroup",
                                 "error",
                                 "Attempt to delete event group " +
-                                req.params.eventGroupID +
-                                " failed with error: " +
-                                err,
+                                    req.params.eventGroupID +
+                                    " failed with error: " +
+                                    err,
                             );
                         }
                     },
@@ -469,9 +422,9 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                                             "deleteEventGroup",
                                             "error",
                                             "Attempt to delete event image for event group " +
-                                            req.params.eventGroupID +
-                                            " failed with error: " +
-                                            err,
+                                                req.params.eventGroupID +
+                                                " failed with error: " +
+                                                err,
                                         );
                                     }
                                 },
@@ -487,8 +440,8 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                                     "deleteEventGroup",
                                     "success",
                                     "Event group " +
-                                    req.params.eventGroupID +
-                                    " deleted",
+                                        req.params.eventGroupID +
+                                        " deleted",
                                 );
                                 res.writeHead(302, {
                                     Location: "/",
@@ -498,30 +451,30 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                             .catch((err) => {
                                 res.send(
                                     "Sorry! Something went wrong (error deleting): " +
-                                    err,
+                                        err,
                                 );
                                 addToLog(
                                     "deleteEventGroup",
                                     "error",
                                     "Attempt to delete event group " +
-                                    req.params.eventGroupID +
-                                    " failed with error: " +
-                                    err,
+                                        req.params.eventGroupID +
+                                        " failed with error: " +
+                                        err,
                                 );
                             });
                     })
                     .catch((err) => {
                         res.send(
                             "Sorry! Something went wrong (error deleting): " +
-                            err,
+                                err,
                         );
                         addToLog(
                             "deleteEventGroup",
                             "error",
                             "Attempt to delete event group " +
-                            req.params.eventGroupID +
-                            " failed with error: " +
-                            err,
+                                req.params.eventGroupID +
+                                " failed with error: " +
+                                err,
                         );
                     });
             } else {
@@ -531,8 +484,8 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                     "deleteEventGroup",
                     "error",
                     "Attempt to delete event group " +
-                    req.params.eventGroupID +
-                    " failed with error: token does not match",
+                        req.params.eventGroupID +
+                        " failed with error: token does not match",
                 );
             }
         })
@@ -542,9 +495,9 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                 "deleteEventGroup",
                 "error",
                 "Attempt to delete event group " +
-                req.params.eventGroupID +
-                " failed with error: " +
-                err,
+                    req.params.eventGroupID +
+                    " failed with error: " +
+                    err,
             );
         });
 });
@@ -562,9 +515,9 @@ router.post("/attendee/provision", async (req, res) => {
             "provisionEventAttendee",
             "error",
             "Attempt to provision attendee in event " +
-            req.query.eventID +
-            " failed with error: " +
-            e,
+                req.query.eventID +
+                " failed with error: " +
+                e,
         );
         return res.sendStatus(500);
     });
@@ -580,9 +533,9 @@ router.post("/attendee/provision", async (req, res) => {
             "provisionEventAttendee",
             "error",
             "Attempt to provision attendee in event " +
-            req.query.eventID +
-            " failed with error: " +
-            e,
+                req.query.eventID +
+                " failed with error: " +
+                e,
         );
         return res.sendStatus(500);
     });
@@ -618,9 +571,9 @@ router.post("/attendevent/:eventID", async (req, res) => {
             "attendEvent",
             "error",
             "Attempt to attend event " +
-            req.params.eventID +
-            " failed with error: " +
-            e,
+                req.params.eventID +
+                " failed with error: " +
+                e,
         );
         return res.sendStatus(500);
     });
@@ -659,56 +612,38 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "attendees.$.name": req.body.attendeeName,
                 "attendees.$.email": req.body.attendeeEmail,
                 "attendees.$.number": req.body.attendeeNumber,
-                "attendees.$.visibility": !!req.body.attendeeVisible ? "public" : "private",
+                "attendees.$.visibility": req.body.attendeeVisible
+                    ? "public"
+                    : "private",
             },
         },
     )
         .then((event) => {
+            if (!event) {
+                return res.sendStatus(404);
+            }
+
             addToLog(
                 "addEventAttendee",
                 "success",
                 "Attendee added to event " + req.params.eventID,
             );
-            if (sendEmails) {
-                if (req.body.attendeeEmail) {
-                    req.app.get("hbsInstance").renderView(
-                        "./views/emails/addEventAttendee/addEventAttendeeHtml.handlebars",
-                        {
-                            eventID: req.params.eventID,
-                            siteName,
-                            siteLogo,
-                            domain,
-                            removalPassword: req.body.removalPassword,
-                            removalPasswordHash: hashString(req.body.removalPassword),
-                            cache: true,
-                            layout: "email.handlebars",
-                        },
-                        function (err, html) {
-                            const msg = {
-                                to: req.body.attendeeEmail,
-                                from: contactEmail,
-                                subject: `${siteName}: You're RSVPed to ${event.name}`,
-                                html,
-                            };
-                            switch (mailService) {
-                                case "sendgrid":
-                                    sgMail.send(msg).catch((e) => {
-                                        console.error(e.toString());
-                                        res.status(500).end();
-                                    });
-                                    break;
-                                case "nodemailer":
-                                    nodemailerTransporter
-                                        .sendMail(msg)
-                                        .catch((e) => {
-                                            console.error(e.toString());
-                                            res.status(500).end();
-                                        });
-                                    break;
-                            }
-                        },
-                    );
-                }
+            if (req.body.attendeeEmail) {          
+                req.emailService.sendEmailFromTemplate({
+                    to: req.body.attendeeEmail,
+                    subject: `You're RSVPed to ${event.name}`,
+                    templateName: "addEventAttendee",
+                    templateData:{
+                        eventID: req.params.eventID,
+                        removalPassword: req.body.removalPassword,
+                        removalPasswordHash: hashString(
+                            req.body.removalPassword,
+                        ),
+                    },
+                }).catch((e) => {
+                    console.error('error sending addEventAttendee email', e.toString());
+                    res.status(500).end();
+                });
             }
             res.redirect(`/${req.params.eventID}`);
         })
@@ -718,9 +653,9 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "addEventAttendee",
                 "error",
                 "Attempt to add attendee to event " +
-                req.params.eventID +
-                " failed with error: " +
-                error,
+                    req.params.eventID +
+                    " failed with error: " +
+                    error,
             );
         });
 });
@@ -737,54 +672,32 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
     ) {
         return res.sendStatus(200);
     }
-    Event.updateOne(
+    Event.findOneAndUpdate(
         { id: req.params.eventID },
         { $pull: { attendees: { _id: req.params.attendeeID } } },
     )
-        .then((response) => {
+        .then((event) => {
+            if (!event) {
+                return res.sendStatus(404);
+            }
             addToLog(
                 "oneClickUnattend",
                 "success",
                 "Attendee removed via one click unattend " + req.params.eventID,
             );
-            if (sendEmails) {
-                // currently this is never called because we don't have the email address
-                if (req.body.attendeeEmail) {
-                    req.app.get("hbsInstance").renderView(
-                        "./views/emails/removeEventAttendee/removeEventAttendeeHtml.handlebars",
-                        {
-                            eventName: req.params.eventName,
-                            siteName,
-                            domain,
-                            cache: true,
-                            layout: "email.handlebars",
-                        },
-                        function (err, html) {
-                            const msg = {
-                                to: req.body.attendeeEmail,
-                                from: contactEmail,
-                                subject: `${siteName}: You have been removed from an event`,
-                                html,
-                            };
-                            switch (mailService) {
-                                case "sendgrid":
-                                    sgMail.send(msg).catch((e) => {
-                                        console.error(e.toString());
-                                        res.status(500).end();
-                                    });
-                                    break;
-                                case "nodemailer":
-                                    nodemailerTransporter
-                                        .sendMail(msg)
-                                        .catch((e) => {
-                                            console.error(e.toString());
-                                            res.status(500).end();
-                                        });
-                                    break;
-                            }
-                        },
-                    );
-                }
+            // currently this is never called because we don't have the email address
+            if (req.body.attendeeEmail) {
+                req.emailService.sendEmailFromTemplate({
+                    to: req.body.attendeeEmail,
+                    subject: `You have been removed from an event`,
+                    templateName: "removeEventAttendee",
+                    templateData:{
+                        eventName: event.name,
+                    },
+                }).catch((e) => {
+                    console.error('error sending removeEventAttendeeHtml email', e.toString());
+                    res.status(500).end();
+                });
             }
             res.writeHead(302, {
                 Location: "/" + req.params.eventID,
@@ -797,63 +710,40 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
                 "removeEventAttendee",
                 "error",
                 "Attempt to remove attendee by admin from event " +
-                req.params.eventID +
-                " failed with error: " +
-                err,
+                    req.params.eventID +
+                    " failed with error: " +
+                    err,
             );
         });
 });
 
 router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
-    Event.updateOne(
+    Event.findOneAndUpdate(
         { id: req.params.eventID },
         { $pull: { attendees: { _id: req.params.attendeeID } } },
     )
-        .then((response) => {
+        .then((event) => {
+            if (!event) {
+                return res.sendStatus(404);
+            }
             addToLog(
                 "removeEventAttendee",
                 "success",
                 "Attendee removed by admin from event " + req.params.eventID,
             );
-            if (sendEmails) {
-                // currently this is never called because we don't have the email address
-                if (req.body.attendeeEmail) {
-                    req.app.get("hbsInstance").renderView(
-                        "./views/emails/removeEventAttendee/removeEventAttendeeHtml.handlebars",
-                        {
-                            eventName: req.params.eventName,
-                            siteName,
-                            siteLogo,
-                            domain,
-                            cache: true,
-                            layout: "email.handlebars",
-                        },
-                        function (err, html) {
-                            const msg = {
-                                to: req.body.attendeeEmail,
-                                from: contactEmail,
-                                subject: `${siteName}: You have been removed from an event`,
-                                html,
-                            };
-                            switch (mailService) {
-                                case "sendgrid":
-                                    sgMail.send(msg).catch((e) => {
-                                        console.error(e.toString());
-                                        res.status(500).end();
-                                    });
-                                    break;
-                                case "nodemailer":
-                                    nodemailerTransporter
-                                        .sendMail(msg)
-                                        .catch((e) => {
-                                            console.error(e.toString());
-                                            res.status(500).end();
-                                        });
-                                    break;
-                            }
-                        },
-                    );
-                }
+            // currently this is never called because we don't have the email address
+            if (req.body.attendeeEmail) {
+                req.emailService.sendEmailFromTemplate({
+                    to: req.body.attendeeEmail, 
+                    subject: `You have been removed from an event`, 
+                    templateName: "removeEventAttendee",
+                    templateData: {
+                        eventName: event.name,
+                    },
+                }).catch((e) => {
+                    console.error('error sending removeEventAttendeeHtml email', e.toString());
+                    res.status(500).end();                  
+                });
             }
             res.writeHead(302, {
                 Location: "/" + req.params.eventID,
@@ -866,9 +756,9 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
                 "removeEventAttendee",
                 "error",
                 "Attempt to remove attendee by admin from event " +
-                req.params.eventID +
-                " failed with error: " +
-                err,
+                    req.params.eventID +
+                    " failed with error: " +
+                    err,
             );
         });
 });
@@ -893,45 +783,20 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
             }
             eventGroup.subscribers.push(subscriber);
             eventGroup.save();
-            if (sendEmails) {
-                req.app.get("hbsInstance").renderView(
-                    "./views/emails/subscribed/subscribedHtml.handlebars",
-                    {
-                        eventGroupName: eventGroup.name,
-                        eventGroupID: eventGroup.id,
-                        emailAddress: encodeURIComponent(subscriber.email),
-                        siteName,
-                        siteLogo,
-                        domain,
-                        cache: true,
-                        layout: "email.handlebars",
-                    },
-                    function (err, html) {
-                        const msg = {
-                            to: subscriber.email,
-                            from: contactEmail,
-                            subject: `${siteName}: You have subscribed to an event group`,
-                            html,
-                        };
-                        switch (mailService) {
-                            case "sendgrid":
-                                sgMail.send(msg).catch((e) => {
-                                    console.error(e.toString());
-                                    res.status(500).end();
-                                });
-                                break;
-                            case "nodemailer":
-                                nodemailerTransporter
-                                    .sendMail(msg)
-                                    .catch((e) => {
-                                        console.error(e.toString());
-                                        res.status(500).end();
-                                    });
-                                break;
-                        }
-                    },
-                );
-            }
+            req.emailService.sendEmailFromTemplate({
+                to: subscriber.email, 
+                subject: "You have subscribed to an event group",
+                templateName: "subscribed",
+                templateData:{
+                    eventGroupName: eventGroup.name,
+                    eventGroupID: eventGroup.id,
+                    emailAddress: encodeURIComponent(subscriber.email),
+                },
+            }).catch((e) => {
+                console.error('error sending removeEventAttendeeHtml email', e.toString());
+                res.status(500).end();                  
+            });
+
             return res.redirect(`/group/${eventGroup.id}`);
         })
         .catch((error) => {
@@ -939,11 +804,11 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
                 "addSubscription",
                 "error",
                 "Attempt to subscribe " +
-                req.body.emailAddress +
-                " to event group " +
-                req.params.eventGroupID +
-                " failed with error: " +
-                error,
+                    req.body.emailAddress +
+                    " to event group " +
+                    req.params.eventGroupID +
+                    " failed with error: " +
+                    error,
             );
             return res.sendStatus(500);
         });
@@ -970,11 +835,11 @@ router.get("/unsubscribe/:eventGroupID", (req, res) => {
                 "removeSubscription",
                 "error",
                 "Attempt to unsubscribe " +
-                req.query.email +
-                " from event group " +
-                req.params.eventGroupID +
-                " failed with error: " +
-                error,
+                    req.query.email +
+                    " from event group " +
+                    req.params.eventGroupID +
+                    " failed with error: " +
+                    error,
             );
             return res.sendStatus(500);
         });
@@ -994,7 +859,9 @@ router.post("/post/comment/:eventID", (req, res) => {
             id: req.params.eventID,
         },
         function (err, event) {
-            if (!event) return;
+            if (!event) {
+                return res.sendStatus(404);
+            }
             event.comments.push(newComment);
             event
                 .save()
@@ -1020,72 +887,40 @@ router.post("/post/comment/:eventID", (req, res) => {
                         event.followers,
                         req.params.eventID,
                     );
-                    if (sendEmails) {
-                        Event.findOne({ id: req.params.eventID }).then(
-                            (event) => {
-                                const attendeeEmails = event.attendees
-                                    .filter(
-                                        (o) =>
-                                            o.status === "attending" && o.email,
-                                    )
-                                    .map((o) => o.email);
-                                if (attendeeEmails.length) {
-                                    console.log(
-                                        "Sending emails to: " + attendeeEmails,
-                                    );
-                                    req.app.get("hbsInstance").renderView(
-                                        "./views/emails/addEventComment/addEventCommentHtml.handlebars",
-                                        {
-                                            siteName,
-                                            siteLogo,
-                                            domain,
-                                            eventID: req.params.eventID,
-                                            commentAuthor:
-                                                req.body.commentAuthor,
-                                            cache: true,
-                                            layout: "email.handlebars",
-                                        },
-                                        function (err, html) {
-                                            const msg = {
-                                                to: attendeeEmails,
-                                                from: contactEmail,
-                                                subject: `${siteName}: New comment in ${event.name}`,
-                                                html,
-                                            };
-                                            switch (mailService) {
-                                                case "sendgrid":
-                                                    sgMail
-                                                        .sendMultiple(msg)
-                                                        .catch((e) => {
-                                                            console.error(
-                                                                e.toString(),
-                                                            );
-                                                            res.status(
-                                                                500,
-                                                            ).end();
-                                                        });
-                                                    break;
-                                                case "nodemailer":
-                                                    nodemailerTransporter
-                                                        .sendMail(msg)
-                                                        .catch((e) => {
-                                                            console.error(
-                                                                e.toString(),
-                                                            );
-                                                            res.status(
-                                                                500,
-                                                            ).end();
-                                                        });
-                                                    break;
-                                            }
-                                        },
-                                    );
-                                } else {
-                                    console.log("Nothing to send!");
-                                }
-                            },
-                        );
+                    if (!event) {
+                        return res.sendStatus(404);
                     }
+                    
+                    Event.findOne({ id: req.params.eventID }).then(
+                        (event) => {
+                            const attendeeEmails = event.attendees
+                                .filter(
+                                    (o) =>
+                                        o.status === "attending" && o.email,
+                                )
+                                .map((o) => o.email || '')  || [];
+                            if (attendeeEmails.length) {
+                                console.log(
+                                    "Sending emails to: " + attendeeEmails,
+                                );
+                                req.emailService.sendEmailFromTemplate({
+                                    to: event?.creatorEmail || config.general.email,
+                                    bcc: attendeeEmails,
+                                    subject: `New comment in ${event.name}`,
+                                    templateName: "addEventComment",
+                                    templateData:{
+                                        eventID: req.params.eventID,
+                                        commentAuthor: req.body.commentAuthor,
+                                    },
+                                }).catch((e) => {
+                                    console.error('error sending removeEventAttendeeHtml email', e.toString());
+                                    res.status(500).end();                  
+                                });
+                            } else {
+                                console.log("Nothing to send!");
+                            }
+                        },
+                    );
                     res.writeHead(302, {
                         Location: "/" + req.params.eventID,
                     });
@@ -1097,9 +932,9 @@ router.post("/post/comment/:eventID", (req, res) => {
                         "addEventComment",
                         "error",
                         "Attempt to add comment to event " +
-                        req.params.eventID +
-                        " failed with error: " +
-                        err,
+                            req.params.eventID +
+                            " failed with error: " +
+                            err,
                     );
                 });
         },
@@ -1120,7 +955,9 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
             id: req.params.eventID,
         },
         function (err, event) {
-            if (!event) return;
+            if (!event) {
+                return res.sendStatus(404);
+            }
             var parentComment = event.comments.id(commentID);
             parentComment.replies.push(newReply);
             event
@@ -1130,9 +967,9 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                         "addEventReply",
                         "success",
                         "Reply added to comment " +
-                        commentID +
-                        " in event " +
-                        req.params.eventID,
+                            commentID +
+                            " in event " +
+                            req.params.eventID,
                     );
                     // broadcast an identical message to all followers, will show in their home timeline
                     const guidObject = crypto.randomBytes(16).toString("hex");
@@ -1149,71 +986,39 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                         event.followers,
                         req.params.eventID,
                     );
-                    if (sendEmails) {
-                        Event.findOne({ id: req.params.eventID }).then(
-                            (event) => {
-                                const attendeeEmails = event.attendees
-                                    .filter(
-                                        (o) =>
-                                            o.status === "attending" && o.email,
-                                    )
-                                    .map((o) => o.email);
-                                if (attendeeEmails.length) {
-                                    console.log(
-                                        "Sending emails to: " + attendeeEmails,
-                                    );
-                                    req.app.get("hbsInstance").renderView(
-                                        "./views/emails/addEventComment/addEventCommentHtml.handlebars",
-                                        {
-                                            siteName,
-                                            siteLogo,
-                                            domain,
-                                            eventID: req.params.eventID,
-                                            commentAuthor: req.body.replyAuthor,
-                                            cache: true,
-                                            layout: "email.handlebars",
-                                        },
-                                        function (err, html) {
-                                            const msg = {
-                                                to: attendeeEmails,
-                                                from: contactEmail,
-                                                subject: `${siteName}: New comment in ${event.name}`,
-                                                html,
-                                            };
-                                            switch (mailService) {
-                                                case "sendgrid":
-                                                    sgMail
-                                                        .sendMultiple(msg)
-                                                        .catch((e) => {
-                                                            console.error(
-                                                                e.toString(),
-                                                            );
-                                                            res.status(
-                                                                500,
-                                                            ).end();
-                                                        });
-                                                    break;
-                                                case "nodemailer":
-                                                    nodemailerTransporter
-                                                        .sendMail(msg)
-                                                        .catch((e) => {
-                                                            console.error(
-                                                                e.toString(),
-                                                            );
-                                                            res.status(
-                                                                500,
-                                                            ).end();
-                                                        });
-                                                    break;
-                                            }
-                                        },
-                                    );
-                                } else {
-                                    console.log("Nothing to send!");
-                                }
-                            },
-                        );
-                    }
+                    Event.findOne({ id: req.params.eventID }).then(
+                        (event) => {
+                            if (!event) {
+                                return res.sendStatus(404);
+                            }
+                            const attendeeEmails = event.attendees
+                                .filter(
+                                    (o) =>
+                                        o.status === "attending" && o.email,
+                                )
+                                .map((o) => o.email || '') || [];
+                            if (attendeeEmails.length) {
+                                console.log(
+                                    "Sending emails to: " + attendeeEmails,
+                                );
+                                req.emailService.sendEmailFromTemplate({
+                                    to: event?.creatorEmail || config.general.email,
+                                    bcc: attendeeEmails,
+                                    subject: `New comment in ${event.name}`,
+                                    templateName: "addEventComment",
+                                    templateData: {
+                                        eventID: req.params.eventID,
+                                        commentAuthor: req.body.replyAuthor,
+                                    },
+                                }).catch((e) => {
+                                    console.error('error sending removeEventAttendeeHtml email', e.toString());
+                                    res.status(500).end();                  
+                                });
+                            } else {
+                                console.log("Nothing to send!");
+                            }
+                        },
+                    );
                     res.writeHead(302, {
                         Location: "/" + req.params.eventID,
                     });
@@ -1225,11 +1030,11 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                         "addEventReply",
                         "error",
                         "Attempt to add reply to comment " +
-                        commentID +
-                        " in event " +
-                        req.params.eventID +
-                        " failed with error: " +
-                        err,
+                            commentID +
+                            " in event " +
+                            req.params.eventID +
+                            " failed with error: " +
+                            err,
                     );
                 });
         },
@@ -1265,17 +1070,17 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
                     .catch((err) => {
                         res.send(
                             "Sorry! Something went wrong (error deleting): " +
-                            err,
+                                err,
                         );
                         addToLog(
                             "deleteComment",
                             "error",
                             "Attempt to delete comment " +
-                            req.params.commentID +
-                            "from event " +
-                            req.params.eventID +
-                            " failed with error: " +
-                            err,
+                                req.params.commentID +
+                                "from event " +
+                                req.params.eventID +
+                                " failed with error: " +
+                                err,
                         );
                     });
             } else {
@@ -1285,10 +1090,10 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
                     "deleteComment",
                     "error",
                     "Attempt to delete comment " +
-                    req.params.commentID +
-                    "from event " +
-                    req.params.eventID +
-                    " failed with error: token does not match",
+                        req.params.commentID +
+                        "from event " +
+                        req.params.eventID +
+                        " failed with error: token does not match",
                 );
             }
         })
@@ -1298,11 +1103,11 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
                 "deleteComment",
                 "error",
                 "Attempt to delete comment " +
-                req.params.commentID +
-                "from event " +
-                req.params.eventID +
-                " failed with error: " +
-                err,
+                    req.params.commentID +
+                    "from event " +
+                    req.params.eventID +
+                    " failed with error: " +
+                    err,
             );
         });
 });

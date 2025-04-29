@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@sendgrid/helpers':
+        specifier: ^8.0.0
+        version: 8.0.0
       '@sendgrid/mail':
         specifier: ^6.5.5
         version: 6.5.5
@@ -92,6 +95,9 @@ importers:
       toml:
         specifier: ^3.0.0
         version: 3.0.0
+      ts-deepmerge:
+        specifier: ^7.0.2
+        version: 7.0.2
       typescript:
         specifier: ^5.4.5
         version: 5.4.5
@@ -369,6 +375,10 @@ packages:
   '@sendgrid/helpers@6.5.5':
     resolution: {integrity: sha512-uRFEanalfss5hDsuzVXZ1wm7i7eEXHh1py80piOXjobiQ+MxmtR19EU+gDSXZ+uMcEehBGhxnb7QDNN0q65qig==}
     engines: {node: '>= 6.0.0'}
+
+  '@sendgrid/helpers@8.0.0':
+    resolution: {integrity: sha512-Ze7WuW2Xzy5GT5WRx+yEv89fsg/pgy3T1E3FS0QEx0/VvRmigMZ5qyVGhJz4SxomegDkzXv/i0aFPpHKN8qdAA==}
+    engines: {node: '>= 12.0.0'}
 
   '@sendgrid/mail@6.5.5':
     resolution: {integrity: sha512-DSu8oTPI0BJFH60jMOG9gM+oeNMoRALFmdAYg2PIXpL+Zbxd7L2GzQZtmf1jLy/8UBImkbB3D74TjiOBiLRK1w==}
@@ -2123,6 +2133,10 @@ packages:
     resolution: {integrity: sha512-2lv/66T7e5yNyhAAC4NaKe5nVavzuGJQVVtRYLyQ2OI8tsJ61PMLlelehb0wi2Hx6+hT/OJUWZcw8MjlSRnxvw==}
     engines: {node: '>=14'}
 
+  ts-deepmerge@7.0.2:
+    resolution: {integrity: sha512-akcpDTPuez4xzULo5NwuoKwYRtjQJ9eoNfBACiBMaXwNAx7B1PKfe5wqUFJuW5uKzQ68YjDFwPaWHDG1KnFGsA==}
+    engines: {node: '>=14.13.1'}
+
   tslib@1.14.1:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
 
@@ -2659,6 +2673,10 @@ snapshots:
   '@sendgrid/helpers@6.5.5':
     dependencies:
       chalk: 2.4.2
+      deepmerge: 4.3.1
+
+  '@sendgrid/helpers@8.0.0':
+    dependencies:
       deepmerge: 4.3.1
 
   '@sendgrid/mail@6.5.5':
@@ -4562,6 +4580,8 @@ snapshots:
   tr46@4.1.1:
     dependencies:
       punycode: 2.3.1
+
+  ts-deepmerge@7.0.2: {}
 
   tslib@1.14.1: {}
 
