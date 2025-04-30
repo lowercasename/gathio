@@ -11,8 +11,13 @@ export interface EventListEvent {
     eventGroup?: IEventGroup;
 }
 
+interface EventBucket {
+    title: string;
+    events: EventListEvent[];
+}
+
 export const bucketEventsByMonth = (
-    acc: Record<string, any>[],
+    acc: EventBucket[],
     event: EventListEvent,
 ) => {
     const month = event.startMoment.format("MMMM YYYY");

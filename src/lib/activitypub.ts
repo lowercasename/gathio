@@ -30,8 +30,8 @@ export const acceptsActivityPub = (req: Request) => {
         activityPubContentType,
         alternateActivityPubContentType,
     ];
-    return validAcceptHeaders.some(
-        (header) => req.headers.accept?.includes(header),
+    return validAcceptHeaders.some((header) =>
+        req.headers.accept?.includes(header),
     );
 };
 
@@ -64,7 +64,7 @@ export const getNoteRecipient = (object: APObject): string | null => {
 export const getEventId = (url: string): string => {
     try {
         return new URL(url).pathname.replace("/", "");
-    } catch (error) {
+    } catch {
         // Apparently not a URL so maybe it's just the ID
         return url;
     }

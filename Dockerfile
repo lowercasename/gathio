@@ -1,6 +1,4 @@
-# Docker builds hang in arm/v7 images, so we use Node 18 to build and Node 20 to run
-# Cf. https://github.com/docker/build-push-action/issues/1071
-FROM node:18-alpine AS BUILD_IMAGE
+FROM node:22-alpine AS BUILD_IMAGE
 WORKDIR /app
 RUN apk add --no-cache python3 build-base
 ADD package.json pnpm-lock.yaml /app/
@@ -12,7 +10,7 @@ COPY . /app/
 RUN pnpm run build; exit 0
 
 # Now we run the app
-FROM node:20-alpine
+FROM node:22-alpine
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=BUILD_IMAGE /app ./
