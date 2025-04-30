@@ -156,7 +156,7 @@ router.get(
     "/.well-known/webfinger",
     send404IfNotFederated,
     async (req, res) => {
-        let resource = req.query.resource as string;
+        const resource = req.query.resource as string;
         if (!resource || !resource.includes("acct:")) {
             return res
                 .status(400)
@@ -165,9 +165,9 @@ router.get(
                 );
         } else {
             // "foo@domain"
-            let activityPubAccount = resource.replace("acct:", "");
+            const activityPubAccount = resource.replace("acct:", "");
             // "foo"
-            let eventID = activityPubAccount.replace(/@.*/, "");
+            const eventID = activityPubAccount.replace(/@.*/, "");
 
             try {
                 const event = await Event.findOne({ id: eventID });
@@ -214,7 +214,7 @@ router.get("/:eventID/followers", send404IfNotFederated, async (req, res) => {
 
         if (event && event.followers) {
             const followers = event.followers.map((el) => el.actorId);
-            let followersCollection = {
+            const followersCollection = {
                 type: "OrderedCollection",
                 totalItems: followers.length,
                 id: `https://${res.locals.config?.general.domain}/${eventID}/followers`,
