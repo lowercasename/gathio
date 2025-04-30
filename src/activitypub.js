@@ -10,7 +10,13 @@ const domain = config.general.domain;
 const siteName = config.general.site_name;
 const isFederated = config.general.is_federated;
 import Event from "./models/Event.js";
-import { handlePollResponse, activityPubContentType, alternateActivityPubContentType, getEventId, getNoteRecipient } from "./lib/activitypub.js";
+import {
+    handlePollResponse,
+    activityPubContentType,
+    alternateActivityPubContentType,
+    getEventId,
+    getNoteRecipient,
+} from "./lib/activitypub.js";
 
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
 // because ActivityPub doesn't like it in IDs
@@ -36,9 +42,9 @@ export function createActivityPubActor(
             "https://www.w3.org/ns/activitystreams",
             "https://w3id.org/security/v1",
             {
-                "toot": "http://joinmastodon.org/ns#",
-                "discoverable": "toot:discoverable",
-                "indexable": "toot:indexable"
+                toot: "http://joinmastodon.org/ns#",
+                discoverable: "toot:discoverable",
+                indexable: "toot:indexable",
             },
         ],
         indexable: false,
@@ -52,8 +58,6 @@ export function createActivityPubActor(
         summary: `<p>${description}</p>`,
         name: name,
         featured: `https://${domain}/${eventID}/featured`,
-        indexable: false,
-        discoverable: false,
         publicKey: {
             id: `https://${domain}/${eventID}#main-key`,
             owner: `https://${domain}/${eventID}`,
@@ -94,9 +98,9 @@ export function createActivityPubEvent(
             "https://www.w3.org/ns/activitystreams",
             "https://w3id.org/security/v1",
             {
-                "toot": "http://joinmastodon.org/ns#",
-                "discoverable": "toot:discoverable",
-                "indexable": "toot:indexable"
+                toot: "http://joinmastodon.org/ns#",
+                discoverable: "toot:discoverable",
+                indexable: "toot:indexable",
             },
         ],
         indexable: false,
@@ -114,12 +118,12 @@ export function createActivityPubEvent(
 
 export function createFeaturedPost(
     eventID,
-    name,
-    startUTC,
-    endUTC,
-    timezone,
-    description,
-    location,
+    _name,
+    _startUTC,
+    _endUTC,
+    _timezone,
+    _description,
+    _location,
 ) {
     const featured = {
         "@context": "https://www.w3.org/ns/activitystreams",
@@ -164,7 +168,7 @@ export function updateActivityPubActor(
     location,
     imageFilename,
     startUTC,
-    endUTC,
+    _endUTC,
     timezone,
 ) {
     if (!actor) return;
@@ -227,12 +231,11 @@ export function signAndSend(message, eventID, targetDomain, inbox, callback) {
                     json: true,
                     body: message,
                 },
-                function (error, response) {
+                function (error, _response) {
                     if (error) {
                         callback(error, null, 500);
                     } else {
                         // Add the message to the database
-                        const messageID = message.id;
                         const newMessage = {
                             id: message.id,
                             content: JSON.stringify(message),
@@ -242,6 +245,10 @@ export function signAndSend(message, eventID, targetDomain, inbox, callback) {
                                 id: eventID,
                             },
                             function (err, event) {
+                                if (err) {
+                                    callback(error, null, 500);
+                                    return;
+                                }
                                 if (!event) return;
                                 event.activityPubMessages.push(newMessage);
                                 // also add the message's object if it has one
@@ -258,7 +265,7 @@ export function signAndSend(message, eventID, targetDomain, inbox, callback) {
                                             "addActivityPubMessage",
                                             "success",
                                             "ActivityPubMessage added to event " +
-                                            eventID,
+                                                eventID,
                                         );
                                         callback(null, message.id, 200);
                                     })
@@ -267,9 +274,9 @@ export function signAndSend(message, eventID, targetDomain, inbox, callback) {
                                             "addActivityPubMessage",
                                             "error",
                                             "Attempt to add ActivityPubMessage to event " +
-                                            eventID +
-                                            " failed with error: " +
-                                            err,
+                                                eventID +
+                                                " failed with error: " +
+                                                err,
                                         );
                                         callback(err, null, 500);
                                     });
@@ -294,7 +301,7 @@ export function broadcastCreateMessage(apObject, followers, eventID) {
         {
             id: eventID,
         },
-        function (err, event) {
+        function (_err, event) {
             if (event) {
                 // iterate over followers
                 for (const follower of followers) {
@@ -386,7 +393,7 @@ export function broadcastAnnounceMessage(apObject, followers, eventID) {
                             eventID,
                             targetDomain,
                             inbox,
-                            function (err, resp, status) {
+                            function (err, _resp, status) {
                                 if (err) {
                                     console.log(
                                         `Didn't send to ${actorId}, status ${status} with error ${err}`,
@@ -417,7 +424,7 @@ export function broadcastUpdateMessage(apObject, followers, eventID) {
         {
             id: eventID,
         },
-        function (err, event) {
+        function (_err, event) {
             if (event) {
                 for (const follower of followers) {
                     let actorId = follower.actorId;
@@ -442,7 +449,7 @@ export function broadcastUpdateMessage(apObject, followers, eventID) {
                             eventID,
                             targetDomain,
                             inbox,
-                            function (err, resp, status) {
+                            function (err, _resp, status) {
                                 if (err) {
                                     console.log(
                                         `Didn't send to ${actorId}, status ${status} with error ${err}`,
@@ -464,7 +471,7 @@ export function broadcastUpdateMessage(apObject, followers, eventID) {
 }
 
 export function broadcastDeleteMessage(apObject, followers, eventID, callback) {
-    callback = callback || function () { };
+    callback = callback || function () {};
     if (!isFederated) {
         callback([]);
         return;
@@ -486,7 +493,7 @@ export function broadcastDeleteMessage(apObject, followers, eventID, callback) {
                     {
                         id: eventID,
                     },
-                    function (err, event) {
+                    function (_err, event) {
                         if (event) {
                             const follower = event.followers.find(
                                 (el) => el.actorId === actorId,
@@ -509,7 +516,7 @@ export function broadcastDeleteMessage(apObject, followers, eventID, callback) {
                                     eventID,
                                     targetDomain,
                                     inbox,
-                                    function (err, resp, status) {
+                                    function (err, _resp, status) {
                                         if (err) {
                                             console.log(
                                                 `Didn't send to ${actorId}, status ${status} with error ${err}`,
@@ -561,7 +568,7 @@ export function broadcastDeleteMessage(apObject, followers, eventID, callback) {
 // this sends a message "to:" an individual fediverse user
 export function sendDirectMessage(apObject, actorId, eventID, callback) {
     if (!isFederated) return;
-    callback = callback || function () { };
+    callback = callback || function () {};
     const guidCreate = crypto.randomBytes(16).toString("hex");
     const guidObject = crypto.randomBytes(16).toString("hex");
     let d = new Date();
@@ -570,7 +577,7 @@ export function sendDirectMessage(apObject, actorId, eventID, callback) {
     apObject.attributedTo = `https://${domain}/${eventID}`;
     apObject.to = actorId;
     apObject.id = `https://${domain}/${eventID}/m/${guidObject}`;
-    apObject.content = unescape(apObject.content);
+    apObject.content = decodeURI(apObject.content);
 
     let createMessage = {
         "@context": "https://www.w3.org/ns/activitystreams",
@@ -589,6 +596,9 @@ export function sendDirectMessage(apObject, actorId, eventID, callback) {
             id: eventID,
         },
         function (err, event) {
+            if (err) {
+                callback(err, null, 500);
+            }
             if (event) {
                 const follower = event.followers.find(
                     (el) => el.actorId === actorId,
@@ -619,7 +629,7 @@ export function sendDirectMessage(apObject, actorId, eventID, callback) {
 
 export function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
     if (!isFederated) return;
-    callback = callback || function () { };
+    callback = callback || function () {};
     const guid = crypto.randomBytes(16).toString("hex");
     const actorId = thebody.actor;
     let message = {
@@ -635,6 +645,9 @@ export function sendAcceptMessage(thebody, eventID, targetDomain, callback) {
             id: eventID,
         },
         function (err, event) {
+            if (err) {
+                callback(err, null, 500);
+            }
             if (event) {
                 const follower = event.followers.find(
                     (el) => el.actorId === actorId,
@@ -671,7 +684,7 @@ function _handleFollow(req, res) {
                 "Content-Type": activityPubContentType,
             },
         },
-        function (error, response, body) {
+        function (_error, _response, body) {
             body = JSON.parse(body);
             const name =
                 body.preferredUsername || body.name || body.attributedTo;
@@ -685,7 +698,7 @@ function _handleFollow(req, res) {
                 {
                     id: eventID,
                 },
-                function (err, event) {
+                function (_err, event) {
                     // if this account is NOT already in our followers list, add it
                     if (
                         event &&
@@ -707,7 +720,7 @@ function _handleFollow(req, res) {
                                     req.body,
                                     eventID,
                                     targetDomain,
-                                    function (err, resp, status) {
+                                    function (err, _resp, status) {
                                         if (err) {
                                             console.log(
                                                 `Didn't send Accept to ${req.body.actor}, status ${status} with error ${err}`,
@@ -735,22 +748,31 @@ function _handleFollow(req, res) {
                                                         "https://www.w3.org/ns/activitystreams",
                                                     name: `RSVP to ${event.name}`,
                                                     type: "Question",
-                                                    content: `<span class=\"h-card\"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}?`,
+                                                    content: `<span class="h-card"><a href="${req.body.actor}" class="u-url mention">@<span>${name}</span></a></span> Will you attend ${event.name}?`,
                                                     oneOf: [
                                                         {
                                                             type: "Note",
                                                             name: "Yes, and show me in the public list",
-                                                            "replies": { "type": "Collection", "totalItems": 0 }
+                                                            replies: {
+                                                                type: "Collection",
+                                                                totalItems: 0,
+                                                            },
                                                         },
                                                         {
                                                             type: "Note",
                                                             name: "Yes, but hide me from the public list",
-                                                            "replies": { "type": "Collection", "totalItems": 0 }
+                                                            replies: {
+                                                                type: "Collection",
+                                                                totalItems: 0,
+                                                            },
                                                         },
                                                         {
                                                             type: "Note",
                                                             name: "No",
-                                                            "replies": { "type": "Collection", "totalItems": 0 }
+                                                            replies: {
+                                                                type: "Collection",
+                                                                totalItems: 0,
+                                                            },
                                                         },
                                                     ],
                                                     endTime:
@@ -806,9 +828,9 @@ function _handleFollow(req, res) {
                                     "addEventFollower",
                                     "error",
                                     "Attempt to add follower to event " +
-                                    eventID +
-                                    " failed with error: " +
-                                    err,
+                                        eventID +
+                                        " failed with error: " +
+                                        err,
                                 );
                                 return res
                                     .status(500)
@@ -833,7 +855,7 @@ function _handleUndoFollow(req, res) {
         {
             id: eventID,
         },
-        function (err, event) {
+        function (_err, event) {
             if (!event) return;
             // check to see if the Follow object's id matches the id we have on record
             // is this even someone who follows us
@@ -863,9 +885,9 @@ function _handleUndoFollow(req, res) {
                                 "removeEventFollower",
                                 "error",
                                 "Attempt to remove follower from event " +
-                                eventID +
-                                " failed with error: " +
-                                err,
+                                    eventID +
+                                    " failed with error: " +
+                                    err,
                             );
                             return res.send(
                                 "Database error, please try again :(",
@@ -878,7 +900,7 @@ function _handleUndoFollow(req, res) {
 }
 
 function _handleAcceptEvent(req, res) {
-    let { name, attributedTo, inReplyTo, actor } = req.body;
+    let { actor } = req.body;
     const recipient = getNoteRecipient(req.body);
     if (!recipient) {
         return res.status(400).send("No recipient found in the object");
@@ -891,7 +913,7 @@ function _handleAcceptEvent(req, res) {
         {
             id: eventID,
         },
-        function (err, event) {
+        function (_err, event) {
             if (!event) return;
             // does the id we got match the id of a thing we sent out
             const message = event.activityPubMessages.find(
@@ -907,7 +929,7 @@ function _handleAcceptEvent(req, res) {
                             "Content-Type": activityPubContentType,
                         },
                     },
-                    function (error, response, body) {
+                    function (_error, _response, body) {
                         body = JSON.parse(body);
                         // if this account is NOT already in our attendees list, add it
                         if (
@@ -929,7 +951,7 @@ function _handleAcceptEvent(req, res) {
                                         "addEventAttendee",
                                         "success",
                                         "Attendee added to event " +
-                                        req.params.eventID,
+                                            req.params.eventID,
                                     );
                                     // get the new attendee with its hidden id from the full event
                                     let fullAttendee = fullEvent.attendees.find(
@@ -941,7 +963,7 @@ function _handleAcceptEvent(req, res) {
                                             "https://www.w3.org/ns/activitystreams",
                                         name: `RSVP to ${event.name}`,
                                         type: "Note",
-                                        content: `<span class=\"h-card\"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
+                                        content: `<span class="h-card"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
                                         tag: [
                                             {
                                                 type: "Mention",
@@ -963,9 +985,9 @@ function _handleAcceptEvent(req, res) {
                                         "addEventAttendee",
                                         "error",
                                         "Attempt to add attendee to event " +
-                                        req.params.eventID +
-                                        " failed with error: " +
-                                        err,
+                                            req.params.eventID +
+                                            " failed with error: " +
+                                            err,
                                     );
                                     return res
                                         .status(500)
@@ -986,8 +1008,8 @@ function _handleAcceptEvent(req, res) {
     );
 }
 
-function _handleUndoAcceptEvent(req, res) {
-    let { name, attributedTo, inReplyTo, to, actor } = req.body;
+function _handleUndoAcceptEvent(req, _res) {
+    let { to, actor } = req.body;
     if (Array.isArray(to)) {
         to = to[0];
     }
@@ -996,7 +1018,7 @@ function _handleUndoAcceptEvent(req, res) {
         {
             id: eventID,
         },
-        function (err, event) {
+        function (_err, event) {
             if (!event) return;
             // does the id we got match the id of a thing we sent out
             const message = event.activityPubMessages.find(
@@ -1007,12 +1029,12 @@ function _handleUndoAcceptEvent(req, res) {
                 Event.updateOne(
                     { id: eventID },
                     { $pull: { attendees: { id: actor } } },
-                ).then((response) => {
+                ).then(() => {
                     addToLog(
                         "oneClickUnattend",
                         "success",
                         "Attendee removed via one click unattend " +
-                        req.params.eventID,
+                            req.params.eventID,
                     );
                 });
             }
@@ -1021,7 +1043,6 @@ function _handleUndoAcceptEvent(req, res) {
 }
 
 function _handleDelete(req, res) {
-    const deleteObjectId = req.body.object.id;
     // find all events with comments from the author
     Event.find(
         {
@@ -1057,7 +1078,7 @@ function _handleDelete(req, res) {
                     return (
                         comment.activityJson &&
                         JSON.parse(comment.activityJson).object.id ===
-                        req.body.object.id
+                            req.body.object.id
                     );
                 },
             );
@@ -1077,11 +1098,11 @@ function _handleDelete(req, res) {
                         "deleteComment",
                         "error",
                         "Attempt to delete comment " +
-                        req.body.object.id +
-                        "from event " +
-                        eventWithComment.id +
-                        " failed with error: " +
-                        err,
+                            req.body.object.id +
+                            "from event " +
+                            eventWithComment.id +
+                            " failed with error: " +
+                            err,
                     );
                     return res.sendStatus(500);
                 });
@@ -1091,7 +1112,7 @@ function _handleDelete(req, res) {
 
 function _handleCreateNoteComment(req, res) {
     // figure out what this is in reply to -- it should be addressed specifically to us
-    let { attributedTo, inReplyTo, to, cc } = req.body.object;
+    let { to, cc } = req.body.object;
     // normalize cc into an array
     if (typeof cc === "string") {
         cc = [cc];
@@ -1128,7 +1149,7 @@ function _handleCreateNoteComment(req, res) {
                         "Content-Type": activityPubContentType,
                     },
                 },
-                function (error, response, actor) {
+                function (error, _response, actor) {
                     if (!error) {
                         const parsedActor = JSON.parse(actor);
                         const name =
@@ -1153,7 +1174,7 @@ function _handleCreateNoteComment(req, res) {
                             {
                                 id: eventID,
                             },
-                            function (err, event) {
+                            function (_err, event) {
                                 if (!event) {
                                     return res.sendStatus(404);
                                 }
@@ -1169,9 +1190,9 @@ function _handleCreateNoteComment(req, res) {
                                             "success",
                                             "Comment added to event " + eventID,
                                         );
-                                        const guidObject = crypto
-                                            .randomBytes(16)
-                                            .toString("hex");
+                                        // const guidObject = crypto
+                                        //     .randomBytes(16)
+                                        //     .toString("hex");
                                         const jsonObject = req.body.object;
                                         jsonObject.attributedTo =
                                             newComment.actorId;
@@ -1187,13 +1208,13 @@ function _handleCreateNoteComment(req, res) {
                                             "addEventComment",
                                             "error",
                                             "Attempt to add comment to event " +
-                                            eventID +
-                                            " failed with error: " +
-                                            err,
+                                                eventID +
+                                                " failed with error: " +
+                                                err,
                                         );
                                         res.status(500).send(
                                             "Database error, please try again :(" +
-                                            err,
+                                                err,
                                         );
                                     });
                             },
