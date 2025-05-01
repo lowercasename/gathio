@@ -175,7 +175,7 @@
   "views.event.nospam": "We won't spam you <3",
   "views.event.numberofattende": "({{numberOfAttendees}})",
   "views.event.numlimit": "Please enter a number between 1 and ${response.data.freeSpots}",
-  "views.event.options": "views.event.options",
+  "views.event.options": "",
   "views.event.partof": "<a href='/group/{{eventData.eventGroup.id}}'>{{eventData.eventGroup.name}}</a>",
   "views.event.postbutton": "Post comment",
   "views.event.remaining_one": "{{count}} spot remaining - add yourself now!",
