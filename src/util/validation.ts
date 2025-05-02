@@ -91,19 +91,19 @@ const validateUrl = (url: string) => {
 export const validateEventTime = (start: Date, end: Date): Error | boolean => {
     if (moment(start).isAfter(moment(end))) {
         return {
-            message: i18next.t('validation.eventtime.startisafter'),
+            message: i18next.t('util.validation.eventtime.startisafter'),
             field: "eventStart",
         };
     }
     if (moment(start).isBefore(moment())) {
         return {
-            message: i18next.t('validation.eventtime.startisbefore'),
+            message: i18next.t('util.validation.eventtime.startisbefore'),
             field: "eventStart",
         };
     }
     if (moment(end).isBefore(moment())) {
         return {
-            message: i18next.t('validation.eventtime.endisbefore'),
+            message: i18next.t('util.validation.eventtime.endisbefore'),
             field: "eventEnd",
         };
     }
