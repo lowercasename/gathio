@@ -186,7 +186,7 @@
   "views.event.removeme": "Remove me",
   "views.event.removemyself": "Remove myself",
   "views.event.removemyselfdesc": "Remove yourself from '{{eventData.name}}'",
-  "views.event.removepswd": "Remove password",
+  "views.event.removepswd": "Removal password",
   "views.event.removepswddesc": "You can use this password to remove yourself from the list of event attendees. If you provided your email, you'll receive it by email. Otherwise, write it down now because it will <strong>not be shown again</strong>.",
   "views.event.removetitle": "Remove {{ attendeeName }} from {{ eventName }}",
   "views.event.removeuser": "Remove user from event",
