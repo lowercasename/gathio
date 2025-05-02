@@ -73,7 +73,7 @@
   "util.validation.groupdata.eventgroupdescription": "Event group description is required.",
   "util.validation.groupdata.eventgroupname": "Event group name is required.",
   "util.validation.groupdata.eventgroupurl": "Group link is invalid.",
-  "views.404desc": "It may have never existed, or if it finished more than some days, it's been removed from the server. Don't despair - why not create a new one? I for one would love to come to your ocarina recital.",
+  "views.404desc": "It may have never existed, or it's been removed from the server. Don't despair - why not create a new one? I for one would love to come to your ocarina recital.",
   "views.404notfound": "Event not found!",
   "views.createeventmagiclink.requestmlcontact": "If you run into any issues, please contact the instance administrator.",
   "views.createeventmagiclink.requestmldesc": "The administrator of this instance has limited event creation to a set of specific email addresses. If your email address is allowed to create events, you will be sent a magic link. If not, you won't receive anything.",
