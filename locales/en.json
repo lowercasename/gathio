@@ -38,7 +38,7 @@
   "routes.addeventcommentsubject": "New comment in {{eventName}}",
   "routes.deleteeventsubject": "{{ eventName }} was deleted",
   "routes.event.datetimeformat": "{{thedate, intlDate}}",
-  "routes.event.descriptionchanged": "the event description changed {{ description }}",
+  "routes.event.descriptionchanged": "the event description changed",
   "routes.event.difftext": "This event was just updated with new information.",
   "routes.event.editedsubject": "{{ eventname }} was just edited",
   "routes.event.endtimechanged": "the end time changed to {{ endtime }}",

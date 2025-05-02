@@ -437,7 +437,7 @@ router.put(
                 diffText += `<li>` + i18next.t("routes.event.timezonechanged", { timezone: updatedEvent.timezone }) + `</li>`;
             }
             if (event.description !== updatedEvent.description) {
-                diffText += `<li>` + i18next.t("routes.event.descriptionchanged", { description: updatedEvent.description }) + `</li>`;
+                diffText += `<li>` + i18next.t("routes.event.descriptionchanged") + `</li>`;
             }
             diffText += `</ul>`;
             const updatedEventObject = await Event.findOneAndUpdate(
