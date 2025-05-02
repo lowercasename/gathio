@@ -40,7 +40,7 @@
         <a href="/group/{{this.id}}" class="list-group-item list-group-item-action">
             <i class="fas fa-fw fa-calendar-alt"></i>
             <strong>{{this.name}}</strong>
-            <span class="badge badge-secondary ml-2">{{{t "views.publiceventlist.numoevents" }}}</span>
+            <span class="badge badge-secondary ml-2">{{plural "views.publiceventlist.numoevents" this.numberOfEvents }}</span>
         </a>
         {{/each}}
     {{else}}

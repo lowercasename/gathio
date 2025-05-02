@@ -299,7 +299,9 @@
   "views.publiceventlist.events": "Events",
   "views.publiceventlist.groups": "Groups",
   "views.publiceventlist.nogroups": "No groups!",
-  "views.publiceventlist.numoevents": "{{this.numberOfEvents}} {{plural this.numberOfEvents \"event(s)\"}}",
+  "views.publiceventlist.numoevents_one": "{{count}} event",
+  "views.publiceventlist.numoevents_other": "{{count}} events",
+  "views.publiceventlist.numoevents_zero": "No event",
   "views.publiceventlist.pastevents": "Past events",
   "views.publiceventlist.upcomingevents": "Upcoming events",
   "views.right": "Get it right!"
