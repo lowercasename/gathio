@@ -111,46 +111,46 @@ export const instanceRules = (): InstanceRule[] => {
     rules.push(
         config.general.show_public_event_list
             ? {
-                  text: i18next.t("config.instancerule.showpubliceventlist-true"),
-                  icon: "fas fa-eye",
-              }
+                text: i18next.t("config.instancerule.showpubliceventlist-true"),
+                icon: "fas fa-eye",
+            }
             : {
-                  text: i18next.t("config.instancerule..showpubliceventlist-false"),
-                  icon: "fas fa-eye-slash",
-              },
+                text: i18next.t("config.instancerule.showpubliceventlist-false"),
+                icon: "fas fa-eye-slash",
+            },
     );
     rules.push(
         config.general.creator_email_addresses?.length
             ? {
-                  text: i18next.t("config.instancerule.creatoremail-true"),
-                  icon: "fas fa-user-check",
-              }
+                text: i18next.t("config.instancerule.creatoremail-true"),
+                icon: "fas fa-user-check",
+            }
             : {
-                  text: i18next.t("config.instancerule.creatoremail-false"),
-                  icon: "fas fa-users",
-              },
+                text: i18next.t("config.instancerule.creatoremail-false"),
+                icon: "fas fa-users",
+            },
     );
     rules.push(
         config.general.delete_after_days > 0
             ? {
-                  text: i18next.t("config.instancerule.deleteafterdays-true", { days: config.general.delete_after_days } ),
-                  icon: "far fa-calendar-times",
-              }
+                text: i18next.t("config.instancerule.deleteafterdays-true", { days: config.general.delete_after_days } ),
+                icon: "far fa-calendar-times",
+            }
             : {
-                  text: i18next.t("config.instancerule.deleteafterdays-false"),
-                  icon: "far fa-calendar-check",
-              },
+                text: i18next.t("config.instancerule.deleteafterdays-false"),
+                icon: "far fa-calendar-check",
+            },
     );
     rules.push(
         config.general.is_federated
             ? {
-                  text: i18next.t("config.instancerule.isfederated-true"),
-                  icon: "fas fa-globe",
-              }
+                text: i18next.t("config.instancerule.isfederated-true"),
+                icon: "fas fa-globe",
+            }
             : {
-                  text: i18next.t("config.instancerule.isfederated-false"),
-                  icon: "fas fa-globe",
-              },
+                text: i18next.t("config.instancerule.isfederated-false"),
+                icon: "fas fa-globe",
+            },
     );
     return rules;
 };
@@ -181,17 +181,35 @@ export const instanceDescription = (): string => {
     }
 };
 
+let _resolvedConfig: GathioConfig | null = null;
 // Attempt to load our global config. Will stop the app if the config file
 // cannot be read (there's no point trying to continue!)
 export const getConfig = (): GathioConfig => {
+    if (_resolvedConfig) {
+        return _resolvedConfig;
+    }
+
     try {
         const config = toml.parse(
             fs.readFileSync("./config/config.toml", "utf-8"),
         ) as GathioConfig;
-        return {
+        const resolvedConfig = {
             ...defaultConfig,
             ...config,
-        };
+        }
+        if (process.env.CYPRESS || process.env.CI) {
+            config.general.mail_service = "none";
+            console.log(
+                "Running in Cypress or CI, not initializing email service.",
+            );
+        } else if (config.general.mail_service === "none") {
+            console.warn(
+                "You have not configured this Gathio instance to send emails! This means that event creators will not receive emails when their events are created, which means they may end up locked out of editing events. Consider setting up an email service.",
+            );
+        }
+
+        _resolvedConfig = resolvedConfig;
+        return resolvedConfig;
     } catch {
         exitWithError(
             "Configuration file not found! Have you renamed './config/config-example.toml' to './config/config.toml'?",

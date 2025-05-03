@@ -1,7 +1,6 @@
 import express from "express";
-import hbs, { ExpressHandlebars } from "express-handlebars";
-import Handlebars from 'handlebars';
 import cookieParser from "cookie-parser";
+import { create as createHandlebars, ExpressHandlebars } from "express-handlebars";
 import i18next from "i18next";
 import Backend from "i18next-fs-backend";
 import { LanguageDetector, handle } from 'i18next-http-middleware';
@@ -24,18 +23,17 @@ import event from "./routes/event.js";
 import group from "./routes/group.js";
 import staticPages from "./routes/static.js";
 import magicLink from "./routes/magicLink.js";
-
-import { initEmailService } from "./lib/email.js";
 import { getI18nHelpers } from "./helpers.js";
 import {
     activityPubContentType,
     alternateActivityPubContentType,
 } from "./lib/activitypub.js";
 import moment from "moment";
+import { EmailService } from "./lib/email.js";
+import getConfig from "./lib/config.js";
 
 const app = express();
-
-app.locals.sendEmails = initEmailService();
+const config = getConfig();
 
 // function to construct __dirname with ES module
 const getLocalesPath = () => {
@@ -101,22 +99,37 @@ async function initializeApp() {
 //    });
 
     // View engine //
-    const hbsInstance: ExpressHandlebars = hbs.create({
+    const hbsInstance = createHandlebars({
         defaultLayout: "main",
         partialsDir: ["views/partials/"],
         layoutsDir: "views/layouts/",
         helpers: {
-            json: function (context: any) {
-                return JSON.stringify(context);
-            },
             // add i18next helpers
             ...getI18nHelpers(),
             plural: function (key: string, count: number, options: any) { // Register the plural helper
                 const translation = i18next.t(key, { count: count });
                 return translation;
+            }, 
+            json: function (context: object) {
+                return JSON.stringify(context);
             }
         },
     });
+
+    const emailService = new EmailService(config, hbsInstance);
+    emailService.verify();
+
+    app.use((req: express.Request, _: express.Response, next: express.NextFunction) => {
+        req.hbsInstance = hbsInstance;
+        req.emailService = emailService;
+        next()
+        return
+    })
+
+    // View engine //
+    app.engine("handlebars", hbsInstance.engine);
+    app.set("view engine", "handlebars");
+    app.set("hbsInstance", hbsInstance);
 
     // calling i18nextHelper
     if (typeof handlebarsI18next === 'function') {

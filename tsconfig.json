@@ -18,5 +18,6 @@
         "moduleResolution": "NodeNext",
         "skipLibCheck": true
     },
-    "include": ["./src/**/*"]
+    "include": ["./src/**/*"],
+    "files": ["./src/index.d.ts"]
 }
