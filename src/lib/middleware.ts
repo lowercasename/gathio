@@ -62,7 +62,7 @@ export const getConfigMiddleware = (
     if (process.env.CYPRESS === "true" && req.cookies?.cypressConfigOverride) {
         console.log("Overriding config with Cypress config");
         const override = JSON.parse(req.cookies.cypressConfigOverride);
-        res.locals.config = deepMerge<GathioConfig>(config, override);
+        res.locals.config = deepMerge(config, override);
         return next();
     }
     res.locals.config = config;
