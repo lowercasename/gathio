@@ -7,7 +7,7 @@ import { addToLog } from "./helpers.js";
 import moment from "moment-timezone";
 import crypto from "crypto";
 import request from "request";
-import niceware from "niceware";
+import { generatePassphrase } from "./lib/eff-niceware.js";
 import ical from "ical";
 import fileUpload from "express-fileupload";
 import Jimp from "jimp";
@@ -503,7 +503,7 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
 });
 
 router.post("/attendee/provision", async (req, res) => {
-    const removalPassword = niceware.generatePassphrase(6).join("-");
+    const removalPassword = generatePassphrase(6)
     const newAttendee = {
         status: "provisioned",
         removalPassword,
