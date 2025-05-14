@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const result = readFileSync(
-    join(__dirname, "../assets/eff_large_wordlist.txt"),
+    join(__dirname, "../../eff_large_wordlist.txt"),
     "utf8",
 );
 const wordList = Object.freeze(
