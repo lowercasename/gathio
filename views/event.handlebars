@@ -108,7 +108,7 @@
     </div>
 
     {{#unless editingEnabled}}
-        <button type="button" id="editEvent" class="button button--outline-secondary button--sm" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{t "group.editmode" }}</button>
+        <button type="button" id="editEvent" class="button button--outline-secondary button--sm" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{t "views.eventgroup.editmode" }}</button>
     {{/unless}}
   </aside> <!-- #event__actions -->
 </div>
@@ -372,7 +372,7 @@
       <form id="verifyTokenForm" action="/verifytoken/event/{{eventData.id}}" method="post">
       <div class="modal-body">
         <div class="form-group">
-          <p class="form-text small">{{t "views.edittokondesc" }}</p>
+          <p class="form-text small">{{t "views.edittokendesc" }}</p>
           <div class="form-group">
             <input type="text" class="form-control" id="editToken" name="editToken" placeholder="{{t "views.right" }}" data-validation="required">
           </div>
