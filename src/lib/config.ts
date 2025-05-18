@@ -157,8 +157,9 @@ export const instanceRules = (): InstanceRule[] => {
 
 export const instanceDescription = (): string => {
     const config = getConfig();
-    const defaultInstanceDescription =
-        i18next.t("config.defaultinstancedesc");
+    const defaultInstanceDescription = markdownToSanitizedHTML(
+        i18next.t("config.defaultinstancedesc", "Welcome to this Gathio instance!")
+    );
     let instanceDescription = defaultInstanceDescription;
     let instancedescfile = "./static/instance-description-" + i18next.language + ".md";
     try {
