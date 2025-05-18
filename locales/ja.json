@@ -28,7 +28,7 @@
   "config.instancerule.showpubliceventlist-true": "公開イベントと公開グループをページ上に掲載します",
   "frontend.dateformat": "LL (dd)",
   "frontend.displaydate-days": "{{ startdate }} {{ starttime }} <span class=\"text-muted\">-</span> {{ enddate }} {{ endtime }} {{ timezone }}",
-  "frontend.displaydate-sameday": "{{ startdate }} {{ starttime }} <span class=\"text-muted\">～</span> {{ endtime }}{{ timezone}}",
+  "frontend.displaydate-sameday": "{{ startdate }} {{ starttime }} <span class=\"text-muted\">～</span> {{ endtime }} <span class=\"text-muted\">{{ timezone }}</span>",
   "frontend.elnumber": "( {{count}} 人）",
   "frontend.eventattendees": "人で",
   "frontend.newevent": "イベントの作成",
