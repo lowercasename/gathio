@@ -1,9 +1,7 @@
-You have been subscribed to the event group '{{eventGroupName}}' on {{siteName}}.
+{{t "views.emails.subscribed.preface", {eventGroupName: {{eventGroupName}}} }}
+{{t "views.emails.subscribed.desc" }}
 
-You will receive emails when new events are added to the group, and can unsubscribe at any time.
-
-Love,
-
+{{t "views.emails.love" }}
 {{siteName}}
 
-If you didn't subscribe yourself to this event group on {{siteName}}, someone may have accidentally typed your email instead of theirs. Click here to unsubscribe: https://{{domain}}/unsubscribe/{{eventGroupID}}?email={{emailAddress}}.
+{{t "views.emails.eventgroupupdate.dontknowhtml" }}: https://{{domain}}/unsubscribe/{{eventGroupID}}?email={{emailAddress}}

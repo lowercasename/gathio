@@ -3,6 +3,7 @@ import toml from "toml";
 import { exitWithError } from "./process.js";
 import { Response } from "express";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
+import i18next from "i18next";
 
 interface StaticPage {
     title: string;
@@ -115,44 +116,44 @@ export const instanceRules = (): InstanceRule[] => {
     rules.push(
         config.general.show_public_event_list
             ? {
-                text: "Public events and groups are displayed on the homepage",
+                text: i18next.t("config.instancerule.showpubliceventlist-true"),
                 icon: "fas fa-eye",
             }
             : {
-                text: "Events and groups can only be accessed by direct link",
+                text: i18next.t("config.instancerule.showpubliceventlist-false"),
                 icon: "fas fa-eye-slash",
             },
     );
     rules.push(
         config.general.creator_email_addresses?.length
             ? {
-                text: "Only specific people can create events and groups",
+                text: i18next.t("config.instancerule.creatoremail-true"),
                 icon: "fas fa-user-check",
             }
             : {
-                text: "Anyone can create events and groups",
+                text: i18next.t("config.instancerule.creatoremail-false"),
                 icon: "fas fa-users",
             },
     );
     rules.push(
         config.general.delete_after_days > 0
             ? {
-                text: `Events are automatically deleted ${config.general.delete_after_days} days after they end`,
+                text: i18next.t("config.instancerule.deleteafterdays-true", { days: config.general.delete_after_days } ),
                 icon: "far fa-calendar-times",
             }
             : {
-                text: "Events are permanent, and are never automatically deleted",
+                text: i18next.t("config.instancerule.deleteafterdays-false"),
                 icon: "far fa-calendar-check",
             },
     );
     rules.push(
         config.general.is_federated
             ? {
-                text: "This instance federates with other instances using ActivityPub",
+                text: i18next.t("config.instancerule.isfederated-true"),
                 icon: "fas fa-globe",
             }
             : {
-                text: "This instance does not federate with other instances",
+                text: i18next.t("config.instancerule.isfederated-false"),
                 icon: "fas fa-globe",
             },
     );
@@ -161,13 +162,15 @@ export const instanceRules = (): InstanceRule[] => {
 
 export const instanceDescription = (): string => {
     const config = getConfig();
-    const defaultInstanceDescription =
-        "**{{ siteName }}** is running on Gathio — a simple, federated, privacy-first event hosting platform.";
+    const defaultInstanceDescription = markdownToSanitizedHTML(
+        i18next.t("config.defaultinstancedesc", "Welcome to this Gathio instance!")
+    );
     let instanceDescription = defaultInstanceDescription;
+    let instancedescfile = "./static/instance-description-" + i18next.language + ".md";
     try {
-        if (fs.existsSync("./static/instance-description.md")) {
+        if (fs.existsSync(instancedescfile)) {
             const fileBody = fs.readFileSync(
-                "./static/instance-description.md",
+                instancedescfile,
                 "utf-8",
             );
             instanceDescription = markdownToSanitizedHTML(fileBody);
