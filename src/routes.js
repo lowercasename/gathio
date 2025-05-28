@@ -22,6 +22,7 @@ import EventGroup from "./models/EventGroup.js";
 import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
 import { hashString } from "./util/generator.js";
+import i18next from "i18next";
 import { EmailService } from "./lib/email.js";
 
 const config = getConfig();
@@ -318,7 +319,7 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                     );
                                     req.emailService.sendEmailFromTemplate({
                                         to: attendeeEmails, 
-                                        subject: `${event?.name} was deleted`,
+                                        subject: i18next.t("routes.deleteeventsubject", {eventName: event?.name}),
                                         templateName: "deleteEvent",
                                         templateData: {
                                             eventName: event?.name,
@@ -631,7 +632,7 @@ router.post("/attendevent/:eventID", async (req, res) => {
             if (req.body.attendeeEmail) {          
                 req.emailService.sendEmailFromTemplate({
                     to: req.body.attendeeEmail,
-                    subject: `You're RSVPed to ${event.name}`,
+                    subject: i18next.t("routes.addeventattendeesubject", {eventName: event?.name}),
                     templateName: "addEventAttendee",
                     templateData:{
                         eventID: req.params.eventID,
@@ -689,7 +690,7 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
             if (req.body.attendeeEmail) {
                 req.emailService.sendEmailFromTemplate({
                     to: req.body.attendeeEmail,
-                    subject: `You have been removed from an event`,
+                    subject: i18next.t("routes.removeeventattendeesubject"),
                     templateName: "removeEventAttendee",
                     templateData:{
                         eventName: event.name,
@@ -735,7 +736,7 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
             if (req.body.attendeeEmail) {
                 req.emailService.sendEmailFromTemplate({
                     to: req.body.attendeeEmail, 
-                    subject: `You have been removed from an event`, 
+                    subject: i18next.t("routes.removeeventattendeesubject"),
                     templateName: "removeEventAttendee",
                     templateData: {
                         eventName: event.name,
@@ -785,7 +786,7 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
             eventGroup.save();
             req.emailService.sendEmailFromTemplate({
                 to: subscriber.email, 
-                subject: "You have subscribed to an event group",
+                subject: i18next.t("routes.subscribedsubject"),
                 templateName: "subscribed",
                 templateData:{
                     eventGroupName: eventGroup.name,
@@ -906,7 +907,7 @@ router.post("/post/comment/:eventID", (req, res) => {
                                 req.emailService.sendEmailFromTemplate({
                                     to: event?.creatorEmail || config.general.email,
                                     bcc: attendeeEmails,
-                                    subject: `New comment in ${event.name}`,
+                                    subject: i18next.t("routes.addeventcommentsubject", { eventName: event?.name }),
                                     templateName: "addEventComment",
                                     templateData:{
                                         eventID: req.params.eventID,
@@ -1004,7 +1005,7 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                                 req.emailService.sendEmailFromTemplate({
                                     to: event?.creatorEmail || config.general.email,
                                     bcc: attendeeEmails,
-                                    subject: `New comment in ${event.name}`,
+                                    subject: i18next.t("routes.addeventcommentsubject", { eventName: event.name }),
                                     templateName: "addEventComment",
                                     templateData: {
                                         eventID: req.params.eventID,

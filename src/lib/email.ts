@@ -5,6 +5,8 @@ import nodemailer, { Transporter } from "nodemailer";
 import { GathioConfig, getConfig } from "./config.js";
 import SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import { exitWithError } from "./process.js";
+import Mailgun from "mailgun.js";
+import { IMailgunClient } from "node_modules/mailgun.js/Types/Interfaces/index.js";
 
 const config = getConfig();
 
@@ -24,7 +26,8 @@ type EmailTemplateName =
 export class EmailService {
     nodemailerTransporter: Transporter | undefined = undefined;
     sgMail: typeof sgMail | undefined = undefined;
-    hbs: ExpressHandlebars
+    mailgunClient: IMailgunClient | undefined = undefined;
+    hbs: ExpressHandlebars;
 
     public constructor(config: GathioConfig, hbs: ExpressHandlebars) {
         this.hbs = hbs;
@@ -38,6 +41,26 @@ export class EmailService {
                 this.sgMail = sgMail;
                 this.sgMail.setApiKey(config.sendgrid.api_key);
                 console.log("Sendgrid is ready to send emails.");
+                break;
+            }
+            case "mailgun": {
+                if (
+                    !config.mailgun?.api_key ||
+                    !config.mailgun?.api_url ||
+                    !config.mailgun?.domain
+                ) {
+                    return exitWithError(
+                        "Mailgun is configured as the email service, but not all required fields are provided. Please provide all required fields in the config file.",
+                    );
+                }
+                const mailgun = new Mailgun(FormData);
+                this.mailgunClient = mailgun.client({
+                    username: "api",
+                    key: config.mailgun.api_key,
+                    url: config.mailgun.api_url,
+                });
+                // TODO: Can we verify the Mailgun connection?
+                console.log("Mailgun is ready to send emails.");
                 break;
             }
             case "nodemailer": {
@@ -73,13 +96,13 @@ export class EmailService {
                         nodemailer.createTransport(nodemailerConfig);
                 }
             }
-
         }
     }
 
     public async verify(): Promise<boolean> {
         if (this.nodemailerTransporter) {
-            const nodemailerVerified = await this.nodemailerTransporter.verify();
+            const nodemailerVerified =
+                await this.nodemailerTransporter.verify();
             if (nodemailerVerified) {
                 console.log("Nodemailer is ready to send emails.");
                 return true;
@@ -118,9 +141,36 @@ export class EmailService {
                 return true;
             } catch (e: unknown | sgHelpers.classes.ResponseError) {
                 if (e instanceof sgHelpers.classes.ResponseError) {
-                    console.error('sendgrid error', e.response.body);
+                    console.error("sendgrid error", e.response.body);
                 } else {
-                    console.error('sendgrid error', e);
+                    console.error("sendgrid error", e);
+                }
+                return false;
+            }
+        } else if (this.mailgunClient) {
+            try {
+                if (!config.mailgun?.domain) {
+                    return exitWithError(
+                        "Mailgun is configured as the email service, but no domain is provided. Please provide a domain in the config file.",
+                    );
+                }
+                await this.mailgunClient.messages.create(
+                    config.mailgun.domain,
+                    {
+                        from: config.general.email,
+                        to,
+                        bcc,
+                        subject: `${config.general.site_name}: ${subject}`,
+                        text,
+                        html,
+                    },
+                );
+                return true;
+            } catch (e: any) {
+                if (e.response) {
+                    console.error(e.response.body);
+                } else {
+                    console.error(e);
                 }
                 return false;
             }
@@ -150,15 +200,14 @@ export class EmailService {
         bcc = "",
         subject,
         templateName,
-        templateData = {}
+        templateData = {},
     }: {
         to: string | string[];
         bcc?: string | string[] | undefined;
         subject: string;
         templateName: EmailTemplateName;
         templateData?: object;
-    },
-    ): Promise<boolean> {
+    }): Promise<boolean> {
         const [html, text] = await Promise.all([
             this.hbs.renderView(
                 `./views/emails/${templateName}/${templateName}Html.handlebars`,
@@ -172,7 +221,7 @@ export class EmailService {
                     cache: true,
                     layout: "email.handlebars",
                     ...templateData,
-                }
+                },
             ),
             this.hbs.renderView(
                 `./views/emails/${templateName}/${templateName}Text.handlebars`,
@@ -186,7 +235,7 @@ export class EmailService {
                     cache: true,
                     layout: "email.handlebars",
                     ...templateData,
-                }
+                },
             ),
         ]);
 
@@ -195,7 +244,7 @@ export class EmailService {
             bcc,
             subject: `${config.general.site_name}: ${subject}`,
             text,
-            html
+            html,
         });
     }
 }

@@ -1,25 +1,25 @@
 <main class="page" x-data="{currentTab: null}">
-<h2 class="mb-3 pb-2 text-center border-bottom">What would you like to do?</h2>
+<h2 class="mb-3 pb-2 text-center border-bottom">{{t "views.newevent.pagetitle" }}</h2>
 <div class="container-fluid mb-4">
   <div class="row">
     <div class="col-lg-4 p-2">
-      <button type="button" id="showNewEventFormButton" class="button w-100" x-bind:class="currentTab === 'event' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'event'"><i class="fas fa-calendar-day"></i> Create a new event</button>
+      <button type="button" id="showNewEventFormButton" class="button w-100" x-bind:class="currentTab === 'event' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'event'"><i class="fas fa-calendar-day"></i> {{t "views.newevent.neweventbutton" }}</button>
     </div>
     <div class="col-lg-4 p-2">
-      <button type="button" id="showImportEventFormButton" class="button w-100" x-bind:class="currentTab === 'importEvent' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'importEvent'"><i class="fas fa-file-import"></i> Import an existing event</button>
+      <button type="button" id="showImportEventFormButton" class="button w-100" x-bind:class="currentTab === 'importEvent' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'importEvent'"><i class="fas fa-file-import"></i> {{t "views.newevent.importevent" }}</button>
     </div>
     <div class="col-lg-4 p-2">
-      <button type="button" id="showNewEventGroupFormButton" class="button w-100" x-bind:class="currentTab === 'group' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'group'"><i class="fas fa-calendar-alt"></i> Create a new event group </button>
+      <button type="button" id="showNewEventGroupFormButton" class="button w-100" x-bind:class="currentTab === 'group' ? 'button--primary' : 'button--secondary'" x-on:click="currentTab = 'group'"><i class="fas fa-calendar-alt"></i> {{t "views.newevent.neweventgroup" }} </button>
     </div>
   </div>
 </div>
 
 <div class="alert alert-info mb-4 text-center" role="alert">
-  <i class="fas fa-exclamation-circle"></i> Events are visible to anyone who knows the link.
+  <i class="fas fa-exclamation-circle"></i> {{{t "views.newevent.visiblealert" }}}
 </div>
 
 <div id="newEventFormContainer" x-show="currentTab === 'event'" style="display: none">
-  <h4 class="mb-2">Create an event</h4>
+  <h4 class="mb-2">{{t "views.newevent.createnew" }}</h4>
   <form
     id="newEventForm"
     enctype="multipart/form-data"
@@ -38,7 +38,7 @@
           class="button button--primary w-50"
           x-bind:disabled="submitting"
           x-bind:class="submitting ? 'button--loading' : ''"
-          x-text="submitting ? 'Creating...' : 'Create'"
+          x-text="submitting ? '{{t "common.creating" }}' : '{{t "common.create" }}'"
         ></button>
       </div>
     </div>
@@ -50,9 +50,9 @@
 </div>
 
 <div id="newEventGroupFormContainer" x-show="currentTab === 'group'" style="display: none">
-  <h4 class="mb-2">Create an event group</h4>
-  <p class="text-muted">An event group is a holding area for a set of linked events, like a recurring game night, a festival, or a band tour. You can share a public link to your event group just like an individual event link, and people who know the secret editing code will be able to add future events to the group.</p>
-  <p class="text-muted">Event groups do not get automatically removed like events do, but events which have been removed from {{siteName}} will of course not show up in an event group.</p>
+  <h4 class="mb-2">{{t "views.newevent.newgroup" }}</h4>
+  <p class="text-muted">{{t "views.newevent.groupdesc" }}</p>
+  <p class="text-muted">{{{t "views.newevent.groupattention" }}}</p>
   <form id="newEventGroupForm" enctype="multipart/form-data" x-data="newEventGroupForm()" @submit.prevent="submitForm">
     {{> eventGroupForm }}
     <div class="form-group row">
@@ -62,7 +62,7 @@
           class="button button--primary w-50"
           x-bind:disabled="submitting"
           x-bind:class="submitting ? 'button--loading' : ''"
-          x-text="submitting ? 'Creating...' : 'Create'"
+          x-text="submitting ? '{{t "common.creating" }}' : '{{t "common.create" }}'"
         ></button>
       </div>
     </div>
