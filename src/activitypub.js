@@ -222,6 +222,7 @@ export function signAndSend(message, eventID, targetDomain, inbox, callback) {
                         Digest: `SHA-256=${digest}`,
                         "Content-Type": activityPubContentType,
                         Accept: activityPubContentType,
+                        "User-Agent": `Gathio - ${domain}`,
                     },
                     method: "POST",
                     json: true,
@@ -669,6 +670,7 @@ function _handleFollow(req, res) {
             headers: {
                 Accept: activityPubContentType,
                 "Content-Type": activityPubContentType,
+                "User-Agent": `Gathio - ${domain}`,
             },
         },
         function (error, response, body) {
@@ -905,6 +907,7 @@ function _handleAcceptEvent(req, res) {
                         headers: {
                             Accept: activityPubContentType,
                             "Content-Type": activityPubContentType,
+                            "User-Agent": `Gathio - ${domain}`,
                         },
                     },
                     function (error, response, body) {
@@ -1126,6 +1129,7 @@ function _handleCreateNoteComment(req, res) {
                     headers: {
                         Accept: activityPubContentType,
                         "Content-Type": activityPubContentType,
+                        "User-Agent": `Gathio - ${domain}`,
                     },
                 },
                 function (error, response, actor) {

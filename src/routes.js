@@ -1139,6 +1139,7 @@ router.post("/activitypub/inbox", (req, res) => {
             headers: {
                 Accept: activityPubContentType,
                 "Content-Type": activityPubContentType,
+                "User-Agent": `Gathio - ${domain}`
             },
         },
         function (error, response, actor) {
