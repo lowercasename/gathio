@@ -6,7 +6,7 @@
         "checkJs": true,
         "removeComments": true,
         "resolveJsonModule": true,
-        "typeRoots": ["./node_modules/@types"],
+        "typeRoots": ["./node_modules/@types", "./src/types"],
         "sourceMap": true,
         "outDir": "dist",
         "strict": true,
@@ -18,5 +18,6 @@
         "moduleResolution": "NodeNext",
         "skipLibCheck": true
     },
-    "include": ["./src/**/*"]
+    "include": ["./src/**/*"],
+    "files": ["./src/index.d.ts"]
 }

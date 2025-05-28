@@ -1,9 +1,9 @@
 import { Router, Request, Response } from "express";
 import { frontendConfig } from "../lib/config.js";
-import { sendEmailFromTemplate } from "../lib/email.js";
 import { generateMagicLinkToken } from "../util/generator.js";
 import MagicLink from "../models/MagicLink.js";
 import { getConfigMiddleware } from "../lib/middleware.js";
+import i18next from "i18next";
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
             ...frontendConfig(res),
             message: {
                 type: "danger",
-                text: "Please provide an email address.",
+                text: i18next.t("routes.magiclink.provideemail"),
             },
         });
         return;
@@ -31,7 +31,7 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
             ...frontendConfig(res),
             message: {
                 type: "success",
-                text: "Thanks! If this email address can create events, you should receive an email with a magic link.",
+                text: i18next.t("routes.magiclink.thanks"),
             },
         });
         return;
@@ -48,24 +48,19 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
     // Take this opportunity to delete any expired magic links
     await MagicLink.deleteMany({ expiryTime: { $lt: new Date() } });
 
-    sendEmailFromTemplate(
-        email,
-        "",
-        `Magic link to create an event`,
-        "createEventMagicLink",
-        {
-            token,
-            siteName: res.locals.config?.general.site_name,
-            siteLogo: res.locals.config?.general.email_logo_url,
-            domain: res.locals.config?.general.domain,
+    req.emailService.sendEmailFromTemplate({
+        to: email,
+        subject: i18next.t("routes.magiclink.mailsubject"),
+        templateName: "createEventMagicLink",
+        templateData: {
+            token
         },
-        req,
-    );
+    });
     res.render("createEventMagicLink", {
         ...frontendConfig(res),
         message: {
             type: "success",
-            text: "Thanks! If this email address can create events, you should receive an email with a magic link.",
+            text: i18next.t("routes.magiclink.thanks"),
         },
     });
 });

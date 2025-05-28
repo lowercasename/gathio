@@ -5,7 +5,6 @@ import { validateGroupData } from "../util/validation.js";
 import Jimp from "jimp";
 import { addToLog } from "../helpers.js";
 import EventGroup from "../models/EventGroup.js";
-import { sendEmailFromTemplate } from "../lib/email.js";
 import { marked } from "marked";
 import { renderPlain } from "../util/markdown.js";
 import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
@@ -92,21 +91,16 @@ router.post(
             );
 
             // Send email with edit link
-            if (groupData.creatorEmail && req.app.locals.sendEmails) {
-                sendEmailFromTemplate(
-                    groupData.creatorEmail,
-                    "",
-                    `${eventGroup.name}`,
-                    "createEventGroup",
-                    {
+            if (groupData.creatorEmail) {
+                req.emailService.sendEmailFromTemplate({
+                    to: groupData.creatorEmail,
+                    subject: eventGroup.name,
+                    templateName: "createEventGroup",
+                    templateData: {
                         eventGroupID: eventGroup.id,
                         editToken: eventGroup.editToken,
-                        siteName: res.locals.config?.general.site_name,
-                        siteLogo: res.locals.config?.general.email_logo_url,
-                        domain: res.locals.config?.general.domain,
                     },
-                    req,
-                );
+                });
             }
 
             res.status(200).json({
@@ -182,7 +176,7 @@ router.put(
             }
             // Token matches
             // If there is a new image, upload that first
-            let eventGroupID = req.params.eventGroupID;
+            const eventGroupID = req.params.eventGroupID;
             let eventGroupImageFilename = eventGroup.image;
             if (req.file?.buffer) {
                 Jimp.read(req.file.buffer)
@@ -228,9 +222,9 @@ router.put(
                 "editEventGroup",
                 "error",
                 "Attempt to edit event group " +
-                    req.params.eventGroupID +
-                    " failed with error: " +
-                    err,
+                req.params.eventGroupID +
+                " failed with error: " +
+                err,
             );
             return res.status(500).json({
                 errors: [

@@ -1,5 +1,4 @@
 import { Router, Request, Response } from "express";
-import fs from "fs";
 import moment from "moment-timezone";
 import { marked } from "marked";
 import { markdownToSanitizedHTML, renderPlain } from "../util/markdown.js";
@@ -8,7 +7,7 @@ import {
     instanceDescription,
     instanceRules,
 } from "../lib/config.js";
-import { addToLog, exportICal } from "../helpers.js";
+import { addToLog, exportIcal } from "../helpers.js";
 import Event from "../models/Event.js";
 import EventGroup, { IEventGroup } from "../models/EventGroup.js";
 import {
@@ -19,13 +18,14 @@ import MagicLink from "../models/MagicLink.js";
 import { getConfigMiddleware } from "../lib/middleware.js";
 import { getMessage } from "../util/messages.js";
 import { EventListEvent, bucketEventsByMonth } from "../lib/event.js";
+import i18next from "i18next";
 
 const router = Router();
 
 // Add config middleware to all routes
 router.use(getConfigMiddleware);
 
-router.get("/", (_: Request, res: Response) => {
+router.get("/", (_, res) => {
     if (res.locals.config?.general.show_public_event_list) {
         return res.redirect("/events");
     }
@@ -44,12 +44,12 @@ router.get("/about", (_: Request, res: Response) => {
     });
 });
 
-router.get("/new", (req: Request, res: Response) => {
+router.get("/new", (_: Request, res: Response) => {
     if (res.locals.config?.general.creator_email_addresses?.length) {
         return res.render("createEventMagicLink", frontendConfig(res));
     }
     return res.render("newevent", {
-        title: "New event",
+        title: i18next.t("frontend.newevent"),
         ...frontendConfig(res),
     });
 });
@@ -70,12 +70,12 @@ router.get("/new/:magicLinkToken", async (req: Request, res: Response) => {
             ...frontendConfig(res),
             message: {
                 type: "danger",
-                text: "This magic link is invalid or has expired. Please request a new one here.",
+                text: i18next.t("routes.magiclink-invalid"),
             },
         });
     }
     res.render("newevent", {
-        title: "New event",
+        title: i18next.t("frontend.newevent"),
         ...frontendConfig(res),
         magicLinkToken: req.params.magicLinkToken,
         creatorEmail: magicLink.email,
@@ -100,9 +100,9 @@ router.get("/events", async (_: Request, res: Response) => {
             name: event.name,
             location: event.location,
             displayDate: isSameDay
-                ? startMoment.format("D MMM YYYY")
-                : `${startMoment.format("D MMM YYYY")} - ${endMoment.format(
-                      "D MMM YYYY",
+                ? startMoment.format("LL")
+                : `${startMoment.format("LL")} - ${endMoment.format(
+                      "LL",
                   )}`,
             eventHasConcluded: endMoment.isBefore(moment.tz(event.timezone)),
             eventGroup: event.eventGroup as any as IEventGroup,
@@ -132,7 +132,7 @@ router.get("/events", async (_: Request, res: Response) => {
     });
 
     res.render("publicEventList", {
-        title: "Public events",
+        title: i18next.t("frontend.publicevents"),
         upcomingEvents: upcomingEventsInMonthBuckets,
         pastEvents: pastEventsInMonthBuckets,
         eventGroups: updatedEventGroups,
@@ -154,31 +154,53 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         }
         const parsedLocation = event.location.replace(/\s+/g, "+");
         let displayDate;
+        const dateformat = i18next.t("frontend.dateformat");
+        const timeformat = i18next.t('frontend.timeformat');
         if (moment.tz(event.end, event.timezone).isSame(event.start, "day")) {
             // Happening during one day
-            displayDate =
-                moment
-                    .tz(event.start, event.timezone)
-                    .format(
-                        'dddd D MMMM YYYY [<span class="text-muted">from</span>] h:mm a',
-                    ) +
-                moment
-                    .tz(event.end, event.timezone)
-                    .format(
-                        ' [<span class="text-muted">to</span>] h:mm a [<span class="text-muted">](z)[</span>]',
-                    );
+            displayDate = i18next.t("frontend.displaydate-sameday",
+                { 
+                    startdate: 
+                        moment
+                            .tz(event.start, event.timezone)
+                            .format(dateformat),
+                    starttime:
+                        moment
+                            .tz(event.start, event.timezone)
+                            .format(timeformat),
+                    endtime:
+                        moment
+                            .tz(event.end, event.timezone)
+                            .format(timeformat),
+                    timezone:
+                        moment
+                            .tz(event.end, event.timezone)
+                            .format('(z)',)
+                });
         } else {
-            displayDate =
-                moment
-                    .tz(event.start, event.timezone)
-                    .format(
-                        'dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a',
-                    ) +
-                moment
-                    .tz(event.end, event.timezone)
-                    .format(
-                        ' [<span class="text-muted">–</span>] dddd D MMMM YYYY [<span class="text-muted">at</span>] h:mm a [<span class="text-muted">](z)[</span>]',
-                    );
+            displayDate = i18next.t("frontend.displaydate-days",
+                {
+                    startdate:
+                        moment
+                            .tz(event.start, event.timezone)
+                            .format(dateformat),
+                    starttime:
+                        moment
+                            .tz(event.start, event.timezone)
+                            .format(timeformat),
+                    enddate:
+                        moment
+                            .tz(event.end, event.timezone)
+                            .format(dateformat),
+                    endtime:
+                        moment
+                            .tz(event.end, event.timezone)
+                            .format(timeformat),
+                    timezone:
+                        moment
+                            .tz(event.end, event.timezone)
+                            .format('(z)',)
+                });
         }
         let eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
         let eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
@@ -257,7 +279,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                     el.id = el._id;
                 }
                 if (el.number && el.number > 1) {
-                    el.name = `${el.name} (${el.number} people)`;
+                    el.name = `${el.name} ${i18next.t("frontend.elnumber", { count: el.number })}`;
                 }
                 return {
                     ...el,
@@ -429,8 +451,8 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
             .sort("start");
 
         const updatedEvents: EventListEvent[] = events.map((event) => {
-            const startMoment = moment.tz(event.start, event.timezone);
-            const endMoment = moment.tz(event.end, event.timezone);
+            const startMoment = moment.tz(event.start, event.timezone).locale(i18next.language);
+            const endMoment = moment.tz(event.end, event.timezone).locale(i18next.language);
             const isSameDay = startMoment.isSame(endMoment, "day");
 
             return {
@@ -438,10 +460,8 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
                 name: event.name,
                 location: event.location,
                 displayDate: isSameDay
-                    ? startMoment.format("D MMM YYYY")
-                    : `${startMoment.format("D MMM YYYY")} - ${endMoment.format(
-                          "D MMM YYYY",
-                      )}`,
+                    ? startMoment.format("LL")
+                    : `${startMoment.format("LL")} - ${endMoment.format("LL")}`,
                 eventHasConcluded: endMoment.isBefore(
                     moment.tz(event.timezone),
                 ),
@@ -546,7 +566,7 @@ router.get(
                 const events = await Event.find({
                     eventGroup: eventGroup._id,
                 }).sort("start");
-                const string = exportICal(events, eventGroup.name);
+                const string = exportIcal(events, eventGroup.name);
                 res.set("Content-Type", "text/calendar").send(string);
             }
         } catch (err) {
@@ -568,7 +588,7 @@ router.get("/export/event/:eventID", async (req: Request, res: Response) => {
         }).populate("eventGroup");
 
         if (event) {
-            const string = exportICal([event], event.name);
+            const string = exportIcal([event], event.name);
             res.set("Content-Type", "text/calendar").send(string);
         }
     } catch (err) {
@@ -594,7 +614,7 @@ router.get(
                 const events = await Event.find({
                     eventGroup: eventGroup._id,
                 }).sort("start");
-                const string = exportICal(events, eventGroup.name);
+                const string = exportIcal(events, eventGroup.name);
                 res.set("Content-Type", "text/calendar").send(string);
             }
         } catch (err) {

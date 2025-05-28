@@ -1,5 +1,5 @@
 <main class="page">
-  <h2 class="mb-3 pb-2 text-center border-bottom">About {{siteName}}</h2>
+  <h2 class="mb-3 pb-2 text-center border-bottom">{{{t "views.home.about" }}}</h2>
 
   {{#if instanceDescription}}
   <div class="instance-description mb-4">
@@ -9,63 +9,46 @@
 
   {{> instanceRules }}
 
-  <h2 class="mb-3 mt-5 pb-2 text-center border-bottom">About Gathio</h2>
+  <h2 class="mb-3 mt-5 pb-2 text-center border-bottom">{{t "views.home.aboutgathio"}}</h2>
 
-  <p class="lead text-center">Gathio is a simple, federated, privacy-first event hosting platform.</p>
+  <p class="lead text-center">{{t "views.home.intro"}}</p>
 
   <div id="example-event" class="text-center w-100 mt-4 mb-5">
     <img
-      alt="An example event page for a picnic. The page shows the event's location, host, date and time, and description, as well as buttons to save the event to Google Calendar, export it, and open the location in OpenStreetMap and Google Maps."
+      alt="{{t "views.home.imgexample" }}"
       src="images/example-event-2023.png" class="img-fluid w-75 mx-auto shadow-lg rounded">
   </div>
 
-  <h3>Privacy-first</h3>
+  <h3>{{t "views.home.privacytitle" }}</h3>
 
-  <p>There are no accounts on Gathio. When you create an event, we generate a password which allows you to edit the
-    event. Send all your guests the public link, and all your co-hosts the secret editing link containing the password.
-  </p>
+  <p>{{t "views.home.privdesc" }} </p>
 
-  <p>If you supply your email, we'll send you the editing password so you don't lose it - but supplying your email is
-    optional!</p>
+  <p>{{t "views.home.privmail" }}</p>
 
-  <p>If this instance automatically deletes its events, sometime after the event finishes, it's deleted from the
-    database for ever, and your data goes with it.</p>
+  <p>{{t "views.home.autodelete" }}</p>
 
-  <p>Also, Gathio doesn't show you ads, doesn't sell your data, and never sends you unnecessary emails.</p>
+  <p>{{t "views.home.privacy" }} </p>
 
-  <p>But remember: all events are visible to anyone who knows the link, so probably don't use Gathio to plot your
-    surprise birthday party or revolution. Or whatever, you do you.</p>
+  <p>{{t "views.home.attention" }} </p>
 
-  <h3>Configurable</h3>
+  <h3>{{t "views.home.conftitle" }}</h3>
 
-  <p>The <a href="https://gath.io">flagship Gathio instance at gath.io</a> is designed for anyone to create ephemeral,
-    hidden events. Anyone can create an event; events are never displayed anywhere public; and they're deleted 7 days
-    after they end.</p>
+  <p>{{{t "views.home.flagshipsetting" }}}</p>
 
-  <p>But if your community sets up their own instance, you can limit event creation to a specific list of people,
-    display events on a handy list on the homepage, and disable event deletion entirely!</p>
+  <p>{{t "views.home.onpre" }}</p>
 
-  <h3>Federation and self-hosting</h3>
+  <h3>{{t "views.home.fedtitle" }}</h3>
 
-  <p>Gathio can easily be self-hosted, and supports ActivityPub services like Mastodon, Pleroma, and Friendica, allowing
-    you to access events from anywhere on the Fediverse. We encourage you to spin up your own instance for your
-    community. Detailed instructions on <a href="https://docs.gath.io/using-gathio/fediverse/">ActivityPub access</a>
-    and <a href="https://docs.gath.io/running-gathio/installation/">self-hosted installation</a>
-    live on our GitHub wiki.
+  <p>{{{t "views.home.selfhost" }}}</p>
 
-  <h3>Open source</h3>
+  <h3>{{t "views.home.opensource" }}</h3>
 
-  <p>Gathio is delighted to be open source, and is built by a lovely group of people. Leave a question in our <a
-      href="https://github.com/lowercasename/gathio/issues">tracker</a> if you encounter any issues.</p>
+  <p>{{{t "views.home.osdesc" }}}</p>
 
   {{#if showKofi}}
-  <div class="card border-secondary mt-5 mb-3 mx-auto" style="min-width:300px;max-width:50%;">
-    <div class="card-body text-secondary">
-      <p>If you find yourself using and enjoying Gathio, consider buying Raphael a coffee. It'll help keep the project
-        and main site running! <i class="far fa-heart"></i></p>
-      <script type='text/javascript' src='https://ko-fi.com/widgets/widget_2.js'></script>
-      <script
-        type='text/javascript'>kofiwidget2.init('Support Me on Ko-fi', '#46b798', 'Q5Q2O7T5'); kofiwidget2.draw();</script>
+  <div class="card border-success mt-5 mb-3 mx-auto" style="min-width:300px;max-width:50%;">
+    <div class="card-body">
+      <p>{{{t "views.home.sponsor" }}}</p>
     </div>
   </div>
   {{/if}}

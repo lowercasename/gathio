@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { IEventGroup } from "../models/EventGroup.js";
 
 export interface EventListEvent {
@@ -15,7 +16,8 @@ export const bucketEventsByMonth = (
     acc: Record<string, any>[],
     event: EventListEvent,
 ) => {
-    const month = event.startMoment.format("MMMM YYYY");
+    event.startMoment.locale(i18next.language);
+    const month = event.startMoment.format(i18next.t("common.year-month-format" ));
     const matchingBucket = acc.find((bucket) => bucket.title === month);
     if (!matchingBucket) {
         acc.push({

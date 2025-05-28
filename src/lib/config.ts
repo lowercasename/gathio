@@ -3,6 +3,7 @@ import toml from "toml";
 import { exitWithError } from "./process.js";
 import { Response } from "express";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
+import i18next from "i18next";
 
 interface StaticPage {
     title: string;
@@ -21,7 +22,7 @@ export interface GathioConfig {
         email_logo_url: string;
         show_kofi: boolean;
         show_public_event_list: boolean;
-        mail_service: "nodemailer" | "sendgrid" | "none";
+        mail_service: "nodemailer" | "sendgrid" | "mailgun" | "none";
         creator_email_addresses: string[];
     };
     database: {
@@ -36,6 +37,11 @@ export interface GathioConfig {
     };
     sendgrid?: {
         api_key: string;
+    };
+    mailgun?: {
+        api_key: string;
+        api_url: string;
+        domain: string;
     };
     static_pages?: StaticPage[];
 }
@@ -110,59 +116,61 @@ export const instanceRules = (): InstanceRule[] => {
     rules.push(
         config.general.show_public_event_list
             ? {
-                  text: "Public events and groups are displayed on the homepage",
-                  icon: "fas fa-eye",
-              }
+                text: i18next.t("config.instancerule.showpubliceventlist-true"),
+                icon: "fas fa-eye",
+            }
             : {
-                  text: "Events and groups can only be accessed by direct link",
-                  icon: "fas fa-eye-slash",
-              },
+                text: i18next.t("config.instancerule.showpubliceventlist-false"),
+                icon: "fas fa-eye-slash",
+            },
     );
     rules.push(
         config.general.creator_email_addresses?.length
             ? {
-                  text: "Only specific people can create events and groups",
-                  icon: "fas fa-user-check",
-              }
+                text: i18next.t("config.instancerule.creatoremail-true"),
+                icon: "fas fa-user-check",
+            }
             : {
-                  text: "Anyone can create events and groups",
-                  icon: "fas fa-users",
-              },
+                text: i18next.t("config.instancerule.creatoremail-false"),
+                icon: "fas fa-users",
+            },
     );
     rules.push(
         config.general.delete_after_days > 0
             ? {
-                  text: `Events are automatically deleted ${config.general.delete_after_days} days after they end`,
-                  icon: "far fa-calendar-times",
-              }
+                text: i18next.t("config.instancerule.deleteafterdays-true", { days: config.general.delete_after_days } ),
+                icon: "far fa-calendar-times",
+            }
             : {
-                  text: "Events are permanent, and are never automatically deleted",
-                  icon: "far fa-calendar-check",
-              },
+                text: i18next.t("config.instancerule.deleteafterdays-false"),
+                icon: "far fa-calendar-check",
+            },
     );
     rules.push(
         config.general.is_federated
             ? {
-                  text: "This instance federates with other instances using ActivityPub",
-                  icon: "fas fa-globe",
-              }
+                text: i18next.t("config.instancerule.isfederated-true"),
+                icon: "fas fa-globe",
+            }
             : {
-                  text: "This instance does not federate with other instances",
-                  icon: "fas fa-globe",
-              },
+                text: i18next.t("config.instancerule.isfederated-false"),
+                icon: "fas fa-globe",
+            },
     );
     return rules;
 };
 
 export const instanceDescription = (): string => {
     const config = getConfig();
-    const defaultInstanceDescription =
-        "**{{ siteName }}** is running on Gathio — a simple, federated, privacy-first event hosting platform.";
+    const defaultInstanceDescription = markdownToSanitizedHTML(
+        i18next.t("config.defaultinstancedesc", "Welcome to this Gathio instance!")
+    );
     let instanceDescription = defaultInstanceDescription;
+    let instancedescfile = "./static/instance-description-" + i18next.language + ".md";
     try {
-        if (fs.existsSync("./static/instance-description.md")) {
+        if (fs.existsSync(instancedescfile)) {
             const fileBody = fs.readFileSync(
-                "./static/instance-description.md",
+                instancedescfile,
                 "utf-8",
             );
             instanceDescription = markdownToSanitizedHTML(fileBody);
@@ -179,17 +187,35 @@ export const instanceDescription = (): string => {
     }
 };
 
+let _resolvedConfig: GathioConfig | null = null;
 // Attempt to load our global config. Will stop the app if the config file
 // cannot be read (there's no point trying to continue!)
 export const getConfig = (): GathioConfig => {
+    if (_resolvedConfig) {
+        return _resolvedConfig;
+    }
+
     try {
         const config = toml.parse(
             fs.readFileSync("./config/config.toml", "utf-8"),
         ) as GathioConfig;
-        return {
+        const resolvedConfig = {
             ...defaultConfig,
             ...config,
-        };
+        }
+        if (process.env.CYPRESS || process.env.CI) {
+            config.general.mail_service = "none";
+            console.log(
+                "Running in Cypress or CI, not initializing email service.",
+            );
+        } else if (config.general.mail_service === "none") {
+            console.warn(
+                "You have not configured this Gathio instance to send emails! This means that event creators will not receive emails when their events are created, which means they may end up locked out of editing events. Consider setting up an email service.",
+            );
+        }
+
+        _resolvedConfig = resolvedConfig;
+        return resolvedConfig;
     } catch {
         exitWithError(
             "Configuration file not found! Have you renamed './config/config-example.toml' to './config/config.toml'?",
