@@ -43,6 +43,16 @@ smtp_password = ""
 [sendgrid]
 api_key = ""
 
+[mailgun]
+# The base domain you have set up in Mailgun, for example 'mg.gath.io'.
+domain = ""
+# Your Mailgun sending API key for the domain you have set up.
+api_key = ""
+# This will be either https://api.mailgun.net (US) or https://api.eu.mailgun.net (EU)
+# depending on the region in your domain settings.
+api_url = "https://api.mailgun.net"
+
+
 # Links to static pages (for example a privacy policy) or an external community page,
 # which will be displayed in the footer.
 # If paths begin with a slash, they are treated as internal and will open the specified

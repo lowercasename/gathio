@@ -41,6 +41,7 @@
         "ical-generator": "^1.15.4",
         "jimp": "^0.16.13",
         "jsdom": "^22.1.0",
+        "mailgun.js": "^12.0.2",
         "marked": "^12.0.2",
         "moment": "^2.30.1",
         "moment-timezone": "^0.5.45",
