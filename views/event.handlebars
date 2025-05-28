@@ -1,7 +1,7 @@
 <main class="event{{#if editingEnabled}} event--editing{{/if}}">
 {{#if editingEnabled}}
 <div class="event__editing-banner">
-    You are currently editing this event. Do not share this link!
+  {{t "views.event.currentlyediting" }}
 </div>
 {{/if}}
 {{#if eventHasCoverImage}}
@@ -77,7 +77,7 @@
           <span class="fa-li">
             <i class="fas fa-fw fa-users"></i>
           </span>
-          <span class="text-muted">Public link:</span>
+          <span class="text-muted">{{ t "views.event.publiclink" }}:</span>
           <a class="u-url" href="https://{{domain}}/{{eventData.id}}">https://{{domain}}/{{eventData.id}}</a>
           <button type="button" id="copyEventLink" class="eventInformationAction button button--outline-secondary button--sm" data-clipboard-text="https://{{domain}}/{{eventData.id}}">
             <i class="fas fa-copy"></i> {{t "common.copy" }}
@@ -86,7 +86,7 @@
         {{#if isFederated}}
         <li>
           <span class="fa-li fa-fw fediverse-icon"><img src="/images/fediverse-icon.svg" alt="Fediverse Icon" /></span>
-          <span class="text-muted">Fediverse link:</span>
+          <span class="text-muted">{{ t "views.event.fediverselink" }}:</span>
           @{{eventData.id}}@{{domain}}
           <button type="button" id="copyAPLink" class="eventInformationAction button button--outline-secondary button--sm" data-clipboard-text="@{{eventData.id}}@{{domain}}">
             <i class="fas fa-copy"></i> {{t "common.copy" }}
