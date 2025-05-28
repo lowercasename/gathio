@@ -175,7 +175,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                     timezone:
                         moment
                             .tz(event.end, event.timezone)
-                            .format(' (z)',)
+                            .format('(z)',)
                 });
         } else {
             displayDate = i18next.t("frontend.displaydate-days",
