@@ -304,9 +304,13 @@ describe("Events", () => {
             cy.clearAllLocalStorage();
             localStorage.setItem("editTokens", "invalid");
             cy.visit(`/${this.eventID}`).then(() => {
-                expect(localStorage.getItem("editTokens")).to.not.include(
-                    "invalid",
-                );
+            const editTokens = localStorage.getItem("editTokens");
+            if (editTokens !== null) {
+                expect(editTokens).to.not.include("invalid");
+            } else {
+                // If it's null, the invalid token was successfully removed
+                expect(editTokens).to.be.null;
+            }
             });
         });
     });
