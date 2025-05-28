@@ -53,6 +53,7 @@ h3 {
     --color-grey-30: hsl(0, 0%, 30%);
     --color-grey-20: hsl(0, 0%, 20%);
     --color--black: hsl(0, 0%, 10%);
+    --color-orange: #ff8c26;
     --transition: 0.15s ease-in;
 }
 
@@ -213,6 +214,10 @@ h3 {
     line-height: 2rem;
 }
 
+.fediverse-icon img {
+    width: 70%;
+}
+
 /* LAYOUT */
 
 html {
@@ -250,7 +255,7 @@ body > #container {
     padding: 1rem;
 }
 
-#container > #content > main.event > *:not(.event-header-image) {
+#container > #content > main.event > *:not(.event-header-image,.event__editing-banner) {
     margin: 0 1rem;
 }
 
@@ -368,6 +373,19 @@ ul#sidebar__nav a {
 }
 
 /* EVENTS */
+
+#container > section#content.content--editing {
+    border: 6px solid var(--color-orange);
+}
+
+.event__editing-banner {
+    background-color: var(--color-orange);
+    color: #fff;
+    padding: 0.5rem;
+    text-align: center;
+    font-weight: bold;
+    margin: 0;
+}
 
 #genericEventImageContainer {
     height: 150px;

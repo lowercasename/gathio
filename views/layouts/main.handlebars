@@ -57,7 +57,7 @@
       <header id="sidebar">
         {{>sidebar}}
       </header>
-      <section id="content">
+      <section id="content" {{#if editingEnabled}}class="content--editing"{{/if}}>
         {{{body}}}
         <footer>
           {{#if showInstanceInformation}}
