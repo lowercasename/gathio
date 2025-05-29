@@ -199,6 +199,7 @@ router.post("/attendee/provision", async (req, res) => {
   if (!event) return res.sendStatus(404);
 
   const attendee = await prisma.attendee.create({ data: {
+    name: "",                 
     status: "provisioned",
     removalPassword,
     created: new Date(),
@@ -219,6 +220,8 @@ router.post("/attendee/provision", async (req, res) => {
 
 // ATTEND EVENT
 router.post("/attendevent/:eventID", async (req, res) => {
+    console.log("🚀 ~ router.postattendevent  ~ req:", req.params)
+    
   const { eventID } = req.params;
   const { removalPassword, attendeeName, attendeeEmail, attendeeNumber, attendeeVisible } = req.body;
   if (!removalPassword) return res.sendStatus(400);
@@ -242,7 +245,7 @@ router.post("/attendevent/:eventID", async (req, res) => {
     status: "attending",
     name: attendeeName,
     email: attendeeEmail,
-    number: attendeeNumber,
+    number: parseInt(attendeeNumber, 10),
     visibility: attendeeVisible ? 'public' : 'private',
   }});
   addToLog("addEventAttendee", "success", `Attended ${eventID}`);
