@@ -1,298 +1,242 @@
-import { Router, Response, Request } from "express";
+//src/routes/group.ts
+import { Router, Request, Response } from "express";
 import multer from "multer";
-import { generateEditToken, generateEventID } from "../util/generator.js";
-import { validateGroupData } from "../util/validation.js";
 import Jimp from "jimp";
-import { addToLog } from "../helpers.js";
-import EventGroup from "../models/EventGroup.js";
 import { marked } from "marked";
 import { renderPlain } from "../util/markdown.js";
-import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
+import { generateEditToken, generateEventID } from "../util/generator.js";
+import { validateGroupData } from "../util/validation.js";
+import { addToLog } from "../helpers.js";
+import { getConfigMiddleware, checkMagicLink } from "../lib/middleware.js";
+import { PrismaClient } from "@prisma/client";
 
+const router = Router();
+const prisma = new PrismaClient();
+
+// Multer config for image uploads
 const storage = multer.memoryStorage();
-// Accept only JPEG, GIF or PNG images, up to 10MB
 const upload = multer({
-    storage: storage,
+    storage,
     limits: { fileSize: 10 * 1024 * 1024 },
-    fileFilter: function (_, file, cb) {
-        const filetypes = /jpeg|jpg|png|gif/;
-        const mimetype = filetypes.test(file.mimetype);
-        if (!mimetype) {
+    fileFilter: (_req, file, cb) => {
+        if (!/jpeg|jpg|png|gif/.test(file.mimetype)) {
             return cb(new Error("Only JPEG, PNG and GIF images are allowed."));
         }
         cb(null, true);
     },
 });
 
-const router = Router();
-
+// Apply config middleware
 router.use(getConfigMiddleware);
 
+// POST /group - create new event group
 router.post(
     "/group",
     upload.single("imageUpload"),
     checkMagicLink,
     async (req: Request, res: Response) => {
         const { data: groupData, errors } = validateGroupData(req.body);
-        if (errors && errors.length > 0) {
+        if (errors?.length) {
             return res.status(400).json({ errors });
         }
         if (!groupData) {
             return res.status(400).json({
-                errors: [
-                    {
-                        message: "No group data was provided.",
-                    },
-                ],
+                errors: [{ message: "No group data was provided." }],
             });
         }
 
         try {
             const groupID = generateEventID();
             const editToken = generateEditToken();
-            let groupImageFilename;
+            let imageFile: string | null = null;
 
             if (req.file?.buffer) {
-                groupImageFilename = await Jimp.read(req.file.buffer)
-                    .then((img) => {
-                        img.resize(920, Jimp.AUTO) // resize
-                            .quality(80) // set JPEG quality
-                            .write("./public/events/" + groupID + ".jpg"); // save
-                        return groupID + ".jpg";
-                    })
-                    .catch((err) => {
-                        addToLog(
-                            "Jimp",
-                            "error",
-                            "Attempt to edit image failed with error: " + err,
-                        );
-                    });
+                try {
+                    const img = await Jimp.read(req.file.buffer);
+                    await img
+                        .resize(920, Jimp.AUTO)
+                        .quality(80)
+                        .writeAsync(`./public/events/${groupID}.jpg`);
+                    imageFile = `${groupID}.jpg`;
+                } catch (err) {
+                    addToLog(
+                        "Jimp",
+                        "error",
+                        `Group image processing failed: ${err}`,
+                    );
+                }
             }
 
-            const eventGroup = new EventGroup({
-                id: groupID,
-                name: groupData.eventGroupName,
-                description: groupData.eventGroupDescription,
-                image: groupImageFilename,
-                creatorEmail: groupData.creatorEmail,
-                url: groupData.eventGroupURL,
-                hostName: groupData.hostName,
-                editToken: editToken,
-                firstLoad: true,
-                showOnPublicList: groupData.publicBoolean,
+            const created = await prisma.eventGroup.create({
+                data: {
+                    id: groupID,
+                    name: groupData.eventGroupName,
+                    description: groupData.eventGroupDescription,
+                    image: imageFile,
+                    creatorEmail: groupData.creatorEmail,
+                    url: groupData.eventGroupURL,
+                    hostName: groupData.hostName,
+                    editToken,
+                    firstLoad: true,
+                    showOnPublicList: !!groupData.publicBoolean,
+                },
             });
-
-            await eventGroup.save();
 
             addToLog(
                 "createEventGroup",
                 "success",
-                "Event group " + groupID + " created",
+                `Event group ${groupID} created`,
             );
 
-            // Send email with edit link
             if (groupData.creatorEmail) {
                 req.emailService.sendEmailFromTemplate({
                     to: groupData.creatorEmail,
-                    subject: eventGroup.name,
+                    subject: created.name,
                     templateName: "createEventGroup",
                     templateData: {
-                        eventGroupID: eventGroup.id,
-                        editToken: eventGroup.editToken,
+                        eventGroupID: created.id,
+                        editToken: created.editToken,
                     },
                 });
             }
 
             res.status(200).json({
-                id: groupID,
-                editToken: editToken,
-                url: `/group/${groupID}?e=${editToken}`,
+                id: created.id,
+                editToken: created.editToken,
+                url: `/group/${created.id}?e=${created.editToken}`,
             });
         } catch (err) {
             console.error(err);
             addToLog(
-                "createEvent",
+                "createEventGroup",
                 "error",
-                "Attempt to create event failed with error: " + err,
+                `Attempt to create event group failed: ${err}`,
             );
-            return res.status(500).json({
-                errors: [
-                    {
-                        message: err,
-                    },
-                ],
-            });
+            res.status(500).json({ errors: [{ message: String(err) }] });
         }
     },
 );
 
+// PUT /group/:eventGroupID - update existing group
 router.put(
     "/group/:eventGroupID",
     upload.single("imageUpload"),
     async (req: Request, res: Response) => {
         const { data: groupData, errors } = validateGroupData(req.body);
-        if (errors && errors.length > 0) {
-            return res.status(400).json({ errors });
-        }
+        if (errors?.length) return res.status(400).json({ errors });
         if (!groupData) {
-            return res.status(400).json({
-                errors: [
-                    {
-                        message: "No group data was provided.",
-                    },
-                ],
-            });
+            return res
+                .status(400)
+                .json({ errors: [{ message: "No group data." }] });
         }
 
         try {
-            const submittedEditToken = req.body.editToken;
-            const eventGroup = await EventGroup.findOne({
-                id: req.params.eventGroupID,
+            const { eventGroupID } = req.params;
+            const submittedToken = req.body.editToken;
+            const existing = await prisma.eventGroup.findUnique({
+                where: { id: eventGroupID },
             });
-            if (!eventGroup) {
-                return res.status(404).json({
-                    errors: [
-                        {
-                            message: "Event group not found.",
-                        },
-                    ],
-                });
+            if (!existing) {
+                return res
+                    .status(404)
+                    .json({ errors: [{ message: "Group not found." }] });
             }
-
-            if (eventGroup.editToken !== submittedEditToken) {
-                // Token doesn't match
+            if (existing.editToken !== submittedToken) {
                 addToLog(
                     "editEventGroup",
                     "error",
-                    `Attempt to edit event group ${req.params.eventGroupID} failed with error: token does not match`,
+                    `Invalid token for group ${eventGroupID}`,
                 );
-                return res.status(403).json({
-                    errors: [
-                        {
-                            message: "Edit token is invalid.",
-                        },
-                    ],
-                });
+                return res
+                    .status(403)
+                    .json({ errors: [{ message: "Edit token invalid." }] });
             }
-            // Token matches
-            // If there is a new image, upload that first
-            const eventGroupID = req.params.eventGroupID;
-            let eventGroupImageFilename = eventGroup.image;
+
+            let imageFile = existing.image;
             if (req.file?.buffer) {
-                Jimp.read(req.file.buffer)
-                    .then((img) => {
-                        img.resize(920, Jimp.AUTO) // resize
-                            .quality(80) // set JPEG quality
-                            .write(`./public/events/${eventGroupID}.jpg`); // save
-                    })
-                    .catch((err) => {
-                        addToLog(
-                            "Jimp",
-                            "error",
-                            "Attempt to edit image failed with error: " + err,
-                        );
-                    });
-                eventGroupImageFilename = eventGroupID + ".jpg";
+                try {
+                    const img = await Jimp.read(req.file.buffer);
+                    await img
+                        .resize(920, Jimp.AUTO)
+                        .quality(80)
+                        .writeAsync(`./public/events/${eventGroupID}.jpg`);
+                    imageFile = `${eventGroupID}.jpg`;
+                } catch (err) {
+                    addToLog(
+                        "Jimp",
+                        "error",
+                        `Group image update failed: ${err}`,
+                    );
+                }
             }
 
-            const updatedEventGroup = {
-                name: req.body.eventGroupName,
-                description: req.body.eventGroupDescription,
-                url: req.body.eventGroupURL,
-                hostName: req.body.hostName,
-                image: eventGroupImageFilename,
-                showOnPublicList: groupData.publicBoolean,
-            };
-
-            await EventGroup.findOneAndUpdate(
-                { id: req.params.eventGroupID },
-                updatedEventGroup,
-            );
+            await prisma.eventGroup.update({
+                where: { id: eventGroupID },
+                data: {
+                    name: groupData.eventGroupName,
+                    description: groupData.eventGroupDescription,
+                    url: groupData.eventGroupURL,
+                    hostName: groupData.hostName,
+                    image: imageFile,
+                    showOnPublicList: !!groupData.publicBoolean,
+                },
+            });
 
             addToLog(
                 "editEventGroup",
                 "success",
-                "Event group " + req.params.eventGroupID + " edited",
+                `Group ${eventGroupID} updated`,
             );
-
             res.sendStatus(200);
         } catch (err) {
             console.error(err);
             addToLog(
                 "editEventGroup",
                 "error",
-                "Attempt to edit event group " +
-                req.params.eventGroupID +
-                " failed with error: " +
-                err,
+                `Edit group ${req.params.eventGroupID} failed: ${err}`,
             );
-            return res.status(500).json({
-                errors: [
-                    {
-                        message: err,
-                    },
-                ],
-            });
+            res.status(500).json({ errors: [{ message: String(err) }] });
         }
     },
 );
 
-// Accepts a JSON object of event/group IDs mapped to edit tokens.
-// Returns an object of basic group data for each of the IDs
-// which are valid groups and have an edit token which matches.
+// POST /known/groups - return basic info for known groups
 router.post("/known/groups", async (req: Request, res: Response) => {
-    const known = req.body;
-    if (!known) {
-        return res.status(400).json({
-            errors: [
-                {
-                    message: "No known IDs were provided.",
-                },
-            ],
-        });
+    const known = req.body as Record<string, string>;
+    if (!known || typeof known !== "object") {
+        return res
+            .status(400)
+            .json({ errors: [{ message: "No known IDs provided." }] });
     }
 
     try {
-        const knownIDs = Object.keys(known);
-        const groups = await EventGroup.find({
-            id: { $in: knownIDs },
+        const ids = Object.keys(known);
+        const groups = await prisma.eventGroup.findMany({
+            where: { id: { in: ids } },
         });
-        const knownGroups = groups.filter((group) => {
-            return group.editToken === known[group.id];
-        });
-        const groupData = knownGroups.map((group) => {
-            return {
-                id: group.id,
-                name: group.name,
-                description: (
-                    marked.parse(group.description, {
-                        renderer: renderPlain(),
-                    }) as string
-                )
-                    .split(" ")
-                    .splice(0, 40)
-                    .join(" ")
-                    .trim(),
-                image: group.image,
-                editToken: group.editToken,
-                url: `/group/${group.id}`,
-            };
-        });
-        return res.status(200).json(groupData);
+        const valid = groups.filter((g) => g.editToken === known[g.id]);
+        const result = valid.map((g) => ({
+            id: g.id,
+            name: g.name,
+            description: marked
+                .parse(g.description, { renderer: renderPlain() })
+                .split(" ")
+                .slice(0, 40)
+                .join(" ")
+                .trim(),
+            image: g.image,
+            editToken: g.editToken,
+            url: `/group/${g.id}`,
+        }));
+        res.status(200).json(result);
     } catch (err) {
         console.error(err);
         addToLog(
             "getKnownGroups",
             "error",
-            "Attempt to get known groups failed with error: " + err,
+            `Known groups lookup failed: ${err}`,
         );
-        return res.status(500).json({
-            errors: [
-                {
-                    message: err,
-                },
-            ],
-        });
+        res.status(500).json({ errors: [{ message: String(err) }] });
     }
 });
 

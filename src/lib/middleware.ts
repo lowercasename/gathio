@@ -1,43 +1,55 @@
+// src/lib/middleware.ts
+
 import { NextFunction, Request, Response } from "express";
-import MagicLink from "../models/MagicLink.js";
-import getConfig, { GathioConfig } from "../lib/config.js";
+import { PrismaClient } from "@prisma/client";
+import getConfig from "./config.js";
 import { merge as deepMerge } from "ts-deepmerge";
 
+const prisma = new PrismaClient();
+
+/**
+ * Verifies that a valid, unexpired magic link token was provided in the request body.
+ * If no creator_email_addresses are configured, skips the check.
+ */
 export const checkMagicLink = async (
     req: Request,
     res: Response,
     next: NextFunction,
 ) => {
     const config = getConfig();
+    // If no creator emails are set up, we don't require a magic link
     if (!config.general.creator_email_addresses?.length) {
-        // No creator email addresses are configured, so skip the magic link check
         return next();
     }
-    if (!req.body.magicLinkToken) {
+
+    const { magicLinkToken, creatorEmail } = req.body;
+    if (!magicLinkToken) {
         return res.status(400).json({
-            errors: [
-                {
-                    message: "No magic link token was provided.",
-                },
-            ],
+            errors: [{ message: "No magic link token was provided." }],
         });
     }
-    if (!req.body.creatorEmail) {
+    if (!creatorEmail) {
         return res.status(400).json({
-            errors: [
-                {
-                    message: "No creator email was provided.",
-                },
-            ],
+            errors: [{ message: "No creator email was provided." }],
         });
     }
-    const magicLink = await MagicLink.findOne({
-        token: req.body.magicLinkToken,
-        email: req.body.creatorEmail,
-        expiryTime: { $gt: new Date() },
-        permittedActions: "createEvent",
+
+    // Look up any non-expired magic link matching token + email
+    const magicLink = await prisma.magicLink.findFirst({
+        where: {
+            token: magicLinkToken,
+            email: creatorEmail,
+            expiryTime: { gt: new Date() },
+        },
     });
-    if (!magicLink || magicLink.email !== req.body.creatorEmail) {
+
+    // Check that the permittedActions JSON array includes "createEvent"
+    const allowed =
+        magicLink &&
+        Array.isArray(magicLink.permittedActions) &&
+        magicLink.permittedActions.includes("createEvent");
+
+    if (!allowed) {
         return res.status(400).json({
             errors: [
                 {
@@ -47,24 +59,29 @@ export const checkMagicLink = async (
             ],
         });
     }
+
     next();
 };
 
-// Route-specific middleware which injects the config into the request object
-// It can also be used to modify the config based on the request, which
-// we use for Cypress testing.
+/**
+ * Injects the GathioConfig into res.locals.config for every request.
+ * Also allows overriding via a Cypress-provided cookie in CI/testing.
+ */
 export const getConfigMiddleware = (
     req: Request,
     res: Response,
     next: NextFunction,
 ) => {
     const config = getConfig();
+
+    // In Cypress tests, allow overriding via JSON in a cookie
     if (process.env.CYPRESS === "true" && req.cookies?.cypressConfigOverride) {
-        console.log("Overriding config with Cypress config");
+        console.log("Overriding config with Cypress override");
         const override = JSON.parse(req.cookies.cypressConfigOverride);
         res.locals.config = deepMerge(config, override);
         return next();
     }
+
     res.locals.config = config;
     return next();
 };

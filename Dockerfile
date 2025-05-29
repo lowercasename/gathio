@@ -1,19 +1,37 @@
-# Docker builds hang in arm/v7 images, so we use Node 18 to build and Node 20 to run
-# Cf. https://github.com/docker/build-push-action/issues/1071
-FROM node:18-alpine AS BUILD_IMAGE
-WORKDIR /app
-RUN apk add --no-cache python3 build-base
-ADD package.json pnpm-lock.yaml /app/
-RUN npm install -g pnpm
-RUN pnpm install --prod
-COPY . /app/
-# Always exit 0 here because TSC will fail while we're migrating to TypeScript but
-# not everything uses TypeScript
-RUN pnpm run build; exit 0
+# Stage 1: install dependencies, generate Prisma client, and build
+FROM node:18-alpine AS build
 
-# Now we run the app
-FROM node:20-alpine
-ENV NODE_ENV=production
 WORKDIR /app
-COPY --from=BUILD_IMAGE /app ./
-CMD ["npm", "run", "start"]
+
+# Install build tools for native modules & Prisma engines
+RUN apk add --no-cache python3 build-base
+
+# Copy lockfiles and install all dependencies
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm
+RUN pnpm install
+
+# Copy the rest of the source, generate Prisma client, and build
+COPY . .
+RUN pnpm prisma generate
+RUN pnpm run build
+
+# Stage 2: production image
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Only production environment
+ENV NODE_ENV=production
+
+# Copy built assets and node_modules from build stage
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/package.json ./package.json
+
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Start the app
+CMD ["node", "dist/start.js"]

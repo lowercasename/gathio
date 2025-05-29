@@ -1,177 +1,150 @@
 # Installation
 
-Gathio can be set up to run on your own server in two ways - as a self-hosted service, or via Docker.
+Gathio can be set up to run on your own server in two ways – as a self-hosted service, or via Docker.
 
 ## Self-hosting on Linux or macOS
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/en/) v18 or greater
-- [MongoDB](https://www.mongodb.com/docs/manual/administration/install-on-linux/#std-label-install-mdb-community-edition-linux)
+- [Node.js](https://nodejs.org/) v18 or greater
+- [pnpm](https://pnpm.io/) v7 or greater
+- **SQLite** (no separate install required – the `sqlite3` package is pulled in by Prisma)
 
-### Ubuntu
+### Ubuntu / Debian
 
-Let's suppose we're installing on a fresh Ubuntu system.
+Let’s suppose we’re installing on a fresh Ubuntu system.
 
-First, let's get the code:
+1. Clone the code:
 
-```bash
-cd /srv/
-sudo git clone https://github.com/lowercasename/gathio/
-```
+    ```bash
+    cd /srv/
+    sudo git clone https://github.com/lowercasename/gathio.git
+    sudo chown -R $USER:$USER gathio
+    cd gathio
+    ```
 
-We'll need to install [`pnpm`](https://pnpm.io/) for this. It should be installed somewhere accessible by any user account. You may also have to link `/usr/bin/node` and `/usr/bin/nodejs` to be accessible to all users, too.
+2. Install pnpm (if you don’t already have it):
 
-```bash
-export PNPM_HOME="/usr/.pnpm"
-curl -fsSL https://get.pnpm.io/install.sh | sh -
-sudo ln -s /usr/.pnpm/pnpm /usr/bin/pnpm
-# you may also have to link /usr/bin/node or /usr/bin/nodejs to your local copy of node
-```
+    ```bash
+    curl -fsSL https://get.pnpm.io/install.sh | sh -
+    export PATH="$HOME/.local/share/pnpm:$PATH"
+    ```
 
-`pnpm` installation instructions for [other systems](https://pnpm.io/installation) are available.
+3. Install dependencies, build TypeScript, and generate Prisma client:
 
-Now, we'll install the dependencies:
+    ```bash
+    pnpm install
+    pnpm build
+    # Initialize your SQLite database:
+    # create .env file with the default DATABASE_URL
+    echo 'DATABASE_URL="file:./dev.db"' > .env
+    pnpm prisma migrate dev --name init
+    pnpm prisma generate
+    ```
 
-```bash
-cd gathio
-pnpm install
-# as "checkJs" is set to "true" in "tsconfig.json", this fails because of type-checking
-#   however, it builds the output folder "dist", so we can ignore the errors and carry on
-pnpm build
-```
+4. Copy and edit your config:
 
-Let's copy the config file in place:
+    ```bash
+    cp config/config.example.toml config/config.toml
+    $EDITOR config/config.toml
+    ```
 
-```bash
-cp config/config.example.toml config/config.toml
-```
+    - Make sure `database.url` (or `DATABASE_URL` in `.env`) points to your SQLite file.
+    - Update `general.domain`, `general.port`, and any mail-service settings if needed.
 
-We can edit this file if needed, as it contains settings which will need to be adjusted to your local setup to successfully format emails.
+5. (Optionally) Create a dedicated system user:
 
-```bash
-$EDITOR config/config.toml
-```
+    ```bash
+    sudo adduser --system --home /srv/gathio --group gathio
+    sudo chown -R gathio:gathio /srv/gathio
+    ```
 
-Either way, we'll need to have MongoDB running. Follow the [MongoDB Community Edition Ubuntu instructions](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-ubuntu), which are probably what you want.
+6. Create a `systemd` service unit (`/etc/systemd/system/gathio.service`):
 
-Next, let's create a dedicated user:
+    ```ini
+    [Unit]
+    Description=Gathio event hosting
+    After=network.target
 
-```bash
-sudo adduser --home /srv/gathio --disabled-login gathio
-sudo chown -R gathio:gathio /srv/gathio
-# check user can access pnpm
-cd / && sudo -u gathio /usr/bin/pnpm --version
-```
+    [Service]
+    Type=simple
+    WorkingDirectory=/srv/gathio
+    User=gathio
+    Environment=NODE_ENV=production
+    EnvironmentFile=/srv/gathio/.env
+    ExecStart=/usr/bin/pnpm start
+    Restart=on-failure
 
-Next, we'll copy the `systemd` service and reload `systemd`
+    [Install]
+    WantedBy=multi-user.target
+    ```
 
-```bash
-sudo cp gathio.service /etc/systemd/system/
-sudo systemctl daemon-reload
-```
+7. Reload and start the service:
 
-Finally, we can start `gathio`:
+    ```bash
+    sudo systemctl daemon-reload
+    sudo systemctl enable gathio
+    sudo systemctl start gathio
+    ```
 
-```bash
-# start locally in terminal as gathio user
-cd /srv/gathio
-sudo -u gathio /usr/bin/pnpm start
-# start service to run in background
-sudo systemctl start gathio
-```
+8. Verify it’s listening on port 3000:
 
-It should now be listening on port 3000:
+    ```bash
+    sudo netstat -tunap | grep LISTEN
+    ```
 
-```bash
-$ sudo netstat -tunap | grep LISTEN
-[...]
-tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      952/sshd
-tcp6       0      0 :::3000                 :::*                    LISTEN      5655/node
-[...]
-```
-
-(this doesn't mean it's only listening on IPv6, because sockets under Linux are
-dual-stack by default...)
-
-It is now available on port 3000, and we can continue by setting up a reverse
-proxy, which allows us to make it available on another port, or from another
-server; and to enable TLS on the connection (see for example [Linode's guide on
-the subject](https://www.linode.com/docs/web-servers/nginx/use-nginx-reverse-proxy/#configure-nginx))
+9. (Optional) Proxy through Nginx for TLS, custom domains, etc.
 
 ## Docker
 
-The easiest way to run Gathio using Docker is by using the provided
-`docker-compose` configuration. We provide a Docker image at [GitHub
-Container Repository](https://github.com/lowercasename/gathio/pkgs/container/gathio).
+We provide a `docker-compose.yml` ready for Prisma/SQLite:
 
-Clone the Gathio repository onto your system - you'll need a few files from it in a minute.
+1. Create your directories:
 
-Create a few directories on your system:
+    ```bash
+    mkdir -p ~/docker/gathio/{config,static,events,db}
+    ```
 
-- One where you'll keep the Gathio configuration file
-- One where you'll keep Gathio's static files, such as the instance description
-  and any custom pages you may want to create
-- And another where Gathio can store user-uploaded event images.
+2. Copy the example config:
 
-```bash
-mkdir -p ~/docker/gathio-docker/{config,images,static}
-```
+    ```bash
+    cp config/config.example.toml ~/docker/gathio/config/config.toml
+    ```
 
-Copy the example config file from the Gathio repository directory into the Docker config directory,
-renaming it to `config.toml`:
+3. Copy or create `docker-compose.yml` in `~/docker/gathio/` with something like:
 
-```bash
-cp config/config.example.toml ~/docker/gathio-docker/config/config.toml
-```
+    ```yaml
+    version: "3.8"
+    services:
+      gathio:
+        image: ghcr.io/lowercasename/gathio:latest
+        container_name: gathio
+        ports:
+          - "3000:3000"
+        environment:
+          - DATABASE_URL=file:./db/dev.db
+        volumes:
+          - ./config:/app/config
+          - ./static:/app/static
+          - ./events:/app/public/events
+          - ./db:/app/db
+        restart: unless-stopped
+    ```
 
-In the `docker-compose.yml` configuration file, adjust
-the `volumes` configuration to match the three folders you created:
+4. Adjust the toml in `config/config.toml`:
 
-```dockerfile
-volumes:
-    - '/home/username/docker/gathio-docker/config:/app/config'
-    - '/home/username/docker/gathio-docker/static:/app/static'
-    - '/home/username/docker/gathio-docker/images:/app/public/events'
-```
+    ```toml
+    [database]
+    url = "file:./db/dev.db"
 
-As with all things in the Docker universe, two things seperated by a colon
-means `<thing on host computer>:<thing inside Docker container>`.  So
-here you're saying "any files I put in the folder called
-`/home/username/docker/gathio-docker/config` on my computer will appear inside
-the Docker container at the path `/app/static`. Don't change the paths on the
-Docker container side - only the ones on the host side!
+    mail_service = "none"  # or "nodemailer"/"sendgrid"/"mailgun"
+    ```
 
-Adjust any settings in the config file, especially the MongoDB URL, which should
-read as follows for the standard Docker Compose config, and the email service if you
-want to enable it:
+5. Bring up the stack:
 
-```ini
-mongodb_url = "mongodb://mongo:27017/gathio"
-mail_service = "nodemailer"
-```
+    ```bash
+    cd ~/docker/gathio
+    docker-compose up -d
+    ```
 
-You can copy the `docker-compose.yml` file into that same `gathio-docker`
-directory you created - you don't need to keep any of the other source code. Once
-you're done, your directory should look something like this:
-
-```tree
-gathio-docker
-├── config
-│  └── config.toml
-├── docker-compose.yml
-├── images
-└── static
-   ├── instance-description.md
-   └── privacy-policy.md
-```
-
-Finally, from wherever you've put your `docker-compose.yml` file, start the Docker Compose stack:
-
-```bash
-cd gathio-docker
-docker-compose up -d
-```
-
-Gathio should now be running on `http://localhost:3000`, storing data in a
-Docker volume, and storing images on your filesystem.
+Gathio will now be running on `http://localhost:3000`, using SQLite (persisted in your `db/` folder) and storing uploaded images in `events/`.
