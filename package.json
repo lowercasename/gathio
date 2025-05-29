@@ -29,7 +29,6 @@
     "express-handlebars": "^6.0.7",
     "express-session": "^1.18.0",
     "express-validator": "^6.15.0",
-    "generate-rsa-keypair": "^0.2.1",
     "handlebars": "^4.7.8",
     "handlebars-i18next": "^1.0.3",
     "i18next": "^24.2.2",
