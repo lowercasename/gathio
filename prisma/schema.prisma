@@ -54,6 +54,7 @@ model Event {
 
 model Attendee {
   id               String     @id @default(cuid())
+  originalMongoId  String?    @unique
   name             String
   status           String?
   email            String?
