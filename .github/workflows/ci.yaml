@@ -34,21 +34,6 @@ jobs:
             - name: Lint
               run: pnpm lint
 
-            - name: Cypress install
-              uses: cypress-io/github-action@v6
-              with:
-                  # Disable running of tests within install job
-                  runTests: false
-                  build: pnpm run build
-              continue-on-error: true
-
-            - name: Save build folder
-              uses: actions/upload-artifact@v4
-              with:
-                  name: dist
-                  if-no-files-found: error
-                  path: dist
-
     cypress-run:
         runs-on: ubuntu-latest
         needs: install
@@ -60,22 +45,20 @@ jobs:
               uses: pnpm/action-setup@v4
               with:
                   version: 10
-                  run_install: false
 
             - name: Install Node.js
               uses: actions/setup-node@v4
               with:
                 node-version: 22
-                cache: 'pnpm'
+
+            - name: Install dependencies
+              run: pnpm install
 
             - name: Set up config files
               run: cp config/config.example.toml config/config.toml
 
-            - name: Download the build folder
-              uses: actions/download-artifact@v4
-              with:
-                  name: dist
-                  path: dist
+            - name: Build
+              run: pnpm build
 
             - name: Start MongoDB
               uses: supercharge/mongodb-github-action@1.10.0
