@@ -65,6 +65,10 @@ router.post(
     const eventID = generateEventID();
     const editToken = generateEditToken();
     let imageFile: string | null = null;
+    const maxAttendeesNumber =
+      eventData.maxAttendees !== undefined
+        ? parseInt(eventData.maxAttendees, 10)
+        : null;
 
     // process uploaded image
     if (req.file?.buffer) {
@@ -122,7 +126,7 @@ router.post(
           showOnPublicList: !!eventData.publicBoolean,
           usersCanAttend: !!eventData.joinBoolean,
           usersCanComment: !!eventData.interactionBoolean,
-          maxAttendees: eventData.maxAttendees,
+          maxAttendees: maxAttendeesNumber,
           eventGroupId: groupId,
           activityPubActor: JSON.stringify(actor),
           activityPubEvent: JSON.stringify(activityEvent),
