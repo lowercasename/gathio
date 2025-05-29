@@ -166,7 +166,7 @@ export const instanceDescription = (): string => {
         i18next.t("config.defaultinstancedesc", "Welcome to this Gathio instance!")
     );
     let instanceDescription = defaultInstanceDescription;
-    let instancedescfile = "./static/instance-description-" + i18next.language + ".md";
+    const instancedescfile = "./static/instance-description-" + i18next.language + ".md";
     try {
         if (fs.existsSync(instancedescfile)) {
             const fileBody = fs.readFileSync(

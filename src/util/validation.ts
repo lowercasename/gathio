@@ -70,7 +70,7 @@ const validateEmail = (email: string) => {
     if (!email || email.length === 0 || typeof email !== "string") {
         return false;
     }
-    var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 };
 
@@ -82,7 +82,7 @@ const validateUrl = (url: string) => {
     let validUrl;
     try {
         validUrl = new URL(url);
-    } catch (_) {
+    } catch {
         return false;
     }
     return validUrl.protocol === "http:" || validUrl.protocol === "https:";

@@ -8,6 +8,7 @@ import { exitWithError } from "./process.js";
 import Mailgun from "mailgun.js";
 import { IMailgunClient } from "node_modules/mailgun.js/Types/Interfaces/index.js";
 
+type ResponseBodyError = Error & { response: { body: string } };
 const config = getConfig();
 
 type EmailTemplateName =
@@ -22,6 +23,19 @@ type EmailTemplateName =
     | "removeEventAttendee"
     | "subscribed"
     | "unattendEvent";
+
+function isResponseBodyError(err: unknown): err is ResponseBodyError {
+    if (err && typeof err === "object" && "response" in err) {
+        if (
+            err.response &&
+            typeof err.response === "object" &&
+            "body" in err.response
+        ) {
+            return true;
+        }
+    }
+    return false;
+}
 
 export class EmailService {
     nodemailerTransporter: Transporter | undefined = undefined;
@@ -166,11 +180,11 @@ export class EmailService {
                     },
                 );
                 return true;
-            } catch (e: any) {
-                if (e.response) {
-                    console.error(e.response.body);
+            } catch (e) {
+                if (isResponseBodyError(e)) {
+                    console.error("mailgun error", e.response.body);
                 } else {
-                    console.error(e);
+                    console.error("mailgun error", e);
                 }
                 return false;
             }

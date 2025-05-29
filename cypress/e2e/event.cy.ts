@@ -68,7 +68,8 @@ describe("Events", () => {
     it("allows you to attend an event - visible in public list", function () {
         cy.get("button#attendEvent").click();
         cy.get("#attendeeName").type("Test Attendee");
-        cy.get("#attendeeNumber").focus().clear();
+        cy.get("#attendeeNumber").focus();
+        cy.get("#attendeeNumber").clear();
         cy.get("#attendeeNumber").type("2");
         cy.get("form#attendEventForm").submit();
         cy.get("#attendees-alert").should("contain.text", "8 spots remaining");
@@ -81,7 +82,8 @@ describe("Events", () => {
     it("allows you to attend an event - hidden from public list", function () {
         cy.get("button#attendEvent").click();
         cy.get("#attendeeName").type("Test Attendee");
-        cy.get("#attendeeNumber").focus().clear();
+        cy.get("#attendeeNumber").focus();
+        cy.get("#attendeeNumber").clear();
         cy.get("#attendeeNumber").type("2");
         cy.get("#attendeeVisible").uncheck();
         cy.get("form#attendEventForm").submit();
@@ -152,15 +154,24 @@ describe("Events", () => {
 
         // The edit form is the same as the new form, so we can just re-use the same selectors
         // but we need to clear the fields first
-        cy.get("#editEventForm #eventName").focus().clear();
-        cy.get("#editEventForm #eventLocation").focus().clear();
-        cy.get("#editEventForm #eventStart").focus().clear();
-        cy.get("#editEventForm #eventEnd").focus().clear();
-        cy.get("#editEventForm #eventDescription").focus().clear();
-        cy.get("#editEventForm #eventURL").focus().clear();
-        cy.get("#editEventForm #hostName").focus().clear();
-        cy.get("#editEventForm #creatorEmail").focus().clear();
-        cy.get("#editEventForm #maxAttendees").focus().clear();
+        cy.get("#editEventForm #eventName").focus();
+        cy.get("#editEventForm #eventName").clear();
+        cy.get("#editEventForm #eventLocation").focus();
+        cy.get("#editEventForm #eventLocation").clear();
+        cy.get("#editEventForm #eventStart").focus();
+        cy.get("#editEventForm #eventStart").clear();
+        cy.get("#editEventForm #eventEnd").focus();
+        cy.get("#editEventForm #eventEnd").clear();
+        cy.get("#editEventForm #eventDescription").focus();
+        cy.get("#editEventForm #eventDescription").clear();
+        cy.get("#editEventForm #eventURL").focus();
+        cy.get("#editEventForm #eventURL").clear();
+        cy.get("#editEventForm #hostName").focus();
+        cy.get("#editEventForm #hostName").clear();
+        cy.get("#editEventForm #creatorEmail").focus();
+        cy.get("#editEventForm #creatorEmail").clear();
+        cy.get("#editEventForm #maxAttendees").focus();
+        cy.get("#editEventForm #maxAttendees").clear();
 
         cy.get("#editEventForm #eventName").type("Edited Event Name");
         cy.get("#editEventForm #eventLocation").type("Edited Event Location");
@@ -241,7 +252,8 @@ describe("Events", () => {
     it("removes you from the event with a one-click unattend link", function () {
         cy.get("button#attendEvent").click();
         cy.get("#attendeeName").type("Test Attendee");
-        cy.get("#attendeeNumber").focus().clear();
+        cy.get("#attendeeNumber").focus();
+        cy.get("#attendeeNumber").clear();
         cy.get("#attendeeNumber").type("2");
         cy.get("#removalPassword")
             .invoke("val")
@@ -304,13 +316,13 @@ describe("Events", () => {
             cy.clearAllLocalStorage();
             localStorage.setItem("editTokens", "invalid");
             cy.visit(`/${this.eventID}`).then(() => {
-            const editTokens = localStorage.getItem("editTokens");
-            if (editTokens !== null) {
-                expect(editTokens).to.not.include("invalid");
-            } else {
-                // If it's null, the invalid token was successfully removed
-                expect(editTokens).to.be.null;
-            }
+                const editTokens = localStorage.getItem("editTokens");
+                if (editTokens !== null) {
+                    expect(editTokens).to.not.include("invalid");
+                } else {
+                    // If it's null, the invalid token was successfully removed
+                    expect(editTokens).to.be.null;
+                }
             });
         });
     });

@@ -105,7 +105,7 @@ router.get("/events", async (_: Request, res: Response) => {
                       "LL",
                   )}`,
             eventHasConcluded: endMoment.isBefore(moment.tz(event.timezone)),
-            eventGroup: event.eventGroup as any as IEventGroup,
+            eventGroup: event.eventGroup as unknown as IEventGroup,
             startMoment,
             endMoment,
         };
@@ -202,12 +202,12 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                             .format('(z)',)
                 });
         }
-        let eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
-        let eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
-        let parsedStart = moment
+        const eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
+        const eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
+        const parsedStart = moment
             .tz(event.start, event.timezone)
             .format("YYYYMMDD[T]HHmmss");
-        let parsedEnd = moment
+        const parsedEnd = moment
             .tz(event.end, event.timezone)
             .format("YYYYMMDD[T]HHmmss");
         // See: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/datetime-local
@@ -233,11 +233,11 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         ) {
             eventHasBegun = true;
         }
-        let fromNow = moment.tz(event.start, event.timezone).fromNow();
-        let parsedDescription = markdownToSanitizedHTML(event.description);
-        let eventEditToken = event.editToken;
+        const fromNow = moment.tz(event.start, event.timezone).fromNow();
+        const parsedDescription = markdownToSanitizedHTML(event.description);
+        const eventEditToken = event.editToken;
 
-        let escapedName = event.name.replace(/\s+/g, "+");
+        const escapedName = event.name.replace(/\s+/g, "+");
 
         let eventHasCoverImage = false;
         if (event.image) {
@@ -272,7 +272,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 }
             }
         }
-        let eventAttendees = event.attendees
+        const eventAttendees = event.attendees
             ?.sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
             .map((el) => {
                 if (!el.id) {
@@ -295,7 +295,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
             });
 
         let spotsRemaining, noMoreSpots;
-        let numberOfAttendees =
+        const numberOfAttendees =
             eventAttendees?.reduce((acc, attendee) => {
                 if (attendee.status === "attending") {
                     return acc + (attendee.number || 1);
@@ -326,7 +326,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 noMoreSpots = true;
             }
         }
-        let metadata = {
+        const metadata = {
             title: event.name,
             description: (
                 marked.parse(event.description, {

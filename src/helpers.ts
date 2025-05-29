@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import moment from 'moment-timezone';
 import icalGenerator from 'ical-generator';
 import i18next from 'i18next';
