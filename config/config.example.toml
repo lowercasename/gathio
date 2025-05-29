@@ -1,3 +1,4 @@
+#config/config.example.toml
 [general]
 # Your domain goes here. If there is a port it should be 'domain.com:port', but
 # otherwise just 'domain.com'.
@@ -29,10 +30,14 @@ mail_service = "none"
 # creator_email_addresses = ["test@test.com", "admin@test.com"]
 creator_email_addresses = []
 
+# ----------------------
+# Database configuration
+# ----------------------
 [database]
-# Set up for a locally running MongoDB connection. Change this to
-# 'mongodb://mongo:27017/gathio' for a Dockerised connection.
-mongodb_url = "mongodb://localhost:27017/gathio"
+# SQLite database file for local/dev
+url = "file:./dev.db"
+# If using PostgreSQL or another RDBMS, you can instead set:
+# url = env("DATABASE_URL")
 
 [nodemailer]
 smtp_server = ""
