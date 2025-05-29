@@ -41,20 +41,21 @@ model Event {
   privateKey          String?
   showOnPublicList    Boolean                 @default(false)
 
+  // foreign-key side of the EventGroup ⇄ Event relation
   eventGroupId        String?                 
   eventGroup          EventGroup?             @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
 
-  attendees           Attendee[]              @relation(onDelete: Cascade)
-  comments            Comment[]               @relation(onDelete: Cascade)
-  followers           Follower[]              @relation(onDelete: Cascade)
-  activityPubMessages ActivityPubMessage[]    @relation(onDelete: Cascade)
+  // back-relations (no onDelete here)
+  attendees           Attendee[]
+  comments            Comment[]
+  followers           Follower[]
+  activityPubMessages ActivityPubMessage[]
 
   @@index([eventGroupId])
 }
 
 model Attendee {
   id               String     @id @default(cuid())
-  originalMongoId  String?    @unique
   name             String
   status           String?
   email            String?
@@ -63,6 +64,7 @@ model Attendee {
   visibility       Visibility @default(public)
   created          DateTime?  @default(now())
 
+  // foreign-key side of Event ⇄ Attendee
   eventId          String
   event            Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
@@ -79,9 +81,12 @@ model Comment {
   activityId    String?
   actorId       String?
 
+  // foreign-key side of Event ⇄ Comment
   eventId       String
   event         Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  replies       Reply[]   @relation(onDelete: Cascade)
+
+  // replies back-relation
+  replies       Reply[]
 
   @@index([eventId])
 }
@@ -92,6 +97,7 @@ model Reply {
   content    String
   timestamp  DateTime
 
+  // foreign-key side of Comment ⇄ Reply
   commentId  String
   comment    Comment   @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
@@ -105,6 +111,7 @@ model Follower {
   actorJson String?
   name      String?
 
+  // foreign-key side of Event ⇄ Follower
   eventId   String
   event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
@@ -115,6 +122,7 @@ model ActivityPubMessage {
   id        String  @id @default(cuid())
   content   String
 
+  // foreign-key side of Event ⇄ ActivityPubMessage
   eventId   String
   event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
@@ -133,14 +141,16 @@ model EventGroup {
   firstLoad        Boolean       @default(true)
   showOnPublicList Boolean       @default(false)
 
-  events           Event[]       @relation(onDelete: Cascade)
-  subscribers      Subscriber[]  @relation(onDelete: Cascade)
+  // back-relations (no onDelete here)
+  events           Event[]
+  subscribers      Subscriber[]
 }
 
 model Subscriber {
   id           String      @id @default(cuid())
   email        String?
 
+  // foreign-key side of EventGroup ⇄ Subscriber
   eventGroupId String
   eventGroup   EventGroup  @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
 
