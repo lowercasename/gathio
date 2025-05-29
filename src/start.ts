@@ -1,26 +1,36 @@
-import mongoose from "mongoose";
+// src/start.ts
+import { PrismaClient } from "@prisma/client";
 import { getConfig } from "./lib/config.js";
 import app from "./app.js";
 
 const config = getConfig();
+const prisma = new PrismaClient();
 
-mongoose.connect(config.database.mongodb_url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
-mongoose.set("useCreateIndex", true);
-mongoose.set("useFindAndModify", false);
-mongoose.Promise = global.Promise;
-mongoose.connection
-    .on("connected", () => {
-        console.log("Mongoose connection open!");
-    })
-    .on("error", (err: any) => {
-        console.log(`Connection error: ${err.message}`);
-    });
+async function start() {
+  try {
+    await prisma.$connect();
+    console.log("Prisma connected to database!");
+  } catch (err) {
+    console.error("Unable to connect to database:", err);
+    process.exit(1);
+  }
 
-const server = app.listen(config.general.port, () => {
+  const port = parseInt(config.general.port, 10) || 3000;
+  app.listen(port, () => {
     console.log(
-        `Welcome to gathio! The app is now running on http://localhost:${config.general.port}`,
+      `Welcome to gathio! The app is now running on http://localhost:${port}`
     );
+  });
+}
+
+// Gracefully disconnect Prisma on termination signals
+process.on("SIGINT", async () => {
+  await prisma.$disconnect();
+  process.exit(0);
 });
+process.on("SIGTERM", async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+start();
