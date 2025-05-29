@@ -91,19 +91,19 @@ const validateUrl = (url: string) => {
 export const validateEventTime = (start: Date, end: Date): Error | boolean => {
     if (moment(start).isAfter(moment(end))) {
         return {
-            message: i18next.t('util.validation.eventtime.startisafter'),
+            message: i18next.t("util.validation.eventtime.startisafter"),
             field: "eventStart",
         };
     }
     if (moment(start).isBefore(moment())) {
         return {
-            message: i18next.t('util.validation.eventtime.startisbefore'),
+            message: i18next.t("util.validation.eventtime.startisbefore"),
             field: "eventStart",
         };
     }
     if (moment(end).isBefore(moment())) {
         return {
-            message: i18next.t('util.validation.eventtime.endisbefore'),
+            message: i18next.t("util.validation.eventtime.endisbefore"),
             field: "eventEnd",
         };
     }
@@ -131,7 +131,7 @@ export const validateEventData = (
     const errors: Error[] = [];
     if (!validatedData.eventName) {
         errors.push({
-            message: i18next.t('util.validation.eventdata.eventname'),
+            message: i18next.t("util.validation.eventdata.eventname"),
             field: "eventName",
         });
     }
@@ -177,13 +177,17 @@ export const validateEventData = (
     if (validatedData.eventGroupBoolean) {
         if (!validatedData.eventGroupID) {
             errors.push({
-                message: i18next.t("util.validation.eventdata.eventgroupboolean"),
+                message: i18next.t(
+                    "util.validation.eventdata.eventgroupboolean",
+                ),
                 field: "eventGroupID",
             });
         }
         if (!validatedData.eventGroupEditToken) {
             errors.push({
-                message: i18next.t("util.validation.eventdata.eventgroupedittoken"),
+                message: i18next.t(
+                    "util.validation.eventdata.eventgroupedittoken",
+                ),
                 field: "eventGroupEditToken",
             });
         }
@@ -191,7 +195,9 @@ export const validateEventData = (
     if (validatedData.maxAttendeesBoolean) {
         if (!validatedData.maxAttendees) {
             errors.push({
-                message: i18next.t("util.validation.eventdata.maxattendeesboolean"),
+                message: i18next.t(
+                    "util.validation.eventdata.maxattendeesboolean",
+                ),
                 field: "maxAttendees",
             });
         }
@@ -237,7 +243,9 @@ export const validateGroupData = (
     }
     if (!groupData.eventGroupDescription) {
         errors.push({
-            message: i18next.t("util.validation.groupdata.eventgroupdescription"),
+            message: i18next.t(
+                "util.validation.groupdata.eventgroupdescription",
+            ),
             field: "eventGroupDescription",
         });
     }

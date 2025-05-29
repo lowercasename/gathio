@@ -15,35 +15,35 @@ enum Visibility {
 }
 
 model Event {
-  id                  String                  @id @default(cuid())
-  type                String
-  name                String
-  location            String
-  start               DateTime
-  end                 DateTime
-  timezone            String                  @default("Etc/UTC")
-  description         String
-  image               String?
-  url                 String?
-  creatorEmail        String?
-  hostName            String?
-  viewPassword        String?
-  editPassword        String?
-  editToken           String?                 @unique
-  usersCanAttend      Boolean                 @default(false)
-  showUsersList       Boolean                 @default(false)
-  usersCanComment     Boolean                 @default(false)
-  firstLoad           Boolean                 @default(true)
-  maxAttendees        Int?
-  activityPubActor    String?
-  activityPubEvent    String?
-  publicKey           String?
-  privateKey          String?
-  showOnPublicList    Boolean                 @default(false)
+  id               String   @id @default(cuid())
+  type             String
+  name             String
+  location         String
+  start            DateTime
+  end              DateTime
+  timezone         String   @default("Etc/UTC")
+  description      String
+  image            String?
+  url              String?
+  creatorEmail     String?
+  hostName         String?
+  viewPassword     String?
+  editPassword     String?
+  editToken        String?  @unique
+  usersCanAttend   Boolean  @default(false)
+  showUsersList    Boolean  @default(false)
+  usersCanComment  Boolean  @default(false)
+  firstLoad        Boolean  @default(true)
+  maxAttendees     Int?
+  activityPubActor String?
+  activityPubEvent String?
+  publicKey        String?
+  privateKey       String?
+  showOnPublicList Boolean  @default(false)
 
   // foreign-key side of the EventGroup ⇄ Event relation
-  eventGroupId        String?                 
-  eventGroup          EventGroup?             @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
+  eventGroupId String?
+  eventGroup   EventGroup? @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
 
   // back-relations (no onDelete here)
   attendees           Attendee[]
@@ -55,51 +55,51 @@ model Event {
 }
 
 model Attendee {
-  id               String     @id @default(cuid())
-  name             String
-  status           String?
-  email            String?
-  removalPassword  String?    @unique
-  number           Int        @default(1)
-  visibility       Visibility @default(public)
-  created          DateTime?  @default(now())
+  id              String     @id @default(cuid())
+  name            String
+  status          String?
+  email           String?
+  removalPassword String?    @unique
+  number          Int        @default(1)
+  visibility      Visibility @default(public)
+  created         DateTime?  @default(now())
 
   // foreign-key side of Event ⇄ Attendee
-  eventId          String
-  event            Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
 }
 
 model Comment {
-  id            String    @id @default(cuid())
-  author        String
-  content       String
-  timestamp     DateTime
-  activityJson  String?
-  actorJson     String?
-  activityId    String?
-  actorId       String?
+  id           String   @id @default(cuid())
+  author       String
+  content      String
+  timestamp    DateTime
+  activityJson String?
+  actorJson    String?
+  activityId   String?
+  actorId      String?
 
   // foreign-key side of Event ⇄ Comment
-  eventId       String
-  event         Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   // replies back-relation
-  replies       Reply[]
+  replies Reply[]
 
   @@index([eventId])
 }
 
 model Reply {
-  id         String    @id @default(cuid())
-  author     String
-  content    String
-  timestamp  DateTime
+  id        String   @id @default(cuid())
+  author    String
+  content   String
+  timestamp DateTime
 
   // foreign-key side of Comment ⇄ Reply
-  commentId  String
-  comment    Comment   @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId String
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@index([commentId])
 }
@@ -112,47 +112,47 @@ model Follower {
   name      String?
 
   // foreign-key side of Event ⇄ Follower
-  eventId   String
-  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
 }
 
 model ActivityPubMessage {
-  id        String  @id @default(cuid())
-  content   String
+  id      String @id @default(cuid())
+  content String
 
   // foreign-key side of Event ⇄ ActivityPubMessage
-  eventId   String
-  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
 }
 
 model EventGroup {
-  id               String        @id @default(cuid())
+  id               String  @id @default(cuid())
   name             String
   description      String
   image            String?
   url              String?
   creatorEmail     String?
   hostName         String?
-  editToken        String?       @unique
-  firstLoad        Boolean       @default(true)
-  showOnPublicList Boolean       @default(false)
+  editToken        String? @unique
+  firstLoad        Boolean @default(true)
+  showOnPublicList Boolean @default(false)
 
   // back-relations (no onDelete here)
-  events           Event[]
-  subscribers      Subscriber[]
+  events      Event[]
+  subscribers Subscriber[]
 }
 
 model Subscriber {
-  id           String      @id @default(cuid())
-  email        String?
+  id    String  @id @default(cuid())
+  email String?
 
   // foreign-key side of EventGroup ⇄ Subscriber
   eventGroupId String
-  eventGroup   EventGroup  @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
+  eventGroup   EventGroup @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
 
   @@index([eventGroupId])
 }

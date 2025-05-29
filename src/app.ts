@@ -1,16 +1,19 @@
 import express from "express";
 import cookieParser from "cookie-parser";
-import { create as createHandlebars, ExpressHandlebars } from "express-handlebars";
+import {
+    create as createHandlebars,
+    ExpressHandlebars,
+} from "express-handlebars";
 import i18next from "i18next";
 import Backend from "i18next-fs-backend";
-import { LanguageDetector, handle } from 'i18next-http-middleware';
-import { createRequire } from 'module';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import path from 'path';
+import { LanguageDetector, handle } from "i18next-http-middleware";
+import { createRequire } from "module";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import path from "path";
 
 const require = createRequire(import.meta.url);
-const handlebarsI18next = require('handlebars-i18next');
+const handlebarsI18next = require("handlebars-i18next");
 
 // Recreate __dirname in ES module
 const __filename = fileURLToPath(import.meta.url);
@@ -39,7 +42,7 @@ const config = getConfig();
 const getLocalesPath = () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
-    return path.join(__dirname, '..', 'locales');
+    return path.join(__dirname, "..", "locales");
 };
 
 async function initializeApp() {
@@ -52,23 +55,23 @@ async function initializeApp() {
         .use(LanguageDetector)
         .init({
             backend: {
-                loadPath: path.join(getLocalesPath(), '{{lng}}.json'),
+                loadPath: path.join(getLocalesPath(), "{{lng}}.json"),
             },
-            fallbackLng: 'en',
-            preload: ['en', 'ja'],
-            supportedLngs: ['en', 'ja'],
+            fallbackLng: "en",
+            preload: ["en", "ja"],
+            supportedLngs: ["en", "ja"],
             nonExplicitSupportedLngs: true,
-            load: 'languageOnly',
+            load: "languageOnly",
             debug: false,
             detection: {
-                order: ['header', 'cookie'],
-                lookupHeader: 'accept-language',
-                lookupCookie: 'i18next',
-                caches: ['cookie']
+                order: ["header", "cookie"],
+                lookupHeader: "accept-language",
+                lookupCookie: "i18next",
+                caches: ["cookie"],
             },
             interpolation: {
-                escapeValue: false
-            }
+                escapeValue: false,
+            },
         });
 
     app.use(handle(i18next));
@@ -78,25 +81,25 @@ async function initializeApp() {
         const currentLanguage = i18next.language;
         i18next.changeLanguage(req.language);
         const newLanguage = i18next.language;
-// Uncomment for debugging
-//        console.log('Language Change:', {
-//            header: req.headers['accept-language'],
-//            detected: req.language,
-//            currentLanguage: currentLanguage,
-//            newLanguage: newLanguage
-//        });
+        // Uncomment for debugging
+        //        console.log('Language Change:', {
+        //            header: req.headers['accept-language'],
+        //            detected: req.language,
+        //            currentLanguage: currentLanguage,
+        //            newLanguage: newLanguage
+        //        });
         next();
     });
 
-// Uncomment for debugging
-//    app.use((req, res, next) => {
-//        console.log('Language Detection:', {
-//            header: req.headers['accept-language'],
-//            detected: req.language,
-//            i18next: i18next.language
-//        });
-//        next();
-//    });
+    // Uncomment for debugging
+    //    app.use((req, res, next) => {
+    //        console.log('Language Detection:', {
+    //            header: req.headers['accept-language'],
+    //            detected: req.language,
+    //            i18next: i18next.language
+    //        });
+    //        next();
+    //    });
 
     // View engine //
     const hbsInstance = createHandlebars({
@@ -106,25 +109,32 @@ async function initializeApp() {
         helpers: {
             // add i18next helpers
             ...getI18nHelpers(),
-            plural: function (key: string, count: number, options: any) { // Register the plural helper
+            plural: function (key: string, count: number, options: any) {
+                // Register the plural helper
                 const translation = i18next.t(key, { count: count });
                 return translation;
-            }, 
+            },
             json: function (context: object) {
                 return JSON.stringify(context);
-            }
+            },
         },
     });
 
     const emailService = new EmailService(config, hbsInstance);
     emailService.verify();
 
-    app.use((req: express.Request, _: express.Response, next: express.NextFunction) => {
-        req.hbsInstance = hbsInstance;
-        req.emailService = emailService;
-        next()
-        return
-    })
+    app.use(
+        (
+            req: express.Request,
+            _: express.Response,
+            next: express.NextFunction,
+        ) => {
+            req.hbsInstance = hbsInstance;
+            req.emailService = emailService;
+            next();
+            return;
+        },
+    );
 
     // View engine //
     app.engine("handlebars", hbsInstance.engine);
@@ -132,15 +142,15 @@ async function initializeApp() {
     app.set("hbsInstance", hbsInstance);
 
     // calling i18nextHelper
-    if (typeof handlebarsI18next === 'function') {
+    if (typeof handlebarsI18next === "function") {
         handlebarsI18next(hbsInstance.handlebars, i18next);
-    } else if (typeof handlebarsI18next.default === 'function') {
+    } else if (typeof handlebarsI18next.default === "function") {
         handlebarsI18next.default(hbsInstance.handlebars, i18next);
     } else {
-        console.error('handlebars-i18next helper is not properly loaded');
+        console.error("handlebars-i18next helper is not properly loaded");
     }
 
-    i18next.on('languageChanged', function(lng) {
+    i18next.on("languageChanged", function (lng) {
         moment.locale(lng);
     });
 
