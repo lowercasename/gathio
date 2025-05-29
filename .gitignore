@@ -98,3 +98,8 @@ typings/
 
 # DynamoDB Local files
 .dynamodb
+# ignore local SQLite files
+/generated/prisma
+/prisma/dev.db
+/prisma/dev.db-journal
+/gathio-docker/db
