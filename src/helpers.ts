@@ -1,34 +1,37 @@
-import mongoose from 'mongoose';
+// src/helpers.ts
 import moment from 'moment-timezone';
 import icalGenerator from 'ical-generator';
 import i18next from 'i18next';
 import handlebars from 'handlebars';
-import Log from "./models/Log.js";
-import { getConfig } from "./lib/config.js";
-import { IEvent } from "./models/Event.js";
+import { PrismaClient } from '@prisma/client';
+import { getConfig } from './lib/config.js';
+import type { Event as IEvent } from '@prisma/client';
 
+const prisma = new PrismaClient();
 const config = getConfig();
 const domain = config.general.domain;
 const siteName = config.general.site_name;
 
 // LOGGING
-export function addToLog(process: string, status: string, message: string) {
+export async function addToLog(process: string, status: string, message: string) {
   const logEntry = {
     status,
     process,
     message,
     timestamp: new Date(),
   };
-  new Log(logEntry).save().catch(() => {
-    console.log("Error saving log entry!");
-  });
+  try {
+    await prisma.log.create({ data: logEntry });
+  } catch (err) {
+    console.error('Error saving log entry!', err);
+  }
 }
 
-export function exportIcal(events: IEvent | IEvent[], calendarName?: string) {  // Ical -> ICal
-  // Create a new icalGenerator... generator
+// ICal export
+export function exportIcal(events: IEvent | IEvent[], calendarName?: string) {
   const cal = icalGenerator({
     name: calendarName || siteName,
-    timezone: 'UTC'
+    timezone: 'UTC',
   });
 
   const eventArray = Array.isArray(events) ? events : [events];
@@ -40,11 +43,11 @@ export function exportIcal(events: IEvent | IEvent[], calendarName?: string) {  
       summary: event.name,
       description: event.description,
       organizer: {
-        name: event.hostName || "Anonymous",
+        name: event.hostName || 'Anonymous',
         email: event.creatorEmail || 'anonymous@anonymous.com',
       },
       location: event.location,
-      url: 'https://' + domain + '/' + event.id
+      url: `https://${domain}/${event.id}`,
     });
   });
 
@@ -59,15 +62,15 @@ interface I18nHelpers {
 
 export function getI18nHelpers(): I18nHelpers {
   return {
-    t: function(key: string, options?: object) {
+    t(this: any, key: string, options?: object) {
       const translation = i18next.t(key, { ...this, ...options });
       const template = handlebars.compile(translation);
       return template(this);
     },
-    tn: function(key: string, options?: object) {
+    tn(this: any, key: string, options?: object) {
       const translation = i18next.t(key, { count: this.count, ...options });
       const template = handlebars.compile(translation);
       return template(this);
-    }
+    },
   };
 }
