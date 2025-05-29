@@ -103,3 +103,5 @@ typings/
 /prisma/dev.db
 /prisma/dev.db-journal
 /gathio-docker/db
+prisma/migrations/migration_lock.toml
+prisma/migrations/20250529164456_init/migration.sql
