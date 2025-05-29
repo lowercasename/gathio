@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import MagicLink from "../models/MagicLink.js";
-import getConfig, { GathioConfig } from "../lib/config.js";
+import { getConfig } from "../lib/config.js";
 import { merge as deepMerge } from "ts-deepmerge";
 
 export const checkMagicLink = async (

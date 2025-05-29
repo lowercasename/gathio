@@ -25,8 +25,14 @@ jobs:
                 node-version: 22
                 cache: 'pnpm'
 
+            - name: Install dependencies
+              run: pnpm install
+
             - name: Set up config files
               run: cp config/config.example.toml config/config.toml
+
+            - name: Lint
+              run: pnpm lint
 
             - name: Cypress install
               uses: cypress-io/github-action@v6
