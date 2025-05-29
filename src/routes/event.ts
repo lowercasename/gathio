@@ -1,8 +1,14 @@
-import { Router, Response, Request } from "express";
+// src/routes/event.ts
+import { Router, Request, Response } from "express";
 import multer from "multer";
 import Jimp from "jimp";
 import moment from "moment-timezone";
-import { generateEditToken, generateEventID, generateRSAKeypair, hashString } from "../util/generator.js";
+import {
+  generateEditToken,
+  generateEventID,
+  generateRSAKeypair,
+  hashString,
+} from "../util/generator.js";
 import { validateEventData } from "../util/validation.js";
 import { addToLog } from "../helpers.js";
 import {
@@ -18,7 +24,10 @@ import {
 import crypto from "crypto";
 import ical from "ical";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
-import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
+import {
+  checkMagicLink,
+  getConfigMiddleware,
+} from "../lib/middleware.js";
 import { getConfig } from "../lib/config.js";
 import i18next from "i18next";
 import { PrismaClient } from "@prisma/client";
@@ -28,29 +37,33 @@ const prisma = new PrismaClient();
 const config = getConfig();
 const domain = config.general.domain;
 
-// Setup file uploads
+// Multer setup for images and ICS files
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_, file, cb) => {
-    if (!/jpeg|jpg|png|gif/.test(file.mimetype)) cb(new Error("Only JPEG, PNG and GIF images are allowed."));
-    else cb(null, true);
+  fileFilter: (_req, file, cb) => {
+    if (!/jpeg|jpg|png|gif/.test(file.mimetype)) {
+      return cb(new Error("Only JPEG, PNG and GIF images are allowed."));
+    }
+    cb(null, true);
   },
 });
 const icsUpload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_, file, cb) => {
-    if (file.mimetype !== "text/calendar") cb(new Error("Only ICS files are allowed."));
-    else cb(null, true);
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype !== "text/calendar") {
+      return cb(new Error("Only ICS files are allowed."));
+    }
+    cb(null, true);
   },
 });
 
 const router = Router();
 router.use(getConfigMiddleware);
 
-// POST /event - create new event
+// POST /event — create a new event
 router.post(
   "/event",
   upload.single("imageUpload"),
@@ -59,18 +72,16 @@ router.post(
     const { data: eventData, errors } = validateEventData(req.body);
     if (errors?.length) return res.status(400).json({ errors });
     if (!eventData) {
-      return res.status(400).json({ errors: [{ message: "No event data was provided." }] });
+      return res
+        .status(400)
+        .json({ errors: [{ message: "No event data was provided." }] });
     }
 
     const eventID = generateEventID();
     const editToken = generateEditToken();
-    let imageFile: string | null = null;
-    const maxAttendeesNumber =
-      eventData.maxAttendees !== undefined
-        ? parseInt(eventData.maxAttendees, 10)
-        : null;
 
-    // process uploaded image
+    // handle optional image
+    let imageFile: string | null = null;
     if (req.file?.buffer) {
       try {
         const img = await Jimp.read(req.file.buffer);
@@ -82,28 +93,49 @@ router.post(
       }
     }
 
-    // determine group
+    // parse maxAttendees
+    const maxAttendeesNumber =
+      eventData.maxAttendees !== undefined
+        ? parseInt(eventData.maxAttendees, 10)
+        : null;
+
+    // optionally link to a group
     let groupId: string | null = null;
     if (eventData.eventGroupBoolean) {
-      const group = await prisma.eventGroup.findUnique({ where: { id: eventData.eventGroupID } });
+      const group = await prisma.eventGroup.findUnique({
+        where: { id: eventData.eventGroupID },
+      });
       if (group && group.editToken === eventData.eventGroupEditToken) {
         groupId = group.id;
       }
     }
 
-    // prepare ActivityPub data
-    const startUTC = moment.tz(eventData.eventStart, eventData.timezone).toDate();
-    const endUTC = moment.tz(eventData.eventEnd, eventData.timezone).toDate();
+    // prepare ActivityPub actor & event
+    const startUTC = moment
+      .tz(eventData.eventStart, eventData.timezone)
+      .toDate();
+    const endUTC = moment
+      .tz(eventData.eventEnd, eventData.timezone)
+      .toDate();
     const { publicKey, privateKey } = generateRSAKeypair();
     const actor = createActivityPubActor(
-      eventID, domain, publicKey,
+      eventID,
+      domain,
+      publicKey,
       markdownToSanitizedHTML(eventData.eventDescription),
-      eventData.eventName, eventData.eventLocation,
-      imageFile, startUTC, endUTC, eventData.timezone
+      eventData.eventName,
+      eventData.eventLocation,
+      imageFile,
+      startUTC,
+      endUTC,
+      eventData.timezone
     );
     const activityEvent = createActivityPubEvent(
-      eventData.eventName, startUTC, endUTC,
-      eventData.timezone, eventData.eventDescription,
+      eventData.eventName,
+      startUTC,
+      endUTC,
+      eventData.timezone,
+      eventData.eventDescription,
       eventData.eventLocation
     );
 
@@ -128,18 +160,26 @@ router.post(
           usersCanComment: !!eventData.interactionBoolean,
           maxAttendees: maxAttendeesNumber,
           eventGroupId: groupId,
-          activityPubActor: JSON.stringify(actor),
-          activityPubEvent: JSON.stringify(activityEvent),
+          // store JSON‐strings for your ActivityPub objects
+          activityPubActor: actor,
+          activityPubEvent: activityEvent,
           activityPubMessages: {
-            create: [{ id: `https://${domain}/${eventID}/m/featuredPost`, content: JSON.stringify(createFeaturedPost(
-              eventID,
-              eventData.eventName,
-              startUTC,
-              endUTC,
-              eventData.timezone,
-              eventData.eventDescription,
-              eventData.eventLocation
-            )) }],
+            create: [
+              {
+                id: `https://${domain}/${eventID}/m/featuredPost`,
+                content: JSON.stringify(
+                  createFeaturedPost(
+                    eventID,
+                    eventData.eventName,
+                    startUTC,
+                    endUTC,
+                    eventData.timezone,
+                    eventData.eventDescription,
+                    eventData.eventLocation
+                  )
+                ),
+              },
+            ],
           },
           publicKey,
           privateKey,
@@ -147,7 +187,8 @@ router.post(
       });
 
       addToLog("createEvent", "success", `Event ${eventID} created`);
-      // notify creator
+
+      // email the creator
       if (eventData.creatorEmail) {
         req.emailService.sendEmailFromTemplate({
           to: eventData.creatorEmail,
@@ -156,10 +197,15 @@ router.post(
           templateData: { eventID, editToken },
         });
       }
-      // notify group subscribers
+
+      // email any group subscribers
       if (groupId) {
-        const subs = await prisma.subscriber.findMany({ where: { eventGroupId: groupId } });
-        const group = await prisma.eventGroup.findUnique({ where: { id: groupId } });
+        const subs = await prisma.subscriber.findMany({
+          where: { eventGroupId: groupId },
+        });
+        const group = await prisma.eventGroup.findUnique({
+          where: { id: groupId },
+        });
         for (const sub of subs) {
           await req.emailService.sendEmailFromTemplate({
             to: sub.email!,
@@ -176,37 +222,60 @@ router.post(
         }
       }
 
-      res.json({ eventID, editToken, url: `/${eventID}?e=${editToken}` });
-
+      // respond with the public + edit URLs
+      return res.json({
+        eventID,
+        editToken,
+        url: `/${eventID}?e=${editToken}`,
+      });
     } catch (err) {
       console.error(err);
       addToLog("createEvent", "error", `Create failed: ${err}`);
-      res.status(500).json({ errors: [{ message: String(err) }] });
+      return res
+        .status(500)
+        .json({ errors: [{ message: String(err) }] });
     }
   }
 );
 
-// PUT /event/:eventID - update existing event
+// PUT /event/:eventID — edit an existing event
 router.put(
   "/event/:eventID",
   upload.single("imageUpload"),
   async (req: Request, res: Response) => {
     const { data: eventData, errors } = validateEventData(req.body);
     if (errors?.length) return res.status(400).json({ errors });
-    if (!eventData) return res.status(400).json({ errors: [{ message: "No event data." }] });
+    if (!eventData) {
+      return res
+        .status(400)
+        .json({ errors: [{ message: "No event data was provided." }] });
+    }
 
     try {
-      const { eventID } = req.params;
+      const eventID = req.params.eventID;
       const submittedToken = req.body.editToken;
-      const event = await prisma.event.findUnique({ where: { id: eventID } });
-      if (!event) return res.status(404).json({ errors: [{ message: "Event not found." }] });
-      if (event.editToken !== submittedToken) {
-        addToLog("editEvent", "error", `Invalid token for ${eventID}`);
-        return res.status(403).json({ errors: [{ message: "Edit token invalid." }] });
+      const existing = await prisma.event.findUnique({
+        where: { id: eventID },
+        include: { attendees: true },
+      });
+      if (!existing) {
+        return res
+          .status(404)
+          .json({ errors: [{ message: "Event not found." }] });
+      }
+      if (existing.editToken !== submittedToken) {
+        addToLog(
+          "editEvent",
+          "error",
+          `Invalid token for ${eventID}`
+        );
+        return res
+          .status(403)
+          .json({ errors: [{ message: "Edit token is invalid." }] });
       }
 
-      // process optional new image
-      let imageFile = event.image;
+      // handle optional new image
+      let imageFile = existing.image;
       if (req.file?.buffer) {
         try {
           const img = await Jimp.read(req.file.buffer);
@@ -219,9 +288,11 @@ router.put(
       }
 
       // group logic
-      let groupId: string | null = event.eventGroupId;
+      let groupId: string | null = existing.eventGroupId;
       if (eventData.eventGroupBoolean) {
-        const group = await prisma.eventGroup.findUnique({ where: { id: eventData.eventGroupID } });
+        const group = await prisma.eventGroup.findUnique({
+          where: { id: eventData.eventGroupID },
+        });
         if (group && group.editToken === eventData.eventGroupEditToken) {
           groupId = group.id;
         }
@@ -229,12 +300,16 @@ router.put(
         groupId = null;
       }
 
-      // prepare update
-      const startUTC = moment.tz(eventData.eventStart, eventData.timezone).toDate();
-      const endUTC = moment.tz(eventData.eventEnd, eventData.timezone).toDate();
-      const actorObj = event.activityPubActor ? JSON.parse(event.activityPubActor) : null;
-      const eventObj = event.activityPubEvent ? JSON.parse(event.activityPubEvent) : null;
-      const updated = await prisma.event.update({
+      // prepare updated fields
+      const startUTC = moment
+        .tz(eventData.eventStart, eventData.timezone)
+        .toDate();
+      const endUTC = moment
+        .tz(eventData.eventEnd, eventData.timezone)
+        .toDate();
+
+      // update in the database
+      await prisma.event.update({
         where: { id: eventID },
         data: {
           name: eventData.eventName,
@@ -249,156 +324,207 @@ router.put(
           showOnPublicList: !!eventData.publicBoolean,
           usersCanAttend: !!eventData.joinBoolean,
           usersCanComment: !!eventData.interactionBoolean,
-          maxAttendees: eventData.maxAttendeesBoolean ? eventData.maxAttendees : null,
-          eventGroupId: groupId,
-          activityPubActor: actorObj
-            ? JSON.stringify(updateActivityPubActor(
-                actorObj,
-                eventData.eventDescription,
-                eventData.eventName,
-                eventData.eventLocation,
-                imageFile,
-                startUTC,
-                endUTC,
-                eventData.timezone
-              ))
+          maxAttendees: eventData.maxAttendeesBoolean
+            ? parseInt(eventData.maxAttendees, 10)
             : null,
-          activityPubEvent: eventObj
-            ? JSON.stringify(updateActivityPubEvent(
-                eventObj,
-                eventData.eventName,
-                startUTC,
-                endUTC,
-                eventData.timezone
-              ))
+          eventGroupId: groupId,
+          activityPubActor: existing.activityPubActor
+            ? JSON.stringify(
+                updateActivityPubActor(
+                  JSON.parse(existing.activityPubActor),
+                  eventData.eventDescription,
+                  eventData.eventName,
+                  eventData.eventLocation,
+                  imageFile,
+                  startUTC,
+                  endUTC,
+                  eventData.timezone
+                )
+              )
+            : null,
+          activityPubEvent: existing.activityPubEvent
+            ? JSON.stringify(
+                updateActivityPubEvent(
+                  JSON.parse(existing.activityPubEvent),
+                  eventData.eventName,
+                  startUTC,
+                  endUTC,
+                  eventData.timezone
+                )
+              )
             : null,
         },
       });
 
       addToLog("editEvent", "success", `Event ${eventID} updated`);
 
-      // build diffText & broadcast updates (omitted for brevity)
-      // ... same as Mongoose logic, but using updated and prisma follower list ...
+      // (You can re-broadcast to followers or email attendees here if desired…)
 
-      res.sendStatus(200);
+      return res.sendStatus(200);
     } catch (err) {
       console.error(err);
       addToLog("editEvent", "error", `Edit failed: ${err}`);
-      res.status(500).json({ errors: [{ message: String(err) }] });
+      return res
+        .status(500)
+        .json({ errors: [{ message: String(err) }] });
     }
   }
 );
 
-// POST /import/event - import ICS
+// POST /import/event — import from an ICS file
 router.post(
   "/import/event",
   icsUpload.single("icsImportControl"),
   checkMagicLink,
   async (req: Request, res: Response) => {
-    if (!req.file) return res.status(400).json({ errors: [{ message: "No file provided." }] });
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ errors: [{ message: "No file provided." }] });
+    }
 
     const eventID = generateEventID();
     const editToken = generateEditToken();
     const iCalObj = ical.parseICS(req.file.buffer.toString("utf8"));
     const data = iCalObj[Object.keys(iCalObj)[0]];
 
+    // pull organizer email & name if present
     let creatorEmail: string | undefined;
-    if (req.body.creatorEmail) creatorEmail = req.body.creatorEmail;
-    else if (data.organizer) {
-      const org = typeof data.organizer === 'string' ? data.organizer : data.organizer.val;
-      creatorEmail = org.replace(/^MAILTO:/, '');
+    if (req.body.creatorEmail) {
+      creatorEmail = req.body.creatorEmail;
+    } else if (data.organizer) {
+      const val =
+        typeof data.organizer === "string"
+          ? data.organizer
+          : data.organizer.val;
+      creatorEmail = val.replace(/^MAILTO:/, "");
     }
-
     let hostName: string | undefined;
-    if (data.organizer && typeof data.organizer !== 'string') {
-      hostName = data.organizer.params.CN.replace(/"+/g, '');
+    if (data.organizer && typeof data.organizer !== "string") {
+      hostName = data.organizer.params.CN.replace(/"+/g, "");
     }
 
     try {
-      await prisma.event.create({ data: {
-        id: eventID,
-        type: 'public',
-        name: data.summary,
-        location: data.location,
-        start: data.start,
-        end: data.end,
-        timezone: 'Etc/UTC',
-        description: data.description,
-        image: null,
-        creatorEmail,
-        url: null,
-        hostName,
-        editToken,
-        showOnPublicList: false,
-        usersCanAttend: false,
-        usersCanComment: false,
-        firstLoad: true,
-      }});
+      await prisma.event.create({
+        data: {
+          id: eventID,
+          type: "public",
+          name: data.summary,
+          location: data.location,
+          start: data.start as Date,
+          end: data.end as Date,
+          timezone: "Etc/UTC",
+          description: data.description,
+          image: null,
+          creatorEmail,
+          url: null,
+          hostName,
+          editToken,
+          showOnPublicList: false,
+          usersCanAttend: false,
+          usersCanComment: false,
+          firstLoad: true,
+        },
+      });
       addToLog("createEvent", "success", `Imported ${eventID}`);
       if (creatorEmail) {
         req.emailService.sendEmailFromTemplate({
           to: creatorEmail,
-          subject: data.summary || '',
-          templateName: 'createEvent',
+          subject: data.summary || "",
+          templateName: "createEvent",
           templateData: { eventID, editToken },
         });
       }
-      res.json({ eventID, editToken, url: `/${eventID}?e=${editToken}` });
+      return res.json({
+        eventID,
+        editToken,
+        url: `/${eventID}?e=${editToken}`,
+      });
     } catch (err) {
       console.error(err);
       addToLog("createEvent", "error", `Import failed: ${err}`);
-      res.status(500).json({ errors: [{ message: String(err) }] });
+      return res
+        .status(500)
+        .json({ errors: [{ message: String(err) }] });
     }
   }
 );
 
-// DELETE /event/attendee/:eventID?p=removalPassword
+// DELETE /event/attendee/:eventID?p=… — self-remove from an event
 router.delete(
   "/event/attendee/:eventID",
   async (req: Request, res: Response) => {
     const { eventID } = req.params;
-    const removalPassword = String(req.query.p || '');
-    if (!removalPassword) return res.status(400).json({ error: 'Please provide a removal password.' });
+    const removalPassword = String(req.query.p || "");
+    if (!removalPassword) {
+      return res
+        .status(400)
+        .json({ error: "Please provide a removal password." });
+    }
 
     try {
-      const attendee = await prisma.attendee.findFirst({ where: { eventId: eventID, removalPassword } });
-      if (!attendee) return res.status(404).json({ error: 'No attendee found.' });
+      const attendee = await prisma.attendee.findFirst({
+        where: { eventId: eventID, removalPassword },
+      });
+      if (!attendee) {
+        return res
+          .status(404)
+          .json({ error: "No attendee found with that removal password." });
+      }
       await prisma.attendee.delete({ where: { id: attendee.id } });
-      addToLog('unattendEvent', 'success', `Attendee removed from ${eventID}`);
+      addToLog(
+        "unattendEvent",
+        "success",
+        `Attendee removed from event ${eventID}`
+      );
       if (attendee.email) {
         await req.emailService.sendEmailFromTemplate({
           to: attendee.email,
-          subject: i18next.t('routes.removeeventattendeesubject'),
-          templateName: 'unattendEvent',
+          subject: i18next.t("routes.removeeventattendeesubject"),
+          templateName: "unattendEvent",
           templateData: { eventID },
         });
       }
-      res.sendStatus(200);
-    } catch (err) {
-      addToLog('removeEventAttendee', 'error', `Removal failed for ${eventID}: ${err}`);
-      res.status(500).json({ error: 'Unexpected error.' });
+      return res.sendStatus(200);
+    } catch (e) {
+      addToLog(
+        "removeEventAttendee",
+        "error",
+        `Removal failed for ${eventID}: ${e}`
+      );
+      return res
+        .status(500)
+        .json({ error: "An unexpected error occurred." });
     }
   }
 );
 
-// GET /event/:eventID/unattend/:removalPasswordHash
+// GET /event/:eventID/unattend/:removalPasswordHash — one-click unattend from email
 router.get(
   "/event/:eventID/unattend/:removalPasswordHash",
   async (req: Request, res: Response) => {
     const { eventID, removalPasswordHash } = req.params;
-    const attendees = await prisma.attendee.findMany({ where: { eventId: eventID } });
-    const target = attendees.find(a => hashString(a.removalPassword || '') === removalPasswordHash);
-    if (!target) return res.redirect(`/${eventID}`);
+    const attendees = await prisma.attendee.findMany({
+      where: { eventId: eventID },
+    });
+    const target = attendees.find(
+      (a) => hashString(a.removalPassword || "") === removalPasswordHash
+    );
+    if (!target) {
+      return res.redirect(`/${eventID}`);
+    }
     await prisma.attendee.delete({ where: { id: target.id } });
     if (target.email) {
+      // re-fetch event for template data
+      const ev = await prisma.event.findUnique({ where: { id: eventID } });
       await req.emailService.sendEmailFromTemplate({
         to: target.email,
-        subject: `You have been removed from ${target.eventId}`,
-        templateName: 'unattendEvent',
-        templateData: { event: await prisma.event.findUnique({ where: { id: eventID } }) },
+        subject: `You have been removed from ${ev?.name}`,
+        templateName: "unattendEvent",
+        templateData: { event: ev },
       });
     }
-    res.redirect(`/${eventID}?m=unattend`);
+    return res.redirect(`/${eventID}?m=unattend`);
   }
 );
 
