@@ -1,0 +1,163 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Visibility {
+  public
+  private
+}
+
+model Event {
+  id                  String                  @id @default(cuid())
+  type                String
+  name                String
+  location            String
+  start               DateTime
+  end                 DateTime
+  timezone            String                  @default("Etc/UTC")
+  description         String
+  image               String?
+  url                 String?
+  creatorEmail        String?
+  hostName            String?
+  viewPassword        String?
+  editPassword        String?
+  editToken           String?                 @unique
+  usersCanAttend      Boolean                 @default(false)
+  showUsersList       Boolean                 @default(false)
+  usersCanComment     Boolean                 @default(false)
+  firstLoad           Boolean                 @default(true)
+  maxAttendees        Int?
+  activityPubActor    String?
+  activityPubEvent    String?
+  publicKey           String?
+  privateKey          String?
+  showOnPublicList    Boolean                 @default(false)
+
+  eventGroupId        String?                 
+  eventGroup          EventGroup?             @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
+
+  attendees           Attendee[]              @relation(onDelete: Cascade)
+  comments            Comment[]               @relation(onDelete: Cascade)
+  followers           Follower[]              @relation(onDelete: Cascade)
+  activityPubMessages ActivityPubMessage[]    @relation(onDelete: Cascade)
+
+  @@index([eventGroupId])
+}
+
+model Attendee {
+  id               String     @id @default(cuid())
+  name             String
+  status           String?
+  email            String?
+  removalPassword  String?    @unique
+  number           Int        @default(1)
+  visibility       Visibility @default(public)
+  created          DateTime?  @default(now())
+
+  eventId          String
+  event            Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model Comment {
+  id            String    @id @default(cuid())
+  author        String
+  content       String
+  timestamp     DateTime
+  activityJson  String?
+  actorJson     String?
+  activityId    String?
+  actorId       String?
+
+  eventId       String
+  event         Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  replies       Reply[]   @relation(onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model Reply {
+  id         String    @id @default(cuid())
+  author     String
+  content    String
+  timestamp  DateTime
+
+  commentId  String
+  comment    Comment   @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+}
+
+model Follower {
+  id        String  @id @default(cuid())
+  followId  String?
+  actorId   String?
+  actorJson String?
+  name      String?
+
+  eventId   String
+  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model ActivityPubMessage {
+  id        String  @id @default(cuid())
+  content   String
+
+  eventId   String
+  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model EventGroup {
+  id               String        @id @default(cuid())
+  name             String
+  description      String
+  image            String?
+  url              String?
+  creatorEmail     String?
+  hostName         String?
+  editToken        String?       @unique
+  firstLoad        Boolean       @default(true)
+  showOnPublicList Boolean       @default(false)
+
+  events           Event[]       @relation(onDelete: Cascade)
+  subscribers      Subscriber[]  @relation(onDelete: Cascade)
+}
+
+model Subscriber {
+  id           String      @id @default(cuid())
+  email        String?
+
+  eventGroupId String
+  eventGroup   EventGroup  @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
+
+  @@index([eventGroupId])
+}
+
+model Log {
+  id        String   @id @default(cuid())
+  status    String
+  process   String
+  message   String
+  timestamp DateTime
+}
+
+model MagicLink {
+  id               String   @id @default(cuid())
+  email            String
+  token            String   @unique
+  expiryTime       DateTime
+  permittedActions Json
+}
