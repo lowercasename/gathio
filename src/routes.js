@@ -629,22 +629,36 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "success",
                 "Attendee added to event " + req.params.eventID,
             );
-            if (req.body.attendeeEmail) {          
-                req.emailService.sendEmailFromTemplate({
-                    to: req.body.attendeeEmail,
-                    subject: i18next.t("routes.addeventattendeesubject", {eventName: event?.name}),
-                    templateName: "addEventAttendee",
-                    templateData:{
-                        eventID: req.params.eventID,
-                        removalPassword: req.body.removalPassword,
-                        removalPasswordHash: hashString(
-                            req.body.removalPassword,
-                        ),
-                    },
-                }).catch((e) => {
-                    console.error('error sending addEventAttendee email', e.toString());
-                    res.status(500).end();
-                });
+            if (req.body.attendeeEmail) {
+                const inviteToken = attendee.removalPassword;
+                
+                const acceptUrl = `https://${config.general.domain}/event/${event.id}/rsvp?token=${inviteToken}&attendance=accepted`;
+                const declineUrl = `https://${config.general.domain}/event/${event.id}/rsvp?token=${inviteToken}&attendance=declined`;
+
+                req.emailService
+                    .sendEmailFromTemplate({
+                        to: req.body.attendeeEmail,
+                        subject: i18next.t("routes.addeventattendeesubject", {
+                            eventName: event?.name,
+                        }),
+                        templateName: "addEventAttendee",
+                        templateData: {
+                            eventID: req.params.eventID,
+                            removalPassword: req.body.removalPassword,
+                            removalPasswordHash: hashString(
+                                req.body.removalPassword,
+                            ),
+                            acceptUrl,
+                            declineUrl,
+                        },
+                    })
+                    .catch((e) => {
+                        console.error(
+                            "error sending addEventAttendee email",
+                            e.toString(),
+                        );
+                        res.status(500).end();
+                    });
             }
             res.redirect(`/${req.params.eventID}`);
         })

@@ -272,6 +272,78 @@ router.post(
     },
 );
 
+router.get("/event/:eventID/rsvp", async (req: Request, res: Response) => {
+    try {
+        const eventID = req.params.eventID;
+        const token = String(req.query.token || "");
+        const attendance = String(req.query.attendance || "");
+
+        // 1️⃣ Load the Event document
+        const event = await Event.findOne({ id: eventID }).exec();
+        if (!event) {
+            return res.status(404).send("Event not found.");
+        }
+
+        // 2️⃣ Find the matching attendee by removalPassword
+        const attendeeEntry = event.attendees?.find(
+            (a) => a.removalPassword === token,
+        );
+        if (!attendeeEntry) {
+            return res.status(400).send("Invalid RSVP link or token.");
+        }
+
+        // 3️⃣ Update their status (“accepted” → “attending”, otherwise “declined”)
+        if (attendance === "accepted") {
+            attendeeEntry.status = "attending";
+        } else if (attendance === "declined") {
+            attendeeEntry.status = "declined";
+        } else {
+            return res.status(400).send("Invalid attendance value.");
+        }
+
+        // 4️⃣ Persist to the database
+        await event.save();
+
+        // 5️⃣ Notify the host via email
+        try {
+            const hostEmail = event.creatorEmail;
+            if (hostEmail) {
+                const eventUrl = `https://${config.general.domain}/${event.id}`;
+                const attendanceText =
+                    attendeeEntry.status === "attending"
+                        ? "accepted"
+                        : "declined";
+
+                await req.emailService.sendEmailFromTemplate({
+                    to: hostEmail,
+                    subject: `${attendeeEntry.email} has ${attendanceText} your invitation`,
+                    templateName: "rsvpNotification",
+                    templateData: {
+                        hostName: event.hostName || hostEmail.split("@")[0],
+                        attendeeEmail: attendeeEntry.email,
+                        attendance: attendanceText,
+                        eventTitle: event.name,
+                        eventUrl: eventUrl,
+                        siteName: config.general.site_name,
+                    },
+                });
+            }
+        } catch (emailErr) {
+            console.error(
+                "Failed to send RSVP notification to host:",
+                emailErr,
+            );
+            // Don’t block the RSVP flow if email sending fails
+        }
+
+        // 6️⃣ Redirect back to the event page with a success flag
+        return res.redirect(`/${eventID}?rsvp=success`);
+    } catch (err) {
+        console.error("RSVP error:", err);
+        return res.status(500).json({ error: "Unexpected error during RSVP." });
+    }
+});
+
 router.put(
     "/event/:eventID",
     upload.single("imageUpload"),

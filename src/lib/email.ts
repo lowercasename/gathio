@@ -21,7 +21,8 @@ type EmailTemplateName =
     | "eventGroupUpdated"
     | "removeEventAttendee"
     | "subscribed"
-    | "unattendEvent";
+    | "unattendEvent"
+    | "rsvpNotification";
 
 export class EmailService {
     nodemailerTransporter: Transporter | undefined = undefined;
