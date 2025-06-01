@@ -16,6 +16,8 @@ type EventGroupValidationResponse = {
     errors?: Error[];
 };
 
+type AllowPastStart = { allowPastStart?: boolean };
+
 interface EventData {
     eventName: string;
     eventLocation: string;
@@ -88,14 +90,14 @@ const validateUrl = (url: string) => {
     return validUrl.protocol === "http:" || validUrl.protocol === "https:";
 };
 
-export const validateEventTime = (start: Date, end: Date): Error | boolean => {
+export const validateEventTime = (start: Date, end: Date, allowPastStart = false): Error | boolean => {
     if (moment(start).isAfter(moment(end))) {
         return {
             message: i18next.t('util.validation.eventtime.startisafter'),
             field: "eventStart",
         };
     }
-    if (moment(start).isBefore(moment())) {
+    if (!allowPastStart && moment(start).isBefore(moment())) {
         return {
             message: i18next.t('util.validation.eventtime.startisbefore'),
             field: "eventStart",
@@ -119,6 +121,7 @@ export const validateEventTime = (start: Date, end: Date): Error | boolean => {
 
 export const validateEventData = (
     eventData: EventData,
+    { allowPastStart = false }: AllowPastStart = {}
 ): EventValidationResponse => {
     const validatedData: ValidatedEventData = {
         ...eventData,
@@ -156,6 +159,7 @@ export const validateEventData = (
     const timeValidation = validateEventTime(
         new Date(validatedData.eventStart),
         new Date(validatedData.eventEnd),
+        allowPastStart
     );
     if (timeValidation !== true && timeValidation !== false) {
         errors.push({
