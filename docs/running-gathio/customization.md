@@ -33,7 +33,9 @@ The title will appear at the top of the page and in the footer menu.
 
 The instance description is a block of text which appears at the top of the public event list page (which is the home page on instances where `show_public_event_list` is set to `true`) and the 'About' page (which is the home page on instances where `show_public_event_list` is set to `false`).
 
-The instance description is rendered from the Markdown file `static/instance-description.md`; if this file is missing, it will default to a generic line of text.
+The instance description is rendered from the Markdown file `static/instance-description-(LOCALE).md`; if this file is missing, it will default to a generic line of text.
+
+To check the locale that your server is running, you can check the log file which will show what instance description file Gathio is trying to load.
 
 Within the instance description, you can use most Markdown formatting, as on static pages, and also you can supply the template string `{{ siteName }}`, which will be converted to the value of `site_name` as specified in `config.toml`.
 
