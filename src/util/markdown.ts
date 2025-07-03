@@ -4,7 +4,7 @@ import DOMPurify from "dompurify";
 
 // &#63; to ? helper
 function htmlEscapeToText(text: string) {
-    return text.replace(/\&\#[0-9]*;|&amp;/g, function (escapeCode) {
+    return text.replace(/&#[0-9]*;|&amp;/g, function (escapeCode) {
         if (escapeCode.match(/amp/)) {
             return "&";
         }
@@ -17,7 +17,7 @@ function htmlEscapeToText(text: string) {
 // Adapted from https://dustinpfister.github.io/2017/11/19/nodejs-marked/
 
 export const renderPlain = () => {
-    var render = new marked.Renderer();
+    const render = new marked.Renderer();
     // render just the text of a link, strong, em
     render.link = function (href, title, text) {
         return text;
@@ -33,10 +33,10 @@ export const renderPlain = () => {
         return htmlEscapeToText(text) + "\r\n";
     };
     // render nothing for headings, images, and br
-    render.heading = function (text, level) {
+    render.heading = function (_text, _level) {
         return "";
     };
-    render.image = function (href, title, text) {
+    render.image = function (_href, _title, _text) {
         return "";
     };
     render.br = function () {

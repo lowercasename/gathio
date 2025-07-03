@@ -1,16 +1,13 @@
 import fs from "fs";
 import express from "express";
 import { customAlphabet } from "nanoid";
-import randomstring from "randomstring";
 import { frontendConfig, getConfig } from "./lib/config.js";
 import { addToLog } from "./helpers.js";
 import moment from "moment-timezone";
 import crypto from "crypto";
 import request from "request";
 import niceware from "niceware";
-import ical from "ical";
 import fileUpload from "express-fileupload";
-import Jimp from "jimp";
 import schedule from "node-schedule";
 import {
     broadcastCreateMessage,
@@ -23,7 +20,6 @@ import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
 import { hashString } from "./util/generator.js";
 import i18next from "i18next";
-import { EmailService } from "./lib/email.js";
 
 const config = getConfig();
 const domain = config.general.domain;
@@ -40,7 +36,7 @@ const router = express.Router();
 router.use(fileUpload());
 
 // SCHEDULED DELETION
-schedule.scheduleJob("59 23 * * *", function (fireDate) {
+schedule.scheduleJob("59 23 * * *", function (_fireDate) {
     const deleteAfterDays = config.general.delete_after_days;
     if (!deleteAfterDays || deleteAfterDays <= 0) {
         // Deletion is disabled
@@ -61,7 +57,7 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
             oldEvents.forEach((event) => {
                 const deleteEventFromDB = (id) => {
                     Event.remove({ _id: id })
-                        .then((response) => {
+                        .then((_response) => {
                             addToLog(
                                 "deleteOldEvents",
                                 "success",
@@ -109,9 +105,9 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                 // Check if event has ActivityPub fields
                 if (event.activityPubActor && event.activityPubEvent) {
                     // Broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
-                    const guidUpdateObject = crypto
-                        .randomBytes(16)
-                        .toString("hex");
+                    // const guidUpdateObject = crypto
+                    //     .randomBytes(16)
+                    //     .toString("hex");
                     const jsonUpdateObject = JSON.parse(event.activityPubActor);
                     const jsonEventObject = JSON.parse(event.activityPubEvent);
                     // first broadcast AP messages, THEN delete from DB
@@ -119,12 +115,12 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
                         jsonUpdateObject,
                         event.followers,
                         event.id,
-                        function (statuses) {
+                        function (_statuses) {
                             broadcastDeleteMessage(
                                 jsonEventObject,
                                 event.followers,
                                 event.id,
-                                function (statuses) {
+                                function (_statuses) {
                                     deleteEventFromDB(event._id);
                                 },
                             );
@@ -140,10 +136,7 @@ schedule.scheduleJob("59 23 * * *", function (fireDate) {
             addToLog(
                 "deleteOldEvents",
                 "error",
-                "Attempt to delete old event " +
-                    event.id +
-                    " failed with error: " +
-                    err,
+                "Attempt to delete old event failed with error: " + err,
             );
         });
 
@@ -210,7 +203,7 @@ router.post("/deleteimage/:eventID/:editToken", (req, res) => {
                     event.image = "";
                     event
                         .save()
-                        .then((response) => {
+                        .then((_response) => {
                             res.status(200).send("Success");
                         })
                         .catch((err) => {
@@ -232,7 +225,6 @@ router.post("/deleteimage/:eventID/:editToken", (req, res) => {
 
 router.post("/deleteevent/:eventID/:editToken", (req, res) => {
     let submittedEditToken = req.params.editToken;
-    let eventImage;
     Event.findOne({
         id: req.params.eventID,
     })
@@ -246,17 +238,17 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                 }
 
                 // broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
-                const guidUpdateObject = crypto.randomBytes(16).toString("hex");
+                // const guidUpdateObject = crypto.randomBytes(16).toString("hex");
                 const jsonUpdateObject = JSON.parse(event.activityPubActor);
                 // first broadcast AP messages, THEN delete from DB
                 broadcastDeleteMessage(
                     jsonUpdateObject,
                     event.followers,
                     req.params.eventID,
-                    function (statuses) {
+                    function (_statuses) {
                         Event.deleteOne(
                             { id: req.params.eventID },
-                            function (err, raw) {
+                            function (err, _raw) {
                                 if (err) {
                                     res.send(err);
                                     addToLog(
@@ -306,28 +298,37 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                 });
                                 res.end();
 
-                                const attendeeEmails = event?.attendees?.filter(
-                                        (o) =>
-                                            o.status === "attending" &&
-                                            o.email,
-                                    )
-                                    .map((o) => o.email || '') || [];
+                                const attendeeEmails =
+                                    event?.attendees
+                                        ?.filter(
+                                            (o) =>
+                                                o.status === "attending" &&
+                                                o.email,
+                                        )
+                                        .map((o) => o.email || "") || [];
                                 if (attendeeEmails.length) {
                                     console.log(
-                                        "Sending emails to: " +
-                                            attendeeEmails,
+                                        "Sending emails to: " + attendeeEmails,
                                     );
-                                    req.emailService.sendEmailFromTemplate({
-                                        to: attendeeEmails, 
-                                        subject: i18next.t("routes.deleteeventsubject", {eventName: event?.name}),
-                                        templateName: "deleteEvent",
-                                        templateData: {
-                                            eventName: event?.name,
-                                        },
-                                    }).catch((e) => {
-                                        console.error('error sending attendee email', e.toString());
-                                        res.status(500).end();
-                                    });
+                                    req.emailService
+                                        .sendEmailFromTemplate({
+                                            to: attendeeEmails,
+                                            subject: i18next.t(
+                                                "routes.deleteeventsubject",
+                                                { eventName: event?.name },
+                                            ),
+                                            templateName: "deleteEvent",
+                                            templateData: {
+                                                eventName: event?.name,
+                                            },
+                                        })
+                                        .catch((e) => {
+                                            console.error(
+                                                "error sending attendee email",
+                                                e.toString(),
+                                            );
+                                            res.status(500).end();
+                                        });
                                 } else {
                                     console.log("Nothing to send!");
                                 }
@@ -394,7 +395,7 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
 
                 EventGroup.deleteOne(
                     { id: req.params.eventGroupID },
-                    function (err, raw) {
+                    function (err, _raw) {
                         if (err) {
                             res.send(err);
                             addToLog(
@@ -436,7 +437,7 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
                             { $set: { eventGroup: null } },
                             { multi: true },
                         )
-                            .then((response) => {
+                            .then((_response) => {
                                 addToLog(
                                     "deleteEventGroup",
                                     "success",
@@ -629,22 +630,29 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "success",
                 "Attendee added to event " + req.params.eventID,
             );
-            if (req.body.attendeeEmail) {          
-                req.emailService.sendEmailFromTemplate({
-                    to: req.body.attendeeEmail,
-                    subject: i18next.t("routes.addeventattendeesubject", {eventName: event?.name}),
-                    templateName: "addEventAttendee",
-                    templateData:{
-                        eventID: req.params.eventID,
-                        removalPassword: req.body.removalPassword,
-                        removalPasswordHash: hashString(
-                            req.body.removalPassword,
-                        ),
-                    },
-                }).catch((e) => {
-                    console.error('error sending addEventAttendee email', e.toString());
-                    res.status(500).end();
-                });
+            if (req.body.attendeeEmail) {
+                req.emailService
+                    .sendEmailFromTemplate({
+                        to: req.body.attendeeEmail,
+                        subject: i18next.t("routes.addeventattendeesubject", {
+                            eventName: event?.name,
+                        }),
+                        templateName: "addEventAttendee",
+                        templateData: {
+                            eventID: req.params.eventID,
+                            removalPassword: req.body.removalPassword,
+                            removalPasswordHash: hashString(
+                                req.body.removalPassword,
+                            ),
+                        },
+                    })
+                    .catch((e) => {
+                        console.error(
+                            "error sending addEventAttendee email",
+                            e.toString(),
+                        );
+                        res.status(500).end();
+                    });
             }
             res.redirect(`/${req.params.eventID}`);
         })
@@ -688,17 +696,22 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
             );
             // currently this is never called because we don't have the email address
             if (req.body.attendeeEmail) {
-                req.emailService.sendEmailFromTemplate({
-                    to: req.body.attendeeEmail,
-                    subject: i18next.t("routes.removeeventattendeesubject"),
-                    templateName: "removeEventAttendee",
-                    templateData:{
-                        eventName: event.name,
-                    },
-                }).catch((e) => {
-                    console.error('error sending removeEventAttendeeHtml email', e.toString());
-                    res.status(500).end();
-                });
+                req.emailService
+                    .sendEmailFromTemplate({
+                        to: req.body.attendeeEmail,
+                        subject: i18next.t("routes.removeeventattendeesubject"),
+                        templateName: "removeEventAttendee",
+                        templateData: {
+                            eventName: event.name,
+                        },
+                    })
+                    .catch((e) => {
+                        console.error(
+                            "error sending removeEventAttendeeHtml email",
+                            e.toString(),
+                        );
+                        res.status(500).end();
+                    });
             }
             res.writeHead(302, {
                 Location: "/" + req.params.eventID,
@@ -734,17 +747,22 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
             );
             // currently this is never called because we don't have the email address
             if (req.body.attendeeEmail) {
-                req.emailService.sendEmailFromTemplate({
-                    to: req.body.attendeeEmail, 
-                    subject: i18next.t("routes.removeeventattendeesubject"),
-                    templateName: "removeEventAttendee",
-                    templateData: {
-                        eventName: event.name,
-                    },
-                }).catch((e) => {
-                    console.error('error sending removeEventAttendeeHtml email', e.toString());
-                    res.status(500).end();                  
-                });
+                req.emailService
+                    .sendEmailFromTemplate({
+                        to: req.body.attendeeEmail,
+                        subject: i18next.t("routes.removeeventattendeesubject"),
+                        templateName: "removeEventAttendee",
+                        templateData: {
+                            eventName: event.name,
+                        },
+                    })
+                    .catch((e) => {
+                        console.error(
+                            "error sending removeEventAttendeeHtml email",
+                            e.toString(),
+                        );
+                        res.status(500).end();
+                    });
             }
             res.writeHead(302, {
                 Location: "/" + req.params.eventID,
@@ -784,19 +802,24 @@ router.post("/subscribe/:eventGroupID", (req, res) => {
             }
             eventGroup.subscribers.push(subscriber);
             eventGroup.save();
-            req.emailService.sendEmailFromTemplate({
-                to: subscriber.email, 
-                subject: i18next.t("routes.subscribedsubject"),
-                templateName: "subscribed",
-                templateData:{
-                    eventGroupName: eventGroup.name,
-                    eventGroupID: eventGroup.id,
-                    emailAddress: encodeURIComponent(subscriber.email),
-                },
-            }).catch((e) => {
-                console.error('error sending removeEventAttendeeHtml email', e.toString());
-                res.status(500).end();                  
-            });
+            req.emailService
+                .sendEmailFromTemplate({
+                    to: subscriber.email,
+                    subject: i18next.t("routes.subscribedsubject"),
+                    templateName: "subscribed",
+                    templateData: {
+                        eventGroupName: eventGroup.name,
+                        eventGroupID: eventGroup.id,
+                        emailAddress: encodeURIComponent(subscriber.email),
+                    },
+                })
+                .catch((e) => {
+                    console.error(
+                        "error sending removeEventAttendeeHtml email",
+                        e.toString(),
+                    );
+                    res.status(500).end();
+                });
 
             return res.redirect(`/group/${eventGroup.id}`);
         })
@@ -828,7 +851,7 @@ router.get("/unsubscribe/:eventGroupID", (req, res) => {
         { id: req.params.eventGroupID },
         { $pull: { subscribers: { email } } },
     )
-        .then((response) => {
+        .then((_response) => {
             return res.redirect("/");
         })
         .catch((error) => {
@@ -891,37 +914,43 @@ router.post("/post/comment/:eventID", (req, res) => {
                     if (!event) {
                         return res.sendStatus(404);
                     }
-                    
-                    Event.findOne({ id: req.params.eventID }).then(
-                        (event) => {
-                            const attendeeEmails = event.attendees
+
+                    Event.findOne({ id: req.params.eventID }).then((event) => {
+                        const attendeeEmails =
+                            event.attendees
                                 .filter(
-                                    (o) =>
-                                        o.status === "attending" && o.email,
+                                    (o) => o.status === "attending" && o.email,
                                 )
-                                .map((o) => o.email || '')  || [];
-                            if (attendeeEmails.length) {
-                                console.log(
-                                    "Sending emails to: " + attendeeEmails,
-                                );
-                                req.emailService.sendEmailFromTemplate({
-                                    to: event?.creatorEmail || config.general.email,
+                                .map((o) => o.email || "") || [];
+                        if (attendeeEmails.length) {
+                            console.log("Sending emails to: " + attendeeEmails);
+                            req.emailService
+                                .sendEmailFromTemplate({
+                                    to:
+                                        event?.creatorEmail ||
+                                        config.general.email,
                                     bcc: attendeeEmails,
-                                    subject: i18next.t("routes.addeventcommentsubject", { eventName: event?.name }),
+                                    subject: i18next.t(
+                                        "routes.addeventcommentsubject",
+                                        { eventName: event?.name },
+                                    ),
                                     templateName: "addEventComment",
-                                    templateData:{
+                                    templateData: {
                                         eventID: req.params.eventID,
                                         commentAuthor: req.body.commentAuthor,
                                     },
-                                }).catch((e) => {
-                                    console.error('error sending removeEventAttendeeHtml email', e.toString());
-                                    res.status(500).end();                  
+                                })
+                                .catch((e) => {
+                                    console.error(
+                                        "error sending removeEventAttendeeHtml email",
+                                        e.toString(),
+                                    );
+                                    res.status(500).end();
                                 });
-                            } else {
-                                console.log("Nothing to send!");
-                            }
-                        },
-                    );
+                        } else {
+                            console.log("Nothing to send!");
+                        }
+                    });
                     res.writeHead(302, {
                         Location: "/" + req.params.eventID,
                     });
@@ -987,39 +1016,45 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                         event.followers,
                         req.params.eventID,
                     );
-                    Event.findOne({ id: req.params.eventID }).then(
-                        (event) => {
-                            if (!event) {
-                                return res.sendStatus(404);
-                            }
-                            const attendeeEmails = event.attendees
+                    Event.findOne({ id: req.params.eventID }).then((event) => {
+                        if (!event) {
+                            return res.sendStatus(404);
+                        }
+                        const attendeeEmails =
+                            event.attendees
                                 .filter(
-                                    (o) =>
-                                        o.status === "attending" && o.email,
+                                    (o) => o.status === "attending" && o.email,
                                 )
-                                .map((o) => o.email || '') || [];
-                            if (attendeeEmails.length) {
-                                console.log(
-                                    "Sending emails to: " + attendeeEmails,
-                                );
-                                req.emailService.sendEmailFromTemplate({
-                                    to: event?.creatorEmail || config.general.email,
+                                .map((o) => o.email || "") || [];
+                        if (attendeeEmails.length) {
+                            console.log("Sending emails to: " + attendeeEmails);
+                            req.emailService
+                                .sendEmailFromTemplate({
+                                    to:
+                                        event?.creatorEmail ||
+                                        config.general.email,
                                     bcc: attendeeEmails,
-                                    subject: i18next.t("routes.addeventcommentsubject", { eventName: event.name }),
+                                    subject: i18next.t(
+                                        "routes.addeventcommentsubject",
+                                        { eventName: event.name },
+                                    ),
                                     templateName: "addEventComment",
                                     templateData: {
                                         eventID: req.params.eventID,
                                         commentAuthor: req.body.replyAuthor,
                                     },
-                                }).catch((e) => {
-                                    console.error('error sending removeEventAttendeeHtml email', e.toString());
-                                    res.status(500).end();                  
+                                })
+                                .catch((e) => {
+                                    console.error(
+                                        "error sending removeEventAttendeeHtml email",
+                                        e.toString(),
+                                    );
+                                    res.status(500).end();
                                 });
-                            } else {
-                                console.log("Nothing to send!");
-                            }
-                        },
-                    );
+                        } else {
+                            console.log("Nothing to send!");
+                        }
+                    });
                     res.writeHead(302, {
                         Location: "/" + req.params.eventID,
                     });
@@ -1139,7 +1174,7 @@ router.post("/activitypub/inbox", (req, res) => {
             headers: {
                 Accept: activityPubContentType,
                 "Content-Type": activityPubContentType,
-                "User-Agent": `Gathio - ${domain}`
+                "User-Agent": `Gathio - ${domain}`,
             },
         },
         function (error, response, actor) {
@@ -1189,7 +1224,7 @@ router.post("/activitypub/inbox", (req, res) => {
     );
 });
 
-router.use(function (req, res, next) {
+router.use(function (req, res, _next) {
     return res.status(404).render("404", frontendConfig(res));
 });
 
