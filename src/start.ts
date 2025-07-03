@@ -15,11 +15,11 @@ mongoose.connection
     .on("connected", () => {
         console.log("Mongoose connection open!");
     })
-    .on("error", (err: any) => {
+    .on("error", (err: Error) => {
         console.log(`Connection error: ${err.message}`);
     });
 
-const server = app.listen(config.general.port, () => {
+app.listen(config.general.port, () => {
     console.log(
         `Welcome to gathio! The app is now running on http://localhost:${config.general.port}`,
     );

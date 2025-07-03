@@ -190,7 +190,7 @@ router.post(
             privateKey,
         });
         try {
-            const savedEvent = await event.save();
+            await event.save();
             addToLog("createEvent", "success", "Event " + eventID + "created");
             // Send email with edit link
             if (eventData.creatorEmail) {
@@ -201,7 +201,7 @@ router.post(
                     templateData: {
                         eventID,
                         editToken,
-                    }
+                    },
                 });
             }
             // If the event was added to a group, send an email to any group
@@ -236,7 +236,7 @@ router.post(
                                 eventID: event.id,
                                 eventGroupID: eventGroup.id,
                                 emailAddress: encodeURIComponent(emailAddress),
-                            }
+                            },
                         });
                     });
                 } catch (err) {
@@ -245,7 +245,7 @@ router.post(
                         "createEvent",
                         "error",
                         "Attempt to send event group emails failed with error: " +
-                        err,
+                            err,
                     );
                 }
             }
@@ -377,24 +377,24 @@ router.put(
                 eventGroup: isPartOfEventGroup ? eventGroup?._id : null,
                 activityPubActor: event.activityPubActor
                     ? updateActivityPubActor(
-                        JSON.parse(event.activityPubActor),
-                        eventData.eventDescription,
-                        eventData.eventName,
-                        eventData.eventLocation,
-                        eventImageFilename,
-                        startUTC,
-                        endUTC,
-                        eventData.timezone,
-                    )
+                          JSON.parse(event.activityPubActor),
+                          eventData.eventDescription,
+                          eventData.eventName,
+                          eventData.eventLocation,
+                          eventImageFilename,
+                          startUTC,
+                          endUTC,
+                          eventData.timezone,
+                      )
                     : undefined,
                 activityPubEvent: event.activityPubEvent
                     ? updateActivityPubEvent(
-                        JSON.parse(event.activityPubEvent),
-                        eventData.eventName,
-                        startUTC,
-                        endUTC,
-                        eventData.timezone,
-                    )
+                          JSON.parse(event.activityPubEvent),
+                          eventData.eventName,
+                          startUTC,
+                          endUTC,
+                          eventData.timezone,
+                      )
                     : undefined,
             };
             let diffText =
@@ -441,7 +441,9 @@ router.put(
                 "Event " + req.params.eventID + " edited",
             );
             // send update to ActivityPub subscribers
-            const attendees = updatedEventObject.attendees?.filter((el) => el.id);
+            const attendees = updatedEventObject.attendees?.filter(
+                (el) => el.id,
+            );
             // broadcast an identical message to all followers, will show in home timeline
             const guidObject = crypto.randomBytes(16).toString("hex");
             const jsonObject = {
@@ -467,7 +469,7 @@ router.put(
                         "@context": "https://www.w3.org/ns/activitystreams",
                         name: `RSVP to ${event.name}`,
                         type: "Note",
-                        content: `<span class=\"h-card\"><a href="${attendee.id}" class="u-url mention">@<span>${attendee.name}</span></a></span> ${diffText} See here: <a href="https://${res.locals.config?.general.domain}/${req.params.eventID}">https://${res.locals.config?.general.domain}/${req.params.eventID}</a>`,
+                        content: `<span class="h-card"><a href="${attendee.id}" class="u-url mention">@<span>${attendee.name}</span></a></span> ${diffText} See here: <a href="https://${res.locals.config?.general.domain}/${req.params.eventID}">https://${res.locals.config?.general.domain}/${req.params.eventID}</a>`,
                         tag: [
                             {
                                 type: "Mention",
@@ -503,9 +505,9 @@ router.put(
                 "editEvent",
                 "error",
                 "Attempt to edit event " +
-                req.params.eventID +
-                " failed with error: " +
-                err,
+                    req.params.eventID +
+                    " failed with error: " +
+                    err,
             );
             return res.status(500).json({
                 errors: [
