@@ -1,0 +1,3 @@
+onlyBuiltDependencies:
+  - cypress
+sideEffectsCache: false
