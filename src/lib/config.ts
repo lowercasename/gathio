@@ -168,6 +168,7 @@ export const instanceDescription = (): string => {
     let instanceDescription = defaultInstanceDescription;
     const instancedescfile = "./static/instance-description-" + i18next.language + ".md";
     try {
+        console.log("Attempting to load instance description file: "+instancedescfile);
         if (fs.existsSync(instancedescfile)) {
             const fileBody = fs.readFileSync(
                 instancedescfile,
