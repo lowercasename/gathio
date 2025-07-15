@@ -197,9 +197,20 @@ export const getConfig = (): GathioConfig => {
     }
 
     try {
-        const config = toml.parse(
-            fs.readFileSync("./config/config.toml", "utf-8"),
-        ) as GathioConfig;
+        const configFile = fs.readFileSync("./config/config.toml", "utf-8");
+        const overriddenConfigFile = configFile.replace(
+            /\$\{?([a-zA-Z_-]+)}?/g,
+            (_ignored: string, envName: string) => {
+                const envValue = process.env[envName];
+                if (!envValue)
+                    exitWithError(
+                        `Configuration env replacement not found, please set $${envName}`,
+                    );
+
+                return String(envValue);
+            },
+        );
+        const config = toml.parse(overriddenConfigFile) as GathioConfig;
         const resolvedConfig = {
             ...defaultConfig,
             ...config,
