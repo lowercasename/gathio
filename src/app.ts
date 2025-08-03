@@ -20,10 +20,6 @@ import group from "./routes/group.js";
 import staticPages from "./routes/static.js";
 import magicLink from "./routes/magicLink.js";
 import { getI18nHelpers } from "./helpers.js";
-import {
-    activityPubContentType,
-    alternateActivityPubContentType,
-} from "./lib/activitypub.js";
 import moment from "moment";
 import { EmailService } from "./lib/email.js";
 import getConfig from "./lib/config.js";
@@ -157,9 +153,10 @@ async function initializeApp() {
     app.use(express.static("public"));
 
     // Body parser //
-    app.use(express.json({ type: alternateActivityPubContentType }));
-    app.use(express.json({ type: activityPubContentType }));
-    app.use(express.json({ type: "application/json" }));
+    // body-parser middleware does not recognise ld+json or activitypub+json
+    // as JSON content types; the workaround is to use a wildcard.
+    // (cf. https://github.com/expressjs/body-parser/issues/519#issuecomment-2006306234)
+    app.use(express.json({ type: [ "application/*+json", "application/json" ] }));
     app.use(express.urlencoded({ extended: true }));
 
     // Router //
