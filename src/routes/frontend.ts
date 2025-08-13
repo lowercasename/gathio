@@ -237,7 +237,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         const parsedDescription = markdownToSanitizedHTML(event.description);
         const eventEditToken = event.editToken;
 
-        const escapedName = event.name.replace(/\s+/g, "+");
+        const escapedName = encodeURIComponent(event.name);
 
         let eventHasCoverImage = false;
         if (event.image) {
