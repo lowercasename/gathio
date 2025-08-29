@@ -14,7 +14,7 @@
   <div class="col-lg">
       <h3 class="p-name" id="eventName" data-event-id="{{eventData.id}}">{{eventData.name}}</h3>
   </div>
-  <div class="col-lg-3 ml-2 edit-buttons">
+  <div class="col-lg-4 ml-2 edit-buttons">
     {{#if editingEnabled}}
       <button type="button" id="editEvent" class="button button--primary ml-auto d-block" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{t "views.event.edit" }}</button>
     {{/if}}
