@@ -95,7 +95,7 @@ export const validateEventTime = (start: Date, end: Date): Error | boolean => {
             field: "eventStart",
         };
     }
-    if (moment(start).isBefore(moment())) {
+    if (moment(start).isSameOrBefore(moment(), "minute")) {
         return {
             message: i18next.t('util.validation.eventtime.startisbefore'),
             field: "eventStart",
