@@ -506,12 +506,6 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
 
 router.post("/attendee/provision", async (req, res) => {
     const removalPassword = niceware.generatePassphrase(6).join("-");
-    const newAttendee = {
-        status: "provisioned",
-        removalPassword,
-        created: Date.now(),
-    };
-
     const event = await Event.findOne({ id: req.query.eventID }).catch((e) => {
         addToLog(
             "provisionEventAttendee",
@@ -527,6 +521,13 @@ router.post("/attendee/provision", async (req, res) => {
     if (!event) {
         return res.sendStatus(404);
     }
+
+    const newAttendee = {
+        status: "provisioned",
+        removalPassword,
+        created: Date.now(),
+        approved: !event.approveRegistrations, // Auto approve if this event does not require approvals
+    };
 
     event.attendees.push(newAttendee);
     await event.save().catch((e) => {
@@ -617,6 +618,7 @@ router.post("/attendevent/:eventID", async (req, res) => {
                 "attendees.$.visibility": req.body.attendeeVisible
                     ? "public"
                     : "private",
+                // Do not modify approval status here
             },
         },
     )
@@ -654,7 +656,8 @@ router.post("/attendevent/:eventID", async (req, res) => {
                         res.status(500).end();
                     });
             }
-            res.redirect(`/${req.params.eventID}`);
+            // Redirect with ?p so attendee immediately has credential in URL
+            res.redirect(`/${req.params.eventID}?p=${encodeURIComponent(req.body.removalPassword)}`);
         })
         .catch((error) => {
             res.send("Database error, please try again :(");
@@ -780,6 +783,45 @@ router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
                     err,
             );
         });
+});
+
+// Approve an attendee (allow them to view hidden location) when instance requires approval
+router.post("/approveattendee/:eventID/:attendeeID", async (req, res) => {
+    try {
+        const event = await Event.findOne({ id: req.params.eventID });
+        if (!event) {
+            return res.sendStatus(404);
+        }
+        // Require edit token in query (?e=)
+        const editToken = req.query.e;
+        if (!editToken || editToken !== event.editToken) {
+            return res.sendStatus(403);
+        }
+        // Find attendee
+        const attendee = event.attendees?.find((a) => a._id.toString() === req.params.attendeeID);
+        if (!attendee) {
+            return res.sendStatus(404);
+        }
+        attendee.approved = true;
+        await event.save();
+        addToLog(
+            "approveEventAttendee",
+            "success",
+            "Attendee approved in event " + req.params.eventID,
+        );
+    return res.redirect(`/${req.params.eventID}?e=${event.editToken}&m=approved`);
+    } catch (error) {
+        console.error(error);
+        addToLog(
+            "approveEventAttendee",
+            "error",
+            "Attempt to approve attendee in event " +
+                req.params.eventID +
+                " failed with error: " +
+                error,
+        );
+        return res.sendStatus(500);
+    }
 });
 
 /*

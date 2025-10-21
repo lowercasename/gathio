@@ -188,6 +188,7 @@ router.post(
             ],
             publicKey,
             privateKey,
+            approveRegistrations: eventData.approveRegistrationsBoolean && eventData.joinBoolean,
         });
         try {
             await event.save();
@@ -396,6 +397,8 @@ router.put(
                           eventData.timezone,
                       )
                     : undefined,
+                approveRegistrations:
+                    eventData.approveRegistrationsBoolean && eventData.joinBoolean,
             };
             let diffText =
                 "<p>" + i18next.t("routes.event.difftext") + "</p><ul>";

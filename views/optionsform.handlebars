@@ -7,6 +7,12 @@
         {{t "views.join" }}
       </label>
     </div>
+    <div class="form-check ml-4" x-show="document.getElementById('joinCheckbox')?.checked">
+      <input class="form-check-input" type="checkbox" id="approveRegistrationsCheckbox" name="approveRegistrationsCheckbox" {{#if data.approveRegistrationsCheckbox}}checked{{/if}}>
+      <label class="form-check-label" for="approveRegistrationsCheckbox">
+        {{t "views.event.requireapproval" }}
+      </label>
+    </div>
     <div class="form-check">
       <input class="form-check-input" type="checkbox" id="guestlistCheckbox" name="guestlistCheckbox"  {{#if data.guestlistCheckbox}}checked{{/if}}>
       <label class="form-check-label" for="guestlistCheckbox">
@@ -29,6 +35,12 @@
       <input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox" {{#if eventData.usersCanAttend}}checked{{/if}}>
       <label class="form-check-label" for="joinCheckbox">
         {{t "views.join" }}
+      </label>
+    </div>
+    <div class="form-check ml-4" x-show="document.getElementById('joinCheckbox')?.checked">
+      <input class="form-check-input" type="checkbox" id="approveRegistrationsCheckbox" name="approveRegistrationsCheckbox" {{#if eventData.approveRegistrations}}checked{{/if}}>
+      <label class="form-check-label" for="approveRegistrationsCheckbox">
+        {{t "views.event.requireapproval" }}
       </label>
     </div>
     <div class="form-check">

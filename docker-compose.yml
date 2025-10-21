@@ -4,9 +4,13 @@ volumes:
 services:
     gathio:
         container_name: gathio-app
-        image: ghcr.io/lowercasename/gathio:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
         links:
             - mongo
+        environment:
+            - NODE_ENV=production
         ports:
             - 3000:3000
         volumes:
@@ -17,6 +21,26 @@ services:
             - ./gathio-docker/static:/app/static
             # The path to Gathio's user-uploaded event images folder - change to match your system
             - ./gathio-docker/images:/app/public/events
+        # Use Dockerfile default CMD (npm run start); build already performed in multi-stage.
+    gathio-dev:
+        container_name: gathio-app-dev
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        links:
+            - mongo
+        ports:
+            - 3001:3000
+        environment:
+            - NODE_ENV=development
+        volumes:
+            - ./gathio-docker/config:/app/config
+            - ./gathio-docker/static:/app/static
+            - ./gathio-docker/images:/app/public/events
+            - ./src:/app/src
+            - ./views:/app/views
+            - ./locales:/app/locales
+        command: pnpm run dev
     mongo:
         container_name: gathio-db
         image: mongo:latest

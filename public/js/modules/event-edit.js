@@ -46,6 +46,7 @@ function editEventForm() {
             joinCheckbox: window.eventData.usersCanAttend,
             maxAttendeesCheckbox: window.eventData.maxAttendees !== null,
             maxAttendees: window.eventData.maxAttendees,
+            approveRegistrationsCheckbox: window.eventData.approveRegistrations,
         },
         errors: [],
         submitting: false,
@@ -64,6 +65,7 @@ function editEventForm() {
             this.data.maxAttendeesCheckbox =
                 window.eventData.maxAttendees !== null;
             this.data.publicCheckbox = window.eventData.showOnPublicList;
+            this.data.approveRegistrationsCheckbox = window.eventData.approveRegistrations;
         },
         updateEventEnd() {
             if (this.data.eventEnd === "" || this.data.eventEnd < this.data.eventStart) {

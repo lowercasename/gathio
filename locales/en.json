@@ -199,6 +199,9 @@
     "views.event.started": "Started",
     "views.event.welcome": "Welcome to your event!",
     "views.event.currentlyediting": "You are currently editing this event. Do not share this link!",
+    "views.event.approveattendee": "Approve attendee",
+    "views.event.pending": "Pending",
+    "views.event.requireapproval": "Require host approvals for attendees to see location",
     "views.eventgroup.about": "About",
     "views.eventgroup.addevent": "To link an existing event to this group, copy and paste the two codes below into the 'Event Group' box when creating a new event or editing an existing event.",
     "views.eventgroup.del": "Delete this event group",
@@ -307,5 +310,7 @@
     "views.publiceventlist.numoevents_zero": "No event",
     "views.publiceventlist.pastevents": "Past events",
     "views.publiceventlist.upcomingevents": "Upcoming events",
-    "views.right": "Get it right!"
+    "views.right": "Get it right!",
+    "views.event.location_hidden": "Location hidden until approved",
+    "views.event.location_hidden_desc": "Your registration is pending approval. Once approved, revisit this page using your secret link (?p= parameter) to view the event address."
 }

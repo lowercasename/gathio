@@ -25,6 +25,11 @@
     {{message}}
 </div>
 {{/if}}
+{{#if viewerRegisteredUnapproved}}
+<div class="alert alert-warning mt-3" role="alert">
+  {{t "views.event.location_hidden" }} – {{t "views.event.location_hidden_desc" }}
+</div>
+{{/if}}
 <div id="event__basics">
   <div class="card" id="event__data">
     <div class="card-body">
@@ -33,7 +38,10 @@
           <span class="fa-li">
             <i class="fas fa-map-marker-alt"></i>
           </span>
-          <span class="p-location">{{eventData.location}}</span>
+            <span class="p-location">{{eventData.location}}</span>
+          {{#unless viewerApprovedForLocation}}
+            <div class="small text-muted">{{t "views.event.location_hidden_desc" }}</div>
+          {{/unless}}
         </li>
         <li>
           <span class="fa-li">
@@ -96,21 +104,24 @@
       </ul>
     </div> <!-- .card-body -->
   </div> <!-- .card#event__data -->
+  
   <aside id="event__actions">
-    <div class="button-stack" role="group" aria-label="Event actions">
-      <a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{parsedLocation}}&ctz={{timezone}}" class="button button--outline-secondary button--sm">
-        <i class="far fa-calendar-plus"></i> {{t "views.event.addtoGC" }}
-      </a>
-      <button type="button" id="exportICS" class="button button--outline-secondary button--sm" data-event-id="{{eventData.id}}">
-        <i class="fas fa-download"></i> {{t "views.event.ICSexport" }}
-      </button>
-      <a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="button button--outline-secondary button--sm">
-        <i class="fas fa-map-marked"></i> {{t "views.event.showonGM" }}
-      </a>
-      <a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="button button--outline-secondary button--sm">
-        <i class="fas fa-map-marked"></i> {{t "views.event.showonOM" }}
-      </a>
-    </div>
+    {{#if viewerApprovedForLocation}}
+      <div class="button-stack" role="group" aria-label="Event actions">
+        <a href="http://www.google.com/calendar/event?action=TEMPLATE&dates={{parsedStart}}%2F{{parsedEnd}}&text={{escapedName}}&location={{calendarLocationParam}}&ctz={{timezone}}" class="button button--outline-secondary button--sm" title="{{t "views.event.location_hidden" }}">
+          <i class="far fa-calendar-plus"></i> {{t "views.event.addtoGC" }}
+        </a>
+        <button type="button" id="exportICS" class="button button--outline-secondary button--sm" data-event-id="{{eventData.id}}">
+          <i class="fas fa-download"></i> {{t "views.event.ICSexport" }}
+        </button>
+        <a target="_blank" href="http://maps.google.com/?q={{parsedLocation}}" class="button button--outline-secondary button--sm" title="{{t "views.event.location_hidden" }}">
+          <i class="fas fa-map-marked"></i> {{t "views.event.showonGM" }}
+        </a>
+        <a target="_blank" href="https://www.openstreetmap.org/search?query={{parsedLocation}}" class="button button--outline-secondary button--sm" title="{{t "views.event.location_hidden" }}">
+          <i class="fas fa-map-marked"></i> {{t "views.event.showonOM" }}
+        </a>
+      </div>
+    {{/if}}
 
     {{#unless editingEnabled}}
         <button type="button" id="editEvent" class="button button--outline-secondary button--sm" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{t "views.eventgroup.editmode" }}</button>
@@ -160,11 +171,45 @@
     {{#if numberOfAttendees}}
       <ul class="attendeesList">
         {{#each visibleAttendees}}
-          <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}><span class="attendee-name">{{this.name}}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="{{t "views.event.removeuser" }}"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+          <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}}>
+            <span class="attendee-name">{{this.name}}</span>
+            {{#if ../approveRegistrations}}
+              {{#unless this.approved}}
+                <span class="badge badge-warning">{{t "views.event.pending" }}</span>
+              {{/unless}}
+            {{/if}}
+            {{#if ../editingEnabled}}
+              {{#if ../approveRegistrations}}
+                {{#unless this.approved}}
+                  <form class="d-inline" method="post" action="/approveattendee/{{../eventData.id}}/{{this._id}}?e={{../eventData.editToken}}">
+                    <button type="submit" class="button button--outline-secondary button--sm" title="Approve attendee"><i class="fas fa-check"></i></button>
+                  </form>
+                {{/unless}}
+              {{/if}}
+              <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="{{t "views.event.removeuser" }}"><i class="fas fa-user-times"></i></a>
+            {{/if}}
+          </li>
         {{/each}}
         {{#if editingEnabled}}
           {{#each hiddenAttendees}}
-            <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}} class="hidden-attendee"><span class="attendee-name">{{this.name}} {{t "views.event.hidden" }}</span>{{#if ../editingEnabled}} <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="{{t "views.event.removeuser" }}"><i class="fas fa-user-times"></i></a>{{/if}}</li>
+            <li{{#if ../editingEnabled}} data-attendee-name="{{this.name}}" data-attendee-id="{{this._id}}"{{/if}} class="hidden-attendee">
+              <span class="attendee-name">{{this.name}} {{t "views.event.hidden" }}</span>
+              {{#if ../approveRegistrations}}
+                {{#unless this.approved}}
+                  <span class="badge badge-warning">{{t "views.event.pending" }}</span>
+                {{/unless}}
+              {{/if}}
+              {{#if ../editingEnabled}}
+                {{#if ../approveRegistrations}}
+                  {{#unless this.approved}}
+                    <form class="d-inline" method="post" action="/approveattendee/{{../eventData.id}}/{{this._id}}?e={{../eventData.editToken}}">
+                      <button type="submit" class="button button--outline-secondary button--sm" title="Approve attendee"><i class="fas fa-check"></i></button>
+                    </form>
+                  {{/unless}}
+                {{/if}}
+                <a href="#" class="remove-attendee" data-toggle="modal" data-target="#removeAttendeeModal" title="{{t "views.event.removeuser" }}"><i class="fas fa-user-times"></i></a>
+              {{/if}}
+            </li>
           {{/each}}
         {{/if}}
       </ul>
@@ -552,6 +597,12 @@ window.eventData = {{{ json jsonData }}};
       axios.post('/attendee/provision', {}, { params: { eventID }})
         .then((response) => {
           modal.find('#removalPassword').val(response.data.removalPassword);
+          // Persist removal password locally for auto ?p injection
+          try {
+            const rpStore = JSON.parse(localStorage.getItem('gathioRemovalPasswords') || '{}');
+            rpStore[eventID] = response.data.removalPassword;
+            localStorage.setItem('gathioRemovalPasswords', JSON.stringify(rpStore));
+          } catch(e) { /* ignore persistence errors */ }
           // If there is a limit on the number of attendees, the provisioned endpoint will return freeSpots;
           // otherwise, freeSpots will be undefined.
           if (response.data.freeSpots !== undefined) {
@@ -590,6 +641,24 @@ window.eventData = {{{ json jsonData }}};
     $('#deleteEvent').on('click', function() {
         $('#editModal').modal('hide');
     })
+
+
+    // Auto-append ?p if stored and missing (not in editing mode)
+    (function autoAppendRemovalPassword(){
+      try {
+        const eventID = $('#eventName').attr('data-event-id');
+        if (!eventID) return;
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('e')) return; // host editing overrides
+        if (url.searchParams.get('p')) return; // already present
+        const rpStore = JSON.parse(localStorage.getItem('gathioRemovalPasswords') || '{}');
+        const rp = rpStore[eventID];
+        if (rp) {
+          url.searchParams.set('p', rp);
+          window.location.replace(url.href);
+        }
+      } catch(e) { /* ignore */ }
+    })();
   });
 
   </script>

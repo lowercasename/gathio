@@ -145,7 +145,13 @@
         {{t "views.join" }}
       </label>
     </div>
-    <div class="form-check" id="maxAttendeesCheckboxContainer" x-show="data.joinCheckbox">
+    <div class="form-check ml-4" x-show="data.joinCheckbox">
+      <input class="form-check-input" type="checkbox" id="approveRegistrationsCheckbox" name="approveRegistrationsCheckbox" x-model="data.approveRegistrationsCheckbox" {{#if eventData.approveRegistrations}}checked{{/if}}>
+      <label class="form-check-label" for="approveRegistrationsCheckbox">
+        {{t "views.event.requireapproval" }}
+      </label>
+    </div>
+    <div class="form-check ml-4" id="maxAttendeesCheckboxContainer" x-show="data.joinCheckbox">
       <input class="form-check-input" type="checkbox" id="maxAttendeesCheckbox" name="maxAttendeesCheckbox" x-model="data.maxAttendeesCheckbox">
       <label class="form-check-label" for="maxAttendeesCheckbox">
         {{t "views.partials.eventform.maxattendeestitle" }}
@@ -153,7 +159,7 @@
     </div>
   </div>
 </div>
-<div class="form-group" id="maxAttendeesContainer" x-show="data.maxAttendeesCheckbox && data.joinCheckbox">
+<div class="form-group ml-4" id="maxAttendeesContainer" x-show="data.maxAttendeesCheckbox && data.joinCheckbox">
   <label for="maxAttendees" >{{t "views.partials.eventform.maxattendees" }}</label>
   <div class="form-group ">
     <input type="number" class="form-control" id="maxAttendees" name="maxAttendees" placeholder="{{t "views.event.enternum" }}" x-model="data.maxAttendees" >
