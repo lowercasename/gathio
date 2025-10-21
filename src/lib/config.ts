@@ -24,7 +24,6 @@ export interface GathioConfig {
         show_public_event_list: boolean;
         mail_service: "nodemailer" | "sendgrid" | "mailgun" | "none";
         creator_email_addresses: string[];
-        approve_registrations?: boolean; // If true, event locations are hidden until attendee is approved by host
     };
     database: {
         mongodb_url: string;
@@ -72,7 +71,6 @@ const defaultConfig: GathioConfig = {
         show_kofi: false,
         mail_service: "none",
         creator_email_addresses: [],
-        approve_registrations: false,
     },
     database: {
         mongodb_url: "mongodb://localhost:27017/gathio",
@@ -202,15 +200,9 @@ export const getConfig = (): GathioConfig => {
         const config = toml.parse(
             fs.readFileSync("./config/config.toml", "utf-8"),
         ) as GathioConfig;
-        // Deep merge so missing nested keys (like approve_registrations) fall back to defaults
-        // Manual shallow merge; nested 'general' keys fallback individually
         const resolvedConfig: GathioConfig = {
             ...defaultConfig,
             ...config,
-            general: {
-                ...defaultConfig.general,
-                ...config.general,
-            },
         };
         if (process.env.CYPRESS || process.env.CI) {
             resolvedConfig.general.mail_service = "none";
