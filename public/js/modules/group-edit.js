@@ -18,12 +18,12 @@ $(document).ready(function () {
     $("#timezone").val(window.groupData.timezone).trigger("change");
 });
 
-$('#editModal').on('shown.bs.modal', function (e) {
-  const ta = document.querySelector("#editModal textarea");
-  ta.style.display = 'none';
-  autosize(ta);
-  ta.style.display = '';
-  autosize.update(ta);
+$("#editModal").on("shown.bs.modal", function (e) {
+    const ta = document.querySelector("#editModal textarea");
+    ta.style.display = "none";
+    autosize(ta);
+    ta.style.display = "";
+    autosize.update(ta);
 });
 
 function editEventGroupForm() {

@@ -28,7 +28,7 @@ import { markdownToSanitizedHTML } from "../util/markdown.js";
 import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
 import { getConfig } from "../lib/config.js";
 import i18next from "i18next";
-moment.locale(i18next.language); 
+moment.locale(i18next.language);
 const config = getConfig();
 
 const storage = multer.memoryStorage();
@@ -401,10 +401,20 @@ router.put(
                 "<p>" + i18next.t("routes.event.difftext") + "</p><ul>";
             let displayDate;
             if (event.name !== updatedEvent.name) {
-                diffText += `<li>` + i18next.t("routes.event.namechanged", { eventname: updatedEvent.name} ) + `</li>`;
+                diffText +=
+                    `<li>` +
+                    i18next.t("routes.event.namechanged", {
+                        eventname: updatedEvent.name,
+                    }) +
+                    `</li>`;
             }
             if (event.location !== updatedEvent.location) {
-                diffText += `<li>` + i18next.t("routes.event.locationchanged", { location: updatedEvent.location} ) + `</li>`;
+                diffText +=
+                    `<li>` +
+                    i18next.t("routes.event.locationchanged", {
+                        location: updatedEvent.location,
+                    }) +
+                    `</li>`;
             }
             if (
                 event.start.toISOString() !== updatedEvent.start.toISOString()
@@ -412,19 +422,37 @@ router.put(
                 displayDate = moment
                     .tz(updatedEvent.start, updatedEvent.timezone)
                     .format(i18next.t("common.datetimeformat"));
-                diffText += `<li>` + i18next.t("routes.event.starttimechanged", { starttime: displayDate }) + `</li>`;
+                diffText +=
+                    `<li>` +
+                    i18next.t("routes.event.starttimechanged", {
+                        starttime: displayDate,
+                    }) +
+                    `</li>`;
             }
             if (event.end.toISOString() !== updatedEvent.end.toISOString()) {
                 displayDate = moment
                     .tz(updatedEvent.end, updatedEvent.timezone)
                     .format(i18next.t("common.datetimeformat"));
-                diffText += `<li>` + i18next.t("routes.event.endtimechanged", { endtime: displayDate }) + `</li>`;
+                diffText +=
+                    `<li>` +
+                    i18next.t("routes.event.endtimechanged", {
+                        endtime: displayDate,
+                    }) +
+                    `</li>`;
             }
             if (event.timezone !== updatedEvent.timezone) {
-                diffText += `<li>` + i18next.t("routes.event.timezonechanged", { timezone: updatedEvent.timezone }) + `</li>`;
+                diffText +=
+                    `<li>` +
+                    i18next.t("routes.event.timezonechanged", {
+                        timezone: updatedEvent.timezone,
+                    }) +
+                    `</li>`;
             }
             if (event.description !== updatedEvent.description) {
-                diffText += `<li>` + i18next.t("routes.event.descriptionchanged") + `</li>`;
+                diffText +=
+                    `<li>` +
+                    i18next.t("routes.event.descriptionchanged") +
+                    `</li>`;
             }
             diffText += `</ul>`;
             const updatedEventObject = await Event.findOneAndUpdate(
@@ -490,7 +518,9 @@ router.put(
                 req.emailService.sendEmailFromTemplate({
                     to: config.general.email,
                     bcc: attendeeEmails,
-                    subject: i18next.t("routes.event.editedsubject", { eventname: event.name}),
+                    subject: i18next.t("routes.event.editedsubject", {
+                        eventname: event.name,
+                    }),
                     templateName: "editEvent",
                     templateData: {
                         diffText,

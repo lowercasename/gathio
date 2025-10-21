@@ -21,14 +21,17 @@ jobs:
             - name: Install Node.js
               uses: actions/setup-node@v4
               with:
-                node-version: 22
-                cache: 'pnpm'
+                  node-version: 22
+                  cache: "pnpm"
 
             - name: Install dependencies
               run: pnpm install
 
             - name: Set up config files
               run: cp config/config.example.toml config/config.toml
+            
+            - name: Lint
+              run: pnpm lint
 
             - name: Build
               run: pnpm build

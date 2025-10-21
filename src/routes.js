@@ -315,7 +315,9 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
                                             to: attendeeEmails,
                                             subject: i18next.t(
                                                 "routes.deleteeventsubject",
-                                                { eventName: event?.name },
+                                                {
+                                                    eventName: event?.name,
+                                                },
                                             ),
                                             templateName: "deleteEvent",
                                             templateData: {
@@ -932,7 +934,9 @@ router.post("/post/comment/:eventID", (req, res) => {
                                     bcc: attendeeEmails,
                                     subject: i18next.t(
                                         "routes.addeventcommentsubject",
-                                        { eventName: event?.name },
+                                        {
+                                            eventName: event?.name,
+                                        },
                                     ),
                                     templateName: "addEventComment",
                                     templateData: {
@@ -1036,7 +1040,9 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
                                     bcc: attendeeEmails,
                                     subject: i18next.t(
                                         "routes.addeventcommentsubject",
-                                        { eventName: event.name },
+                                        {
+                                            eventName: event.name,
+                                        },
                                     ),
                                     templateName: "addEventComment",
                                     templateData: {

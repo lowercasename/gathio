@@ -156,7 +156,7 @@ async function initializeApp() {
     // body-parser middleware does not recognise ld+json or activitypub+json
     // as JSON content types; the workaround is to use a wildcard.
     // (cf. https://github.com/expressjs/body-parser/issues/519#issuecomment-2006306234)
-    app.use(express.json({ type: [ "application/*+json", "application/json" ] }));
+    app.use(express.json({ type: ["application/*+json", "application/json"] }));
     app.use(express.urlencoded({ extended: true }));
 
     // Router //

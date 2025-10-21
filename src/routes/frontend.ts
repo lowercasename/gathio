@@ -101,9 +101,7 @@ router.get("/events", async (_: Request, res: Response) => {
             location: event.location,
             displayDate: isSameDay
                 ? startMoment.format("LL")
-                : `${startMoment.format("LL")} - ${endMoment.format(
-                      "LL",
-                  )}`,
+                : `${startMoment.format("LL")} - ${endMoment.format("LL")}`,
             eventHasConcluded: endMoment.isBefore(moment.tz(event.timezone)),
             eventGroup: event.eventGroup as unknown as IEventGroup,
             startMoment,
@@ -155,52 +153,37 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         const parsedLocation = event.location.replace(/\s+/g, "+");
         let displayDate;
         const dateformat = i18next.t("frontend.dateformat");
-        const timeformat = i18next.t('frontend.timeformat');
+        const timeformat = i18next.t("frontend.timeformat");
         if (moment.tz(event.end, event.timezone).isSame(event.start, "day")) {
             // Happening during one day
-            displayDate = i18next.t("frontend.displaydate-sameday",
-                { 
-                    startdate: 
-                        moment
-                            .tz(event.start, event.timezone)
-                            .format(dateformat),
-                    starttime:
-                        moment
-                            .tz(event.start, event.timezone)
-                            .format(timeformat),
-                    endtime:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format(timeformat),
-                    timezone:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format('(z)',)
-                });
+            displayDate = i18next.t("frontend.displaydate-sameday", {
+                startdate: moment
+                    .tz(event.start, event.timezone)
+                    .format(dateformat),
+                starttime: moment
+                    .tz(event.start, event.timezone)
+                    .format(timeformat),
+                endtime: moment
+                    .tz(event.end, event.timezone)
+                    .format(timeformat),
+                timezone: moment.tz(event.end, event.timezone).format("(z)"),
+            });
         } else {
-            displayDate = i18next.t("frontend.displaydate-days",
-                {
-                    startdate:
-                        moment
-                            .tz(event.start, event.timezone)
-                            .format(dateformat),
-                    starttime:
-                        moment
-                            .tz(event.start, event.timezone)
-                            .format(timeformat),
-                    enddate:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format(dateformat),
-                    endtime:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format(timeformat),
-                    timezone:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format('(z)',)
-                });
+            displayDate = i18next.t("frontend.displaydate-days", {
+                startdate: moment
+                    .tz(event.start, event.timezone)
+                    .format(dateformat),
+                starttime: moment
+                    .tz(event.start, event.timezone)
+                    .format(timeformat),
+                enddate: moment
+                    .tz(event.end, event.timezone)
+                    .format(dateformat),
+                endtime: moment
+                    .tz(event.end, event.timezone)
+                    .format(timeformat),
+                timezone: moment.tz(event.end, event.timezone).format("(z)"),
+            });
         }
         const eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
         const eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
@@ -451,8 +434,12 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
             .sort("start");
 
         const updatedEvents: EventListEvent[] = events.map((event) => {
-            const startMoment = moment.tz(event.start, event.timezone).locale(i18next.language);
-            const endMoment = moment.tz(event.end, event.timezone).locale(i18next.language);
+            const startMoment = moment
+                .tz(event.start, event.timezone)
+                .locale(i18next.language);
+            const endMoment = moment
+                .tz(event.end, event.timezone)
+                .locale(i18next.language);
             const isSameDay = startMoment.isSame(endMoment, "day");
 
             return {

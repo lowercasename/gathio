@@ -22,7 +22,9 @@ export const bucketEventsByMonth = (
     event: EventListEvent,
 ) => {
     event.startMoment.locale(i18next.language);
-    const month = event.startMoment.format(i18next.t("common.year-month-format" ));
+    const month = event.startMoment.format(
+        i18next.t("common.year-month-format"),
+    );
     const matchingBucket = acc.find((bucket) => bucket.title === month);
     if (!matchingBucket) {
         acc.push({

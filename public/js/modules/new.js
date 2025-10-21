@@ -69,7 +69,10 @@ function newEventForm() {
             this.data.publicCheckbox = false;
         },
         updateEventEnd() {
-            if (this.data.eventEnd === "" || this.data.eventEnd < this.data.eventStart) {
+            if (
+                this.data.eventEnd === "" ||
+                this.data.eventEnd < this.data.eventStart
+            ) {
                 this.data.eventEnd = this.data.eventStart;
             }
         },
@@ -84,10 +87,7 @@ function newEventForm() {
                 "imageUpload",
                 this.$refs.eventImageUpload.files[0],
             );
-            formData.append(
-                "magicLinkToken",
-                this.$refs.magicLinkToken.value,
-            );
+            formData.append("magicLinkToken", this.$refs.magicLinkToken.value);
             try {
                 const response = await fetch("/event", {
                     method: "POST",
@@ -144,10 +144,7 @@ function newEventGroupForm() {
                 "imageUpload",
                 this.$refs.eventGroupImageUpload.files[0],
             );
-            formData.append(
-                "magicLinkToken",
-                this.$refs.magicLinkToken.value,
-            );
+            formData.append("magicLinkToken", this.$refs.magicLinkToken.value);
             try {
                 const response = await fetch("/group", {
                     method: "POST",
@@ -196,10 +193,7 @@ function importEventForm() {
                 "icsImportControl",
                 this.$refs.icsImportControl.files[0],
             );
-            formData.append(
-                "magicLinkToken",
-                this.$refs.magicLinkToken.value,
-            );
+            formData.append("magicLinkToken", this.$refs.magicLinkToken.value);
             try {
                 const response = await fetch("/import/event", {
                     method: "POST",

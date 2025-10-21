@@ -53,7 +53,7 @@ router.post("/magic-link/event/create", async (req: Request, res: Response) => {
         subject: i18next.t("routes.magiclink.mailsubject"),
         templateName: "createEventMagicLink",
         templateData: {
-            token
+            token,
         },
     });
     res.render("createEventMagicLink", {

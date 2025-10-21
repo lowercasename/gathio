@@ -222,9 +222,9 @@ router.put(
                 "editEventGroup",
                 "error",
                 "Attempt to edit event group " +
-                req.params.eventGroupID +
-                " failed with error: " +
-                err,
+                    req.params.eventGroupID +
+                    " failed with error: " +
+                    err,
             );
             return res.status(500).json({
                 errors: [
