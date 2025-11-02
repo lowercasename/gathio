@@ -190,6 +190,24 @@ export const instanceDescription = (): string => {
   }
 };
 
+const processConfigEnv = (config: GathioConfig) => {
+  for (const configValue of Object.values(config)) {
+    if (typeof configValue !== "object") continue;
+    for (const [subConfigKey, subConfigValue] of Object.entries(configValue)) {
+      if (typeof subConfigValue === "string") {
+        configValue[subConfigKey as keyof typeof configValue] =
+          subConfigValue.replace(/\$\{(\w+)\}/g, (orig, match) => {
+            if (!match) return orig;
+            if (match.startsWith("GATHIO_")) {
+              return process.env[match] || orig;
+            }
+            return orig;
+          });
+      }
+    }
+  }
+};
+
 let _resolvedConfig: GathioConfig | null = null;
 // Attempt to load our global config. Will stop the app if the config file
 // cannot be read (there's no point trying to continue!)
@@ -200,13 +218,9 @@ export const getConfig = (): GathioConfig => {
 
   try {
     const config = toml.parse(
-      fs
-        .readFileSync("./config/config.toml", "utf-8")
-        .toString()
-        .replace(/\$\{(\w+)\}/g, (match) => {
-          return process.env[`GATHIO_${match.slice(2, -1)}`] || match;
-        }),
+      fs.readFileSync("./config/config.toml", "utf-8"),
     ) as GathioConfig;
+    processConfigEnv(config);
     const resolvedConfig = {
       ...defaultConfig,
       ...config,
@@ -219,7 +233,6 @@ export const getConfig = (): GathioConfig => {
         "You have not configured this Gathio instance to send emails! This means that event creators will not receive emails when their events are created, which means they may end up locked out of editing events. Consider setting up an email service.",
       );
     }
-
     _resolvedConfig = resolvedConfig;
     return resolvedConfig;
   } catch {
