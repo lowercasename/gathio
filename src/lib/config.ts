@@ -200,7 +200,12 @@ export const getConfig = (): GathioConfig => {
 
   try {
     const config = toml.parse(
-      fs.readFileSync("./config/config.toml", "utf-8"),
+      fs
+        .readFileSync("./config/config.toml", "utf-8")
+        .toString()
+        .replace(/\$\{(\w+)\}/g, (match) => {
+          return process.env[`GATHIO_${match.slice(2, -1)}`] || match;
+        }),
     ) as GathioConfig;
     const resolvedConfig = {
       ...defaultConfig,
