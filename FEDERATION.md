@@ -6,18 +6,18 @@ This document is meant to be a reference for all the ActivityPub federation-rela
 
 To keep things simple, sometimes you will see things formatted like `Create/Note` or `Delete/Event` or `Undo/Follow`. The thing before the slash is the Activity, and the thing after the slash is the Object inside the Activity, in an `object` property. So these are to be read as follows:
 
--   `Create/Note`: a `Create` activity containing a `Note` in the `object` field
--   `Delete/Event`: a `Delete` activity containing an `Event` in the `object` field
--   `Undo/Follow`: an `Undo` activity containing a `Follow` in the `object` field
+- `Create/Note`: a `Create` activity containing a `Note` in the `object` field
+- `Delete/Event`: a `Delete` activity containing an `Event` in the `object` field
+- `Undo/Follow`: an `Undo` activity containing a `Follow` in the `object` field
 
 When the word "broadcast" is used in this document, it means to send an Activity to individual inbox of each of the followers of a given Actor.
 
 This document has four main sections:
 
--   **Federation philosophy** lays out the general model of how this is intended to federate
--   **General Actor information** contains the basics of what to expect from our `Actor` objects
--   **Inbox behavior** lists every incoming ActivityPub activity that the server recognizes, and tells you what it does in response to that activity, including any other ActivityPub activities it sends back out.
--   **Activities triggered from the web app** tells you what circumstances on the web application cause the server to emit ActivityPub activities. (For example, when an event is updated via the web application, it lets all the ActivityPub followers know that the event has been updated.)
+- **Federation philosophy** lays out the general model of how this is intended to federate
+- **General Actor information** contains the basics of what to expect from our `Actor` objects
+- **Inbox behavior** lists every incoming ActivityPub activity that the server recognizes, and tells you what it does in response to that activity, including any other ActivityPub activities it sends back out.
+- **Activities triggered from the web app** tells you what circumstances on the web application cause the server to emit ActivityPub activities. (For example, when an event is updated via the web application, it lets all the ActivityPub followers know that the event has been updated.)
 
 Please note: there is an unfortunate collision between the English language and the ActivityPub spec that can make this document confusing. When this document uses the word 'event' with a lowercase-e and not in monospace, it refers to the thing that is being tracked in gathio: events that are being organized. When this document uses the word `Event` with a capital E and in monospace, it refers to the [`Event` object defined in the ActivityStreams Vocabulary spec](https://www.w3.org/TR/activitystreams-vocabulary/#dfn-event).
 
@@ -37,29 +37,29 @@ Every event has an Actor. The Actor looks like this:
 
 ```json
 {
-    "@context": [
-        "https://www.w3.org/ns/activitystreams",
-        "https://w3id.org/security/v1"
-    ],
-    "id": "https://DOMAIN/EVENTID",
-    "type": "Person",
-    "preferredUsername": "EVENTID",
-    "inbox": "https://DOMAIN/activitypub/inbox",
-    "outbox": "https://DOMAIN/EVENTID/outbox",
-    "followers": "https://DOMAIN/EVENTID/followers",
-    "summary": "<p><p>DESCRIPTION</p>\n</p><p>Location: LOCATION.</p><p>Starting DATETIME (human readable).</p>",
-    "name": "EVENTNAME",
-    "featured": "https://DOMAIN/EVENTID/featured",
-    "publicKey": {
-        "id": "https://DOMAIN/EVENTID#main-key",
-        "owner": "https://DOMAIN/EVENTID",
-        "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nOURPUBLICKEY\n-----END PUBLIC KEY-----\n"
-    },
-    "icon": {
-        "type": "Image",
-        "mediaType": "image/jpg",
-        "url": "https://DOMAIN/events/EVENTID.jpg"
-    }
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    "https://w3id.org/security/v1"
+  ],
+  "id": "https://DOMAIN/EVENTID",
+  "type": "Person",
+  "preferredUsername": "EVENTID",
+  "inbox": "https://DOMAIN/activitypub/inbox",
+  "outbox": "https://DOMAIN/EVENTID/outbox",
+  "followers": "https://DOMAIN/EVENTID/followers",
+  "summary": "<p><p>DESCRIPTION</p>\n</p><p>Location: LOCATION.</p><p>Starting DATETIME (human readable).</p>",
+  "name": "EVENTNAME",
+  "featured": "https://DOMAIN/EVENTID/featured",
+  "publicKey": {
+    "id": "https://DOMAIN/EVENTID#main-key",
+    "owner": "https://DOMAIN/EVENTID",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nOURPUBLICKEY\n-----END PUBLIC KEY-----\n"
+  },
+  "icon": {
+    "type": "Image",
+    "mediaType": "image/jpg",
+    "url": "https://DOMAIN/events/EVENTID.jpg"
+  }
 }
 ```
 
