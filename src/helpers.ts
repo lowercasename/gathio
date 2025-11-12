@@ -1,7 +1,7 @@
-import moment from 'moment-timezone';
-import icalGenerator from 'ical-generator';
-import i18next from 'i18next';
-import handlebars from 'handlebars';
+import moment from "moment-timezone";
+import icalGenerator from "ical-generator";
+import i18next from "i18next";
+import handlebars from "handlebars";
 import Log from "./models/Log.js";
 import { getConfig } from "./lib/config.js";
 import { IEvent } from "./models/Event.js";
@@ -23,15 +23,16 @@ export function addToLog(process: string, status: string, message: string) {
   });
 }
 
-export function exportIcal(events: IEvent | IEvent[], calendarName?: string) {  // Ical -> ICal
+export function exportIcal(events: IEvent | IEvent[], calendarName?: string) {
+  // Ical -> ICal
   // Create a new icalGenerator... generator
   const cal = icalGenerator({
     name: calendarName || siteName,
-    timezone: 'UTC'
+    timezone: "UTC",
   });
 
   const eventArray = Array.isArray(events) ? events : [events];
-  eventArray.forEach(event => {
+  eventArray.forEach((event) => {
     cal.createEvent({
       start: moment.tz(event.start, event.timezone),
       end: moment.tz(event.end, event.timezone),
@@ -40,10 +41,10 @@ export function exportIcal(events: IEvent | IEvent[], calendarName?: string) {  
       description: event.description,
       organizer: {
         name: event.hostName || "Anonymous",
-        email: event.creatorEmail || 'anonymous@anonymous.com',
+        email: event.creatorEmail || "anonymous@anonymous.com",
       },
       location: event.location,
-      url: 'https://' + domain + '/' + event.id
+      url: "https://" + domain + "/" + event.id,
     });
   });
 
@@ -58,15 +59,18 @@ interface I18nHelpers {
 
 export function getI18nHelpers(): I18nHelpers {
   return {
-    t: function(key: string, options?: object) {
+    t: function (key: string, options?: object) {
       const translation = i18next.t(key, { ...this, ...options });
       const template = handlebars.compile(translation);
       return template(this);
     },
-    tn: function(key: string, options?: object) {
-      const translation = i18next.t(key, { count: this.count, ...options });
+    tn: function (key: string, options?: object) {
+      const translation = i18next.t(key, {
+        count: this.count,
+        ...options,
+      });
       const template = handlebars.compile(translation);
       return template(this);
-    }
+    },
   };
 }

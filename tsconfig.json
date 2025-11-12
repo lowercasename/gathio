@@ -6,10 +6,7 @@
     "checkJs": false,
     "removeComments": true,
     "resolveJsonModule": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./src/types"
-    ],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "sourceMap": true,
     "outDir": "dist",
     "strict": true,
@@ -21,13 +18,7 @@
     "moduleResolution": "NodeNext",
     "skipLibCheck": true
   },
-  "include": [
-    "./src/**/*.ts"
-  ],
-  "exclude": [
-    "./src/**/*.js"
-  ],
-  "files": [
-    "./src/index.d.ts"
-  ]
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./src/**/*.js"],
+  "files": ["./src/index.d.ts"]
 }

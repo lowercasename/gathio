@@ -136,7 +136,7 @@ volumes:
 ```
 
 As with all things in the Docker universe, two things seperated by a colon
-means `<thing on host computer>:<thing inside Docker container>`.  So
+means `<thing on host computer>:<thing inside Docker container>`. So
 here you're saying "any files I put in the folder called
 `/home/username/docker/gathio-docker/config` on my computer will appear inside
 the Docker container at the path `/app/static`. Don't change the paths on the
