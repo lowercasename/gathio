@@ -47,8 +47,8 @@ async function initializeApp() {
         loadPath: path.join(getLocalesPath(), "{{lng}}.json"),
       },
       fallbackLng: "en",
-      preload: ["en", "ja", "de"],
-      supportedLngs: ["en", "ja", "de"],
+      preload: ["en", "ja", "de", "nn"],
+      supportedLngs: ["en", "ja", "de", "nn"],
       nonExplicitSupportedLngs: true,
       load: "languageOnly",
       debug: false,
@@ -62,6 +62,24 @@ async function initializeApp() {
         escapeValue: false,
       },
     });
+
+  app.use(handle(i18next));
+
+  // to Switch language
+  app.use((req, _res, next) => {
+    const currentLanguage = i18next.language;
+    i18next.changeLanguage(req.language);
+    const newLanguage = i18next.language;
+    if (process.env.DEBUG_I18N) {
+      console.log("Language Change:", {
+        header: req.headers["accept-language"],
+        detected: req.language,
+        currentLanguage: currentLanguage,
+        newLanguage: newLanguage,
+      });
+    }
+    next();
+  });
 
   app.use(handle(i18next));
 
@@ -144,6 +162,13 @@ async function initializeApp() {
   app.engine("handlebars", hbsInstance.engine);
   app.set("view engine", "handlebars");
   app.set("hbsInstance", hbsInstance);
+
+  // Body parser //
+  // body-parser middleware does not recognise ld+json or activitypub+json
+  // as JSON content types; the workaround is to use a wildcard.
+  // (cf. https://github.com/expressjs/body-parser/issues/519#issuecomment-2006306234)
+  app.use(express.json({ type: ["application/*+json", "application/json"] }));
+  app.use(express.urlencoded({ extended: true }));
 
   // Static files //
   app.use(express.static("public"));
