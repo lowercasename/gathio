@@ -16,7 +16,7 @@ Each event created on Gathio has a randomly-generated handle that looks somethin
 
 1. If the event allows for people to RSVP, you'll get a DM with a poll asking if you are going to attend. If you vote "Yes" in the poll, your @ handle on your instance will be listed on the event page and it will link back to your Mastodon profile. (The following gif shows this flow in action.) If you RSVP then you will be DMed when the organiser changes any details about the event.
 
-    [![](https://tinysubversions.com/pics/mastodon-01.gif)](https://tinysubversions.com/pics/mastodon-01.gif)
+   [![](https://tinysubversions.com/pics/mastodon-01.gif)](https://tinysubversions.com/pics/mastodon-01.gif)
 
 2. Regardless of whether you RSVP, following the account means that you will see any updates made by the organiser in your home timeline, like following any normal account. The event account will also automatically boost any conversation about the event so you can see what people are talking about. (This is subject to the same moderation as any Gathio event: if the event organiser deletes the comment from the event page, then the boost will be un-boosted as well.)
 
