@@ -38,45 +38,45 @@
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace Cypress {
-    interface Chainable<Subject> {
-        createGroup(
-            groupData: {
-                eventGroupName: string;
-                eventGroupDescription: string;
-                eventGroupURL: string;
-                hostName: string;
-                creatorEmail: string;
-            },
-            isPublic?: boolean,
-        ): Chainable<Subject>;
-    }
+  interface Chainable<Subject> {
+    createGroup(
+      groupData: {
+        eventGroupName: string;
+        eventGroupDescription: string;
+        eventGroupURL: string;
+        hostName: string;
+        creatorEmail: string;
+      },
+      isPublic?: boolean,
+    ): Chainable<Subject>;
+  }
 }
 
 Cypress.Commands.add("createGroup", (groupData, isPublic) => {
-    cy.visit("/new");
-    cy.get("#showNewEventGroupFormButton").click();
+  cy.visit("/new");
+  cy.get("#showNewEventGroupFormButton").click();
 
-    // Fill in the form
-    cy.get("#eventGroupName").type(groupData.eventGroupName);
-    cy.get("#eventGroupDescription").type(groupData.eventGroupDescription);
-    cy.get("#eventGroupURL").type(groupData.eventGroupURL);
-    cy.get("#eventGroupHostName").type(groupData.hostName);
-    cy.get("#eventGroupCreatorEmail").type(groupData.creatorEmail);
+  // Fill in the form
+  cy.get("#eventGroupName").type(groupData.eventGroupName);
+  cy.get("#eventGroupDescription").type(groupData.eventGroupDescription);
+  cy.get("#eventGroupURL").type(groupData.eventGroupURL);
+  cy.get("#eventGroupHostName").type(groupData.hostName);
+  cy.get("#eventGroupCreatorEmail").type(groupData.creatorEmail);
 
-    if (isPublic) {
-        cy.get("#publicGroupCheckbox").check();
-    }
+  if (isPublic) {
+    cy.get("#publicGroupCheckbox").check();
+  }
 
-    // Submit the form
-    cy.get("#newEventGroupForm").submit();
+  // Submit the form
+  cy.get("#newEventGroupForm").submit();
 
-    // Wait for the new page to load
-    cy.url({ timeout: 10000 }).should("not.include", "/new");
+  // Wait for the new page to load
+  cy.url({ timeout: 10000 }).should("not.include", "/new");
 
-    // Get the new group ID from the URL
-    cy.url().then((url) => {
-        const [groupID, editToken] = url.split("/").pop().split("?");
-        cy.wrap(groupID).as("groupID");
-        cy.wrap(editToken.slice(2)).as("editToken");
-    });
+  // Get the new group ID from the URL
+  cy.url().then((url) => {
+    const [groupID, editToken] = url.split("/").pop().split("?");
+    cy.wrap(groupID).as("groupID");
+    cy.wrap(editToken.slice(2)).as("editToken");
+  });
 });

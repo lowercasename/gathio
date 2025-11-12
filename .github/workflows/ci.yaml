@@ -1,55 +1,55 @@
 name: CI / Build and test
 on:
-    pull_request:
-    workflow_dispatch:
-    push:
-        branches:
-            - main
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
-    cypress-run:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v4
-              with:
-                  version: 10
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
-            - name: Install Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-                  cache: "pnpm"
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
 
-            - name: Install dependencies
-              run: pnpm install
+      - name: Install dependencies
+        run: pnpm install
 
-            - name: Set up config files
-              run: cp config/config.example.toml config/config.toml
-            
-            - name: Lint
-              run: pnpm lint
+      - name: Set up config files
+        run: cp config/config.example.toml config/config.toml
 
-            - name: Build
-              run: pnpm build
+      - name: Lint
+        run: pnpm lint
 
-            - name: Start MongoDB
-              uses: supercharge/mongodb-github-action@1.10.0
+      - name: Build
+        run: pnpm build
 
-            - name: Cypress run
-              uses: cypress-io/github-action@v6
-              with:
-                  start: pnpm start
-                  browser: chrome
-              env:
-                  CYPRESS: true
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.10.0
 
-            - name: Upload screenshots
-              uses: actions/upload-artifact@v4
-              if: failure()
-              with:
-                  name: cypress-screenshots
-                  path: cypress/screenshots
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          start: pnpm start
+          browser: chrome
+        env:
+          CYPRESS: true
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots

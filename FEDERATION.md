@@ -37,29 +37,29 @@ Every event has an Actor. The Actor looks like this:
 
 ```json
 {
-    "@context": [
-        "https://www.w3.org/ns/activitystreams",
-        "https://w3id.org/security/v1"
-    ],
-    "id": "https://DOMAIN/EVENTID",
-    "type": "Person",
-    "preferredUsername": "EVENTID",
-    "inbox": "https://DOMAIN/activitypub/inbox",
-    "outbox": "https://DOMAIN/EVENTID/outbox",
-    "followers": "https://DOMAIN/EVENTID/followers",
-    "summary": "<p><p>DESCRIPTION</p>\n</p><p>Location: LOCATION.</p><p>Starting DATETIME (human readable).</p>",
-    "name": "EVENTNAME",
-    "featured": "https://DOMAIN/EVENTID/featured",
-    "publicKey": {
-        "id": "https://DOMAIN/EVENTID#main-key",
-        "owner": "https://DOMAIN/EVENTID",
-        "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nOURPUBLICKEY\n-----END PUBLIC KEY-----\n"
-    },
-    "icon": {
-        "type": "Image",
-        "mediaType": "image/jpg",
-        "url": "https://DOMAIN/events/EVENTID.jpg"
-    }
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    "https://w3id.org/security/v1"
+  ],
+  "id": "https://DOMAIN/EVENTID",
+  "type": "Person",
+  "preferredUsername": "EVENTID",
+  "inbox": "https://DOMAIN/activitypub/inbox",
+  "outbox": "https://DOMAIN/EVENTID/outbox",
+  "followers": "https://DOMAIN/EVENTID/followers",
+  "summary": "<p><p>DESCRIPTION</p>\n</p><p>Location: LOCATION.</p><p>Starting DATETIME (human readable).</p>",
+  "name": "EVENTNAME",
+  "featured": "https://DOMAIN/EVENTID/featured",
+  "publicKey": {
+    "id": "https://DOMAIN/EVENTID#main-key",
+    "owner": "https://DOMAIN/EVENTID",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nOURPUBLICKEY\n-----END PUBLIC KEY-----\n"
+  },
+  "icon": {
+    "type": "Image",
+    "mediaType": "image/jpg",
+    "url": "https://DOMAIN/events/EVENTID.jpg"
+  }
 }
 ```
 
