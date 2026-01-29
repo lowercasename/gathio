@@ -8,8 +8,8 @@ on your own server.
 
 These docs are here to:
 
--   Explain the more esoteric or complex features of Gathio
--   Help you set up, customize, and run Gathio on your own system
+- Explain the more esoteric or complex features of Gathio
+- Help you set up, customize, and run Gathio on your own system
 
 ## Documentation
 
