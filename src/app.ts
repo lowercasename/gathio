@@ -108,6 +108,10 @@ async function initializeApp() {
             json: function (context: object) {
                 return JSON.stringify(context);
             },
+            firstLetter: function (name: string) {
+                // Get the first letter of a name for avatar display
+                return name ? name.charAt(0).toUpperCase() : "?";
+            },
         },
     });
 

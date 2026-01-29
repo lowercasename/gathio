@@ -14,6 +14,8 @@ const config = getConfig();
 type EmailTemplateName =
     | "addEventAttendee"
     | "addEventComment"
+    | "attendeeAwaitingApproval"
+    | "attendeeApproved"
     | "createEvent"
     | "createEventGroup"
     | "createEventMagicLink"

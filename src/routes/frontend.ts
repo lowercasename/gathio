@@ -7,9 +7,10 @@ import {
     instanceDescription,
     instanceRules,
 } from "../lib/config.js";
-import { addToLog, exportIcal } from "../helpers.js";
+import { addToLog, exportIcal, ICalEvent } from "../helpers.js";
 import Event from "../models/Event.js";
 import EventGroup, { IEventGroup } from "../models/EventGroup.js";
+import mongoose from "mongoose";
 import {
     acceptsActivityPub,
     activityPubContentType,
@@ -33,6 +34,31 @@ interface AttendeeLite {
     removalPassword?: string;
     approved?: boolean;
 }
+
+// Unified attendee view object with all computed state for templates
+interface AttendeeView {
+    id: string;
+    name: string;
+    avatarLetter: string;
+    avatarColor: string;
+    isHidden: boolean;
+    isPending: boolean;
+    canApprove: boolean;
+    canRemove: boolean;
+    canCopyLink: boolean;
+    removalPassword?: string;
+}
+
+// Generate a consistent HSL color from a string
+function stringToColor(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 80%, 45%)`;
+}
+
 interface EventLite {
     id: string;
     name: string;
@@ -42,24 +68,33 @@ interface EventLite {
     timezone: string;
     attendees?: AttendeeLite[];
     editToken?: string;
-    eventGroup?: any;
+    eventGroup?: mongoose.Types.ObjectId | IEventGroup;
     description: string;
     image?: string;
     hostName?: string;
     firstLoad?: boolean;
     url?: string;
+    approveRegistrations?: boolean;
+}
+
+// Minimal event shape for location access checks (works with both documents and lean objects)
+interface EventForLocationAccess {
+    approveRegistrations?: boolean;
+    editToken?: string;
+    attendees?: AttendeeLite[];
 }
 
 // Centralized location visibility resolution for an event view/export
 // Determines whether the current viewer should see the precise location
 // and returns ancillary flags for template messaging.
 function resolveLocationAccess(
-    event: any,
-    query: Record<string, any>,
+    event: EventForLocationAccess,
+    query: Record<string, string | string[] | undefined>,
 ): {
     viewerApprovedForLocation: boolean;
     viewerRegistered: boolean;
     viewerRegisteredUnapproved: boolean;
+    viewerAttendeeId: string | null;
     editingEnabled: boolean;
 } {
     const eventEditToken = event.editToken;
@@ -72,6 +107,7 @@ function resolveLocationAccess(
         }
     }
     let viewerApprovedForLocation = true;
+    let viewerAttendeeId: string | null = null;
     if (approveRegistrations) {
         // Start hidden
         viewerApprovedForLocation = false;
@@ -79,11 +115,15 @@ function resolveLocationAccess(
             viewerApprovedForLocation = true;
         } else if (query.p) {
             const removalPassword = String(query.p);
-            const attendee = (event.attendees as AttendeeLite[] | undefined)?.find(
-                (a: AttendeeLite) => a.removalPassword === removalPassword,
-            );
-            if (attendee?.approved) {
-                viewerApprovedForLocation = true;
+            const attendee = (
+                event.attendees as AttendeeLite[] | undefined
+            )?.find((a: AttendeeLite) => a.removalPassword === removalPassword);
+            if (attendee) {
+                viewerAttendeeId =
+                    attendee._id?.toString() || attendee.id || null;
+                if (attendee.approved) {
+                    viewerApprovedForLocation = true;
+                }
             }
         }
     }
@@ -110,6 +150,7 @@ function resolveLocationAccess(
         viewerApprovedForLocation,
         viewerRegistered,
         viewerRegisteredUnapproved,
+        viewerAttendeeId,
         editingEnabled,
     };
 }
@@ -190,17 +231,16 @@ router.get("/events", async (_: Request, res: Response) => {
         return {
             id: event.id,
             name: event.name,
-            // Hide precise location if global gating OR this event requires approvals
-            location: (event as any).approveRegistrations
+            // Hide precise location if this event requires approvals
+            location: event.approveRegistrations
                 ? i18next.t("views.event.location_hidden")
                 : event.location,
             displayDate: isSameDay
                 ? startMoment.format("LL")
-                : `${startMoment.format("LL")} - ${endMoment.format(
-                      "LL",
-                  )}`,
+                : `${startMoment.format("LL")} - ${endMoment.format("LL")}`,
             eventHasConcluded: endMoment.isBefore(moment.tz(event.timezone)),
             eventGroup: event.eventGroup as unknown as IEventGroup,
+            eventGroupId: event.eventGroup?.toString(),
             startMoment,
             endMoment,
         };
@@ -214,17 +254,17 @@ router.get("/events", async (_: Request, res: Response) => {
     const eventGroups = await EventGroup.find({
         showOnPublicList: true,
     }).lean();
-    const updatedEventGroups = eventGroups.map((eventGroup: any) => {
-        return {
-            id: eventGroup.id,
-            name: eventGroup.name,
-            numberOfEvents: updatedEvents.filter(
-                (event) =>
-                    (event.eventGroup as any)?._id?.toString() ===
-                    (eventGroup as any)._id?.toString(),
-            ).length,
-        };
-    });
+    const updatedEventGroups = eventGroups.map(
+        (eventGroup: { id: string; name: string; _id?: mongoose.Types.ObjectId }) => {
+            return {
+                id: eventGroup.id,
+                name: eventGroup.name,
+                numberOfEvents: updatedEvents.filter(
+                    (event) => event.eventGroupId === eventGroup._id?.toString(),
+                ).length,
+            };
+        },
+    );
 
     res.render("publicEventList", {
         title: i18next.t("frontend.publicevents"),
@@ -233,7 +273,7 @@ router.get("/events", async (_: Request, res: Response) => {
         eventGroups: updatedEventGroups,
         instanceDescription: instanceDescription(),
         instanceRules: instanceRules(),
-    approveRegistrations: false,
+        approveRegistrations: false,
         ...frontendConfig(res),
     });
 });
@@ -248,56 +288,41 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         if (!event) {
             return res.status(404).render("404", frontendConfig(res));
         }
-    
+
         const parsedLocationOriginal = event.location.replace(/\s+/g, "+");
         let displayDate;
         const dateformat = i18next.t("frontend.dateformat");
-        const timeformat = i18next.t('frontend.timeformat');
+        const timeformat = i18next.t("frontend.timeformat");
         if (moment.tz(event.end, event.timezone).isSame(event.start, "day")) {
             // Happening during one day
-            displayDate = i18next.t("frontend.displaydate-sameday",
-                { 
-                    startdate: 
-                        moment
-                            .tz(event.start, event.timezone)
-                            .format(dateformat),
-                    starttime:
-                        moment
-                            .tz(event.start, event.timezone)
-                            .format(timeformat),
-                    endtime:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format(timeformat),
-                    timezone:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format('(z)',)
-                });
+            displayDate = i18next.t("frontend.displaydate-sameday", {
+                startdate: moment
+                    .tz(event.start, event.timezone)
+                    .format(dateformat),
+                starttime: moment
+                    .tz(event.start, event.timezone)
+                    .format(timeformat),
+                endtime: moment
+                    .tz(event.end, event.timezone)
+                    .format(timeformat),
+                timezone: moment.tz(event.end, event.timezone).format("(z)"),
+            });
         } else {
-            displayDate = i18next.t("frontend.displaydate-days",
-                {
-                    startdate:
-                        moment
-                            .tz(event.start, event.timezone)
-                            .format(dateformat),
-                    starttime:
-                        moment
-                            .tz(event.start, event.timezone)
-                            .format(timeformat),
-                    enddate:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format(dateformat),
-                    endtime:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format(timeformat),
-                    timezone:
-                        moment
-                            .tz(event.end, event.timezone)
-                            .format('(z)',)
-                });
+            displayDate = i18next.t("frontend.displaydate-days", {
+                startdate: moment
+                    .tz(event.start, event.timezone)
+                    .format(dateformat),
+                starttime: moment
+                    .tz(event.start, event.timezone)
+                    .format(timeformat),
+                enddate: moment
+                    .tz(event.end, event.timezone)
+                    .format(dateformat),
+                endtime: moment
+                    .tz(event.end, event.timezone)
+                    .format(timeformat),
+                timezone: moment.tz(event.end, event.timezone).format("(z)"),
+            });
         }
         const eventStartISO = moment.tz(event.start, "Etc/UTC").toISOString();
         const eventEndISO = moment.tz(event.end, "Etc/UTC").toISOString();
@@ -356,68 +381,132 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 { firstLoad: false },
             );
         }
-        const { viewerApprovedForLocation, viewerRegistered, viewerRegisteredUnapproved, editingEnabled } = resolveLocationAccess(event, req.query as Record<string, any>);
+        const {
+            viewerApprovedForLocation,
+            viewerRegistered,
+            viewerRegisteredUnapproved,
+            viewerAttendeeId,
+            editingEnabled,
+        } = resolveLocationAccess(
+            event,
+            req.query as Record<string, string | string[] | undefined>,
+        );
         const approveRegistrations = !!event.approveRegistrations;
-        const parsedLocation = viewerApprovedForLocation ? parsedLocationOriginal : "";
-        const calendarLocationParam = viewerApprovedForLocation ? parsedLocationOriginal : ""; // leave blank if hidden
+        const parsedLocation = viewerApprovedForLocation
+            ? parsedLocationOriginal
+            : "";
+        const calendarLocationParam = viewerApprovedForLocation
+            ? parsedLocationOriginal
+            : ""; // leave blank if hidden
         // Provide a sanitized copy of the event object for templates so location isn't leaked accidentally
         const sanitizedEvent = {
             ...event,
-            location: !viewerApprovedForLocation ?
-            i18next.t("views.event.location_hidden")
-            : event.location,
+            location: !viewerApprovedForLocation
+                ? i18next.t("views.event.location_hidden")
+                : event.location,
         };
-        
-        const eventAttendees = (event.attendees as AttendeeLite[] | undefined)
-            ?.sort((a: AttendeeLite, b: AttendeeLite) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
-            .map((el: AttendeeLite) => {
-                if (!el.id) {
-                    el.id = el._id;
-                }
-                if (el.number && el.number > 1) {
-                    el.name = `${el.name} ${i18next.t("frontend.elnumber", { count: el.number })}`;
-                }
-                return {
-                    ...el,
-                    // Backwards compatibility - if visibility is not set, default to public
-                    visibility: el.visibility || "public",
-                };
-            })
-            .filter((obj: AttendeeLite, pos: number, arr: AttendeeLite[]) => {
-                return (
-                    obj.status === "attending" &&
-                    arr.map((mapObj: AttendeeLite) => mapObj.id).indexOf(obj.id) === pos
-                );
-            });
+
+        // Build unified attendee list with computed state
+        // Visibility rules:
+        // - Host (editingEnabled): sees ALL attendees including pending
+        // - Approved viewer: sees only approved attendees
+        // - Unapproved viewer with ?p= link: sees only their own entry
+        // - Random visitor: sees nothing
+        const canSeeAllAttendees =
+            editingEnabled ||
+            !approveRegistrations ||
+            viewerApprovedForLocation;
+        const canSeeOnlySelf =
+            !canSeeAllAttendees &&
+            viewerRegisteredUnapproved &&
+            viewerAttendeeId;
+        const shouldFilterPending = approveRegistrations && !editingEnabled;
+
+        const isViewerAttendee = (attendee: AttendeeLite) =>
+            viewerAttendeeId &&
+            (attendee._id?.toString() === viewerAttendeeId ||
+                attendee.id === viewerAttendeeId);
+
+        // Process raw attendees into AttendeeView objects
+        const rawAttendees =
+            (event.attendees as AttendeeLite[] | undefined)
+                ?.filter((a) => a.status === "attending")
+                .sort((a, b) => a.name.localeCompare(b.name))
+                // Dedupe by id
+                .filter((obj, pos, arr) => {
+                    const id = obj._id || obj.id;
+                    return arr.findIndex((a) => (a._id || a.id) === id) === pos;
+                }) || [];
+
+        // Transform to AttendeeView with computed properties
+        let attendees: AttendeeView[] = [];
+        let numberOfHiddenAttendees = 0;
+        let totalAttendees = 0;
+
+        if (canSeeAllAttendees || canSeeOnlySelf) {
+            attendees = rawAttendees
+                .filter((a) => {
+                    // Filter based on viewer context
+                    if (canSeeOnlySelf) return isViewerAttendee(a);
+                    if (shouldFilterPending && !a.approved) return false;
+                    return true;
+                })
+                .map((a): AttendeeView => {
+                    const id = (a._id || a.id) as string;
+                    const displayName =
+                        a.number && a.number > 1
+                            ? `${a.name} ${i18next.t("frontend.elnumber", { count: a.number })}`
+                            : a.name;
+                    const isHidden = (a.visibility || "public") === "private";
+                    const isPending = approveRegistrations && !a.approved;
+
+                    return {
+                        id,
+                        name: displayName,
+                        avatarLetter: a.name.charAt(0).toUpperCase(),
+                        avatarColor: stringToColor(a.name),
+                        isHidden,
+                        isPending,
+                        // Actions: only available to host
+                        canApprove: editingEnabled && isPending,
+                        canRemove: editingEnabled,
+                        canCopyLink:
+                            editingEnabled &&
+                            approveRegistrations &&
+                            !isPending,
+                        // Only include removalPassword for host
+                        ...(editingEnabled && a.removalPassword
+                            ? { removalPassword: a.removalPassword }
+                            : {}),
+                    };
+                });
+
+            // Calculate counts
+            totalAttendees = rawAttendees
+                .filter((a) => {
+                    if (canSeeOnlySelf) return isViewerAttendee(a);
+                    if (shouldFilterPending && !a.approved) return false;
+                    return true;
+                })
+                .reduce((acc, a) => acc + (a.number || 1), 0);
+
+            numberOfHiddenAttendees = rawAttendees
+                .filter((a) => {
+                    if (canSeeOnlySelf) return isViewerAttendee(a);
+                    if (shouldFilterPending && !a.approved) return false;
+                    return (a.visibility || "public") === "private";
+                })
+                .reduce((acc, a) => acc + (a.number || 1), 0);
+        }
+
+        // Capacity calculation - only count approved attendees
+        const approvedAttendeesCount = rawAttendees
+            .filter((a) => !approveRegistrations || a.approved)
+            .reduce((acc, a) => acc + (a.number || 1), 0);
 
         let spotsRemaining, noMoreSpots;
-        const numberOfAttendees =
-            eventAttendees?.reduce((acc: number, attendee: AttendeeLite) => {
-                if (attendee.status === "attending") {
-                    return acc + (attendee.number || 1);
-                }
-                return acc;
-            }, 0) || 0;
-        const visibleAttendees = eventAttendees?.filter(
-            (attendee: AttendeeLite) => attendee.visibility === "public",
-        );
-        const hiddenAttendees = eventAttendees?.filter(
-            (attendee: AttendeeLite) => attendee.visibility === "private",
-        );
-        const numberOfHiddenAttendees = eventAttendees?.reduce(
-            (acc: number, attendee: AttendeeLite) => {
-                if (
-                    attendee.status === "attending" &&
-                    attendee.visibility === "private"
-                ) {
-                    return acc + (attendee.number || 1);
-                }
-                return acc;
-            },
-            0,
-        );
         if (event.maxAttendees) {
-            spotsRemaining = event.maxAttendees - numberOfAttendees;
+            spotsRemaining = event.maxAttendees - approvedAttendeesCount;
             if (spotsRemaining <= 0) {
                 noMoreSpots = true;
             }
@@ -446,7 +535,9 @@ router.get("/:eventID", async (req: Request, res: Response) => {
             if (approveRegistrations && !viewerApprovedForLocation) {
                 // Attempt to sanitize obvious location fields
                 if (actorObj.location) {
-                    actorObj.location = i18next.t("views.event.location_hidden");
+                    actorObj.location = i18next.t(
+                        "views.event.location_hidden",
+                    );
                 }
             }
             res.header("Content-Type", activityPubContentType).send(actorObj);
@@ -461,9 +552,9 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                 approveRegistrations: approveRegistrations,
                 viewerRegistered,
                 viewerRegisteredUnapproved,
-                visibleAttendees,
-                hiddenAttendees,
-                numberOfAttendees,
+                attendeesListHidden: canSeeOnlySelf,
+                attendees,
+                numberOfAttendees: totalAttendees,
                 numberOfHiddenAttendees,
                 spotsRemaining: spotsRemaining,
                 noMoreSpots: noMoreSpots,
@@ -496,7 +587,9 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                     name: event.name,
                     id: event.id,
                     description: event.description,
-                    location: viewerApprovedForLocation ? event.location : undefined,
+                    location: viewerApprovedForLocation
+                        ? event.location
+                        : undefined,
                     timezone: event.timezone,
                     url: event.url,
                     hostName: event.hostName,
@@ -511,7 +604,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
                     usersCanAttend: event.usersCanAttend,
                     usersCanComment: event.usersCanComment,
                     maxAttendees: event.maxAttendees,
-                    approveRegistrations: (event as any).approveRegistrations || false,
+                    approveRegistrations: event.approveRegistrations || false,
                     startISO: eventStartISO,
                     endISO: eventEndISO,
                     startForDateInput: parsedStartForDateInput,
@@ -557,27 +650,34 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
             .lean()
             .sort("start");
 
-    
-        const updatedEvents: EventListEvent[] = events.map((event: EventLite) => {
-            const startMoment = moment.tz(event.start, event.timezone).locale(i18next.language);
-            const endMoment = moment.tz(event.end, event.timezone).locale(i18next.language);
-            const isSameDay = startMoment.isSame(endMoment, "day");
+        const updatedEvents: EventListEvent[] = events.map(
+            (event: EventLite) => {
+                const startMoment = moment
+                    .tz(event.start, event.timezone)
+                    .locale(i18next.language);
+                const endMoment = moment
+                    .tz(event.end, event.timezone)
+                    .locale(i18next.language);
+                const isSameDay = startMoment.isSame(endMoment, "day");
 
-            return {
-                id: event.id,
-                name: event.name,
-                // Hide if global gating OR individual event requires approvals
-                location: (event as any).approveRegistrations ? i18next.t("views.event.location_hidden") : event.location,
-                displayDate: isSameDay
-                    ? startMoment.format("LL")
-                    : `${startMoment.format("LL")} - ${endMoment.format("LL")}`,
-                eventHasConcluded: endMoment.isBefore(
-                    moment.tz(event.timezone),
-                ),
-                startMoment,
-                endMoment,
-            };
-        });
+                return {
+                    id: event.id,
+                    name: event.name,
+                    // Hide if individual event requires approvals
+                    location: event.approveRegistrations
+                        ? i18next.t("views.event.location_hidden")
+                        : event.location,
+                    displayDate: isSameDay
+                        ? startMoment.format("LL")
+                        : `${startMoment.format("LL")} - ${endMoment.format("LL")}`,
+                    eventHasConcluded: endMoment.isBefore(
+                        moment.tz(event.timezone),
+                    ),
+                    startMoment,
+                    endMoment,
+                };
+            },
+        );
 
         const upcomingEventsInMonthBuckets = updatedEvents
             .filter((event) => !event.eventHasConcluded)
@@ -681,12 +781,20 @@ router.get(
                     editingEnabled = true;
                 }
                 // If approvals are required and viewer is not host, strip locations
-                const sanitizedEvents = events.map((ev: any) => {
+                const sanitizedEvents: ICalEvent[] = events.map((ev) => {
                     const evObj = ev.toObject?.() || ev;
-                    const needsHide = evObj.approveRegistrations && !editingEnabled;
-                    return needsHide ? { ...evObj, location: i18next.t("views.event.location_hidden") } : evObj;
+                    const needsHide =
+                        evObj.approveRegistrations && !editingEnabled;
+                    return needsHide
+                        ? {
+                              ...evObj,
+                              location: i18next.t(
+                                  "views.event.location_hidden",
+                              ),
+                          }
+                        : evObj;
                 });
-                const string = exportIcal(sanitizedEvents as any, eventGroup.name);
+                const string = exportIcal(sanitizedEvents, eventGroup.name);
                 res.set("Content-Type", "text/calendar").send(string);
             }
         } catch (err) {
@@ -708,9 +816,18 @@ router.get("/export/event/:eventID", async (req: Request, res: Response) => {
         }).populate("eventGroup");
 
         if (event) {
-            const { viewerApprovedForLocation, editingEnabled } = resolveLocationAccess(event, req.query as Record<string, any>);
-            const sanitizedEvent = viewerApprovedForLocation ? event : ({ ...(event.toObject?.() || event), location: i18next.t("views.event.location_hidden") });
-            const string = exportIcal([sanitizedEvent] as any, event.name);
+            const { viewerApprovedForLocation } = resolveLocationAccess(
+                event,
+                req.query as Record<string, string | string[] | undefined>,
+            );
+            const evObj = event.toObject?.() || event;
+            const sanitizedEvent: ICalEvent = viewerApprovedForLocation
+                ? evObj
+                : {
+                      ...evObj,
+                      location: i18next.t("views.event.location_hidden"),
+                  };
+            const string = exportIcal([sanitizedEvent], event.name);
             res.set("Content-Type", "text/calendar").send(string);
         }
     } catch (err) {
@@ -740,12 +857,20 @@ router.get(
                 if (req.query.e && req.query.e === eventGroup.editToken) {
                     editingEnabled = true;
                 }
-                const sanitizedEvents = events.map((ev: any) => {
+                const sanitizedEvents: ICalEvent[] = events.map((ev) => {
                     const evObj = ev.toObject?.() || ev;
-                    const needsHide = evObj.approveRegistrations && !editingEnabled;
-                    return needsHide ? { ...evObj, location: i18next.t("views.event.location_hidden") } : evObj;
+                    const needsHide =
+                        evObj.approveRegistrations && !editingEnabled;
+                    return needsHide
+                        ? {
+                              ...evObj,
+                              location: i18next.t(
+                                  "views.event.location_hidden",
+                              ),
+                          }
+                        : evObj;
                 });
-                const string = exportIcal(sanitizedEvents as any, eventGroup.name);
+                const string = exportIcal(sanitizedEvents, eventGroup.name);
                 res.set("Content-Type", "text/calendar").send(string);
             }
         } catch (err) {
