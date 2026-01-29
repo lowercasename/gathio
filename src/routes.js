@@ -18,7 +18,6 @@ import Event from "./models/Event.js";
 import EventGroup from "./models/EventGroup.js";
 import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
-import { hashString } from "./util/generator.js";
 import i18next from "i18next";
 
 const config = getConfig();

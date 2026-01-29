@@ -748,156 +748,137 @@ router.get(
 );
 
 // Finalize attendance (convert provisioned attendee to attending)
-router.post(
-  "/event/:eventID/attendee",
-  async (req: Request, res: Response) => {
-    const {
-      removalPassword,
-      attendeeName,
-      attendeeEmail,
-      attendeeNumber,
-      attendeeVisible,
-    } = req.body;
+router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
+  const {
+    removalPassword,
+    attendeeName,
+    attendeeEmail,
+    attendeeNumber,
+    attendeeVisible,
+  } = req.body;
 
-    if (!removalPassword) {
-      return res
-        .status(400)
-        .json({ error: "Removal password is required." });
+  if (!removalPassword) {
+    return res.status(400).json({ error: "Removal password is required." });
+  }
+
+  try {
+    const event = await Event.findOne({ id: req.params.eventID });
+    if (!event) {
+      return res.status(404).json({ error: "Event not found." });
     }
 
-    try {
-      const event = await Event.findOne({ id: req.params.eventID });
-      if (!event) {
-        return res.status(404).json({ error: "Event not found." });
-      }
-
-      const attendee = event.attendees?.find(
-        (a) => a.removalPassword === removalPassword,
-      );
-      if (!attendee) {
-        return res.status(404).json({ error: "Attendee not found." });
-      }
-
-      // Check capacity - for approval-required events, only count approved attendees
-      if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
-        const currentCount =
-          event.attendees?.reduce((acc, a) => {
-            if (a.status !== "attending") return acc;
-            if (event.approveRegistrations && !a.approved) return acc;
-            return acc + (a.number || 1);
-          }, 0) || 0;
-        const freeSpots = event.maxAttendees - currentCount;
-        if (attendeeNumber > freeSpots) {
-          return res
-            .status(403)
-            .json({ error: "Not enough spots available." });
-        }
-      }
-
-      // Check if this is the host adding an attendee (via edit token)
-      const editToken = req.query.e || req.body.editToken;
-      const isHostAdding = editToken && editToken === event.editToken;
-
-      // Update attendee
-      attendee.status = "attending";
-      attendee.name = attendeeName;
-      attendee.email = attendeeEmail;
-      attendee.number = parseInt(attendeeNumber, 10) || 1;
-      attendee.visibility = attendeeVisible ? "public" : "private";
-
-      // Auto-approve if host is adding, or if event doesn't require approval
-      if (isHostAdding || !event.approveRegistrations) {
-        attendee.approved = true;
-      }
-
-      // Mark subdocument as modified so Mongoose detects changes
-      event.markModified("attendees");
-      await event.save();
-
-      addToLog(
-        "addEventAttendee",
-        "success",
-        `Attendee added to event ${req.params.eventID}`,
-      );
-
-      // Send confirmation email to attendee (only if they're approved, not if pending)
-      if (attendeeEmail && attendee.approved) {
-        req.emailService
-          .sendEmailFromTemplate({
-            to: attendeeEmail,
-            subject: i18next.t("routes.addeventattendeesubject", {
-              eventName: event.name,
-            }),
-            templateName: "addEventAttendee",
-            templateData: {
-              eventID: req.params.eventID,
-              removalPassword,
-              removalPasswordHash: hashString(removalPassword),
-            },
-          })
-          .catch((e) => {
-            console.error("Error sending addEventAttendee email:", e);
-          });
-      }
-
-      // Notify host if approval is required (but not if host added the attendee themselves)
-      if (
-        event.approveRegistrations &&
-        event.creatorEmail &&
-        !isHostAdding
-      ) {
-        req.emailService
-          .sendEmailFromTemplate({
-            to: event.creatorEmail,
-            subject: i18next.t(
-              "routes.attendeeawaitingapprovalsubject",
-              {
-                eventName: event.name,
-              },
-            ),
-            templateName: "attendeeAwaitingApproval",
-            templateData: {
-              eventID: req.params.eventID,
-              eventName: event.name,
-              attendeeName,
-              editToken: event.editToken,
-            },
-          })
-          .catch((e) => {
-            console.error(
-              "Error sending attendeeAwaitingApproval email:",
-              e,
-            );
-          });
-      }
-
-      // Redirect appropriately based on who is adding the attendee
-      if (isHostAdding) {
-        // Host added attendee - redirect back to edit view
-        return res.redirect(`/${req.params.eventID}?e=${editToken}`);
-      } else if (event.approveRegistrations) {
-        // Approval required - show save link modal since location is hidden until approved
-        return res.redirect(
-          `/${req.params.eventID}?p=${encodeURIComponent(removalPassword)}&m=rsvppending`,
-        );
-      } else {
-        // No approval needed - just redirect with ?p
-        return res.redirect(
-          `/${req.params.eventID}?p=${encodeURIComponent(removalPassword)}`,
-        );
-      }
-    } catch (e) {
-      addToLog(
-        "addEventAttendee",
-        "error",
-        `Attempt to add attendee to event ${req.params.eventID} failed with error: ${e}`,
-      );
-      return res
-        .status(500)
-        .json({ error: "An unexpected error occurred." });
+    const attendee = event.attendees?.find(
+      (a) => a.removalPassword === removalPassword,
+    );
+    if (!attendee) {
+      return res.status(404).json({ error: "Attendee not found." });
     }
-  },
-);
+
+    // Check capacity - for approval-required events, only count approved attendees
+    if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
+      const currentCount =
+        event.attendees?.reduce((acc, a) => {
+          if (a.status !== "attending") return acc;
+          if (event.approveRegistrations && !a.approved) return acc;
+          return acc + (a.number || 1);
+        }, 0) || 0;
+      const freeSpots = event.maxAttendees - currentCount;
+      if (attendeeNumber > freeSpots) {
+        return res.status(403).json({ error: "Not enough spots available." });
+      }
+    }
+
+    // Check if this is the host adding an attendee (via edit token)
+    const editToken = req.query.e || req.body.editToken;
+    const isHostAdding = editToken && editToken === event.editToken;
+
+    // Update attendee
+    attendee.status = "attending";
+    attendee.name = attendeeName;
+    attendee.email = attendeeEmail;
+    attendee.number = parseInt(attendeeNumber, 10) || 1;
+    attendee.visibility = attendeeVisible ? "public" : "private";
+
+    // Auto-approve if host is adding, or if event doesn't require approval
+    if (isHostAdding || !event.approveRegistrations) {
+      attendee.approved = true;
+    }
+
+    // Mark subdocument as modified so Mongoose detects changes
+    event.markModified("attendees");
+    await event.save();
+
+    addToLog(
+      "addEventAttendee",
+      "success",
+      `Attendee added to event ${req.params.eventID}`,
+    );
+
+    // Send confirmation email to attendee (only if they're approved, not if pending)
+    if (attendeeEmail && attendee.approved) {
+      req.emailService
+        .sendEmailFromTemplate({
+          to: attendeeEmail,
+          subject: i18next.t("routes.addeventattendeesubject", {
+            eventName: event.name,
+          }),
+          templateName: "addEventAttendee",
+          templateData: {
+            eventID: req.params.eventID,
+            removalPassword,
+            removalPasswordHash: hashString(removalPassword),
+          },
+        })
+        .catch((e) => {
+          console.error("Error sending addEventAttendee email:", e);
+        });
+    }
+
+    // Notify host if approval is required (but not if host added the attendee themselves)
+    if (event.approveRegistrations && event.creatorEmail && !isHostAdding) {
+      req.emailService
+        .sendEmailFromTemplate({
+          to: event.creatorEmail,
+          subject: i18next.t("routes.attendeeawaitingapprovalsubject", {
+            eventName: event.name,
+          }),
+          templateName: "attendeeAwaitingApproval",
+          templateData: {
+            eventID: req.params.eventID,
+            eventName: event.name,
+            attendeeName,
+            editToken: event.editToken,
+          },
+        })
+        .catch((e) => {
+          console.error("Error sending attendeeAwaitingApproval email:", e);
+        });
+    }
+
+    // Redirect appropriately based on who is adding the attendee
+    if (isHostAdding) {
+      // Host added attendee - redirect back to edit view
+      return res.redirect(`/${req.params.eventID}?e=${editToken}`);
+    } else if (event.approveRegistrations) {
+      // Approval required - show save link modal since location is hidden until approved
+      return res.redirect(
+        `/${req.params.eventID}?p=${encodeURIComponent(removalPassword)}&m=rsvppending`,
+      );
+    } else {
+      // No approval needed - just redirect with ?p
+      return res.redirect(
+        `/${req.params.eventID}?p=${encodeURIComponent(removalPassword)}`,
+      );
+    }
+  } catch (e) {
+    addToLog(
+      "addEventAttendee",
+      "error",
+      `Attempt to add attendee to event ${req.params.eventID} failed with error: ${e}`,
+    );
+    return res.status(500).json({ error: "An unexpected error occurred." });
+  }
+});
 
 // Approve an attendee (host action for approval-required events)
 router.patch(
@@ -956,9 +937,7 @@ router.patch(
         "error",
         `Attempt to approve attendee in event ${req.params.eventID} failed with error: ${e}`,
       );
-      return res
-        .status(500)
-        .json({ error: "An unexpected error occurred." });
+      return res.status(500).json({ error: "An unexpected error occurred." });
     }
   },
 );
@@ -1005,9 +984,7 @@ router.delete(
         "error",
         `Attempt to deny attendee in event ${req.params.eventID} failed with error: ${e}`,
       );
-      return res
-        .status(500)
-        .json({ error: "An unexpected error occurred." });
+      return res.status(500).json({ error: "An unexpected error occurred." });
     }
   },
 );
