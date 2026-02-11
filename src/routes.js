@@ -56,7 +56,7 @@ schedule.scheduleJob("59 23 * * *", function (_fireDate) {
     .then((oldEvents) => {
       oldEvents.forEach((event) => {
         const deleteEventFromDB = (id) => {
-          Event.remove({ _id: id })
+          Event.deleteOne({ _id: id })
             .then((_response) => {
               addToLog(
                 "deleteOldEvents",
