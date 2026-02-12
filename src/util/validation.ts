@@ -35,6 +35,7 @@ interface EventData {
   joinCheckbox: string;
   maxAttendeesCheckbox: string;
   maxAttendees: number;
+  approveRegistrationsCheckbox?: string; // optional checkbox value
 }
 
 // EventData without the 'checkbox' fields
@@ -45,12 +46,14 @@ export type ValidatedEventData = Omit<
   | "interactionCheckbox"
   | "joinCheckbox"
   | "maxAttendeesCheckbox"
+  | "approveRegistrationsCheckbox"
 > & {
   publicBoolean: boolean;
   eventGroupBoolean: boolean;
   interactionBoolean: boolean;
   joinBoolean: boolean;
   maxAttendeesBoolean: boolean;
+  approveRegistrationsBoolean: boolean;
 };
 
 interface EventGroupData {
@@ -136,6 +139,8 @@ export const validateEventData = (
     interactionBoolean: eventData.interactionCheckbox === "true",
     joinBoolean: eventData.joinCheckbox === "true",
     maxAttendeesBoolean: eventData.maxAttendeesCheckbox === "true",
+    approveRegistrationsBoolean:
+      eventData.approveRegistrationsCheckbox === "true",
   };
   const errors: Error[] = [];
   if (!validatedData.eventName) {

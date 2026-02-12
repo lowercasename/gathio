@@ -49,8 +49,60 @@ declare namespace Cypress {
       },
       isPublic?: boolean,
     ): Chainable<Subject>;
+    createEventWithApproval(eventData: {
+      eventName: string;
+      eventLocation: string;
+      eventStart: string;
+      eventEnd: string;
+      timezone: string;
+      eventDescription: string;
+      hostName: string;
+      creatorEmail: string;
+      maxAttendees?: number;
+    }): Chainable<Subject>;
   }
 }
+
+Cypress.Commands.add("createEventWithApproval", (eventData) => {
+  cy.visit("/new");
+  cy.get("#showNewEventFormButton").click();
+
+  cy.get("#eventName").type(eventData.eventName);
+  cy.get("#eventLocation").type(eventData.eventLocation);
+  cy.get("#eventStart").type(eventData.eventStart);
+  cy.get("#eventEnd").type(eventData.eventEnd);
+
+  cy.get("select#timezone + span.select2").click();
+  cy.get(".select2-results__option")
+    .contains(eventData.timezone)
+    .click({ force: true });
+
+  cy.get("#eventDescription").type(eventData.eventDescription);
+  cy.get("#hostName").type(eventData.hostName);
+  cy.get("#creatorEmail").type(eventData.creatorEmail);
+
+  // Enable attendance and approval
+  cy.get("#joinCheckbox").check();
+  cy.get("#approveRegistrationsCheckbox").check();
+
+  // Set max attendees if provided
+  if (eventData.maxAttendees) {
+    cy.get("#maxAttendeesCheckbox").check();
+    cy.get("#maxAttendees").type(eventData.maxAttendees.toString());
+  }
+
+  cy.get("#newEventFormSubmit").click();
+
+  // Wait for the new page to load
+  cy.url({ timeout: 10000 }).should("not.include", "/new");
+
+  // Get the new event ID from the URL
+  cy.url().then((url) => {
+    const [eventID, editToken] = url.split("/").pop()!.split("?");
+    cy.wrap(eventID).as("eventID");
+    cy.wrap(editToken.slice(2)).as("editToken");
+  });
+});
 
 Cypress.Commands.add("createGroup", (groupData, isPublic) => {
   cy.visit("/new");

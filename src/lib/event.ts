@@ -10,6 +10,7 @@ export interface EventListEvent {
   startMoment: moment.Moment;
   endMoment: moment.Moment;
   eventGroup?: IEventGroup;
+  eventGroupId?: string;
 }
 
 interface EventBucket {

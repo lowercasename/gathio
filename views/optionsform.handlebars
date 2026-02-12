@@ -1,10 +1,16 @@
-<div class="form-group row">
+<div class="form-group row" x-data="{ joinChecked: {{#if data.joinCheckbox}}true{{else}}false{{/if}} }">
   <div class="col-sm-2">{{t "options.title" }}</div>
   <div class="col-sm-10">
     <div class="form-check">
-      <input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox" {{#if data.joinCheckbox}}checked{{/if}}>
+      <input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox" x-model="joinChecked" {{#if data.joinCheckbox}}checked{{/if}}>
       <label class="form-check-label" for="joinCheckbox">
         {{t "views.join" }}
+      </label>
+    </div>
+    <div class="form-check ml-4" x-show="joinChecked">
+      <input class="form-check-input" type="checkbox" id="approveRegistrationsCheckbox" name="approveRegistrationsCheckbox" {{#if data.approveRegistrationsCheckbox}}checked{{/if}}>
+      <label class="form-check-label" for="approveRegistrationsCheckbox">
+        {{t "views.event.requireapproval" }}
       </label>
     </div>
     <div class="form-check">
@@ -22,24 +28,30 @@
   </div>
 </div>
 
-<div class="form-group row">
+<div class="form-group row" x-data="{ joinChecked: {{#if eventData.usersCanAttend}}true{{else}}false{{/if}} }">
   <div class="col-sm-2">{{t "options.title" }}</div>
   <div class="col-sm-10">
     <div class="form-check">
-      <input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox" {{#if eventData.usersCanAttend}}checked{{/if}}>
-      <label class="form-check-label" for="joinCheckbox">
+      <input class="form-check-input" type="checkbox" id="joinCheckboxEdit" name="joinCheckbox" x-model="joinChecked" {{#if eventData.usersCanAttend}}checked{{/if}}>
+      <label class="form-check-label" for="joinCheckboxEdit">
         {{t "views.join" }}
       </label>
     </div>
+    <div class="form-check ml-4" x-show="joinChecked">
+      <input class="form-check-input" type="checkbox" id="approveRegistrationsCheckboxEdit" name="approveRegistrationsCheckbox" {{#if eventData.approveRegistrations}}checked{{/if}}>
+      <label class="form-check-label" for="approveRegistrationsCheckboxEdit">
+        {{t "views.event.requireapproval" }}
+      </label>
+    </div>
     <div class="form-check">
-      <input class="form-check-input" type="checkbox" id="guestlistCheckbox" name="guestlistCheckbox"  {{#if eventData.showUsersList}}checked{{/if}}>
-      <label class="form-check-label" for="guestlistCheckbox">
+      <input class="form-check-input" type="checkbox" id="guestlistCheckboxEdit" name="guestlistCheckbox"  {{#if eventData.showUsersList}}checked{{/if}}>
+      <label class="form-check-label" for="guestlistCheckboxEdit">
         {{t "views.options.showlistattendees" }}
       </label>
     </div>
     <div class="form-check">
-      <input class="form-check-input" type="checkbox" id="interactionCheckbox" name="interactionCheckbox" {{#if eventData.usersCanComment}}checked{{/if}}>
-      <label class="form-check-label" for="interactionCheckbox">
+      <input class="form-check-input" type="checkbox" id="interactionCheckboxEdit" name="interactionCheckbox" {{#if eventData.usersCanComment}}checked{{/if}}>
+      <label class="form-check-label" for="interactionCheckboxEdit">
         {{t "views.interaction" }}
       </label>
     </div>

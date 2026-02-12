@@ -81,8 +81,6 @@ async function initializeApp() {
     next();
   });
 
-  app.use(handle(i18next));
-
   // to Switch language
   app.use((req, _res, next) => {
     const currentLanguage = i18next.language;
@@ -125,6 +123,10 @@ async function initializeApp() {
       },
       json: function (context: object) {
         return JSON.stringify(context);
+      },
+      firstLetter: function (name: string) {
+        // Get the first letter of a name for avatar display
+        return name ? name.charAt(0).toUpperCase() : "?";
       },
     },
   });
