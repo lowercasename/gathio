@@ -217,6 +217,7 @@ describe("Events", () => {
   });
 
   it("allows editing an event after it starts", function () {
+    const updatedEventName = "Edited While";
     const oneHour = 60 * 60 * 1000;
     const startedEventStart = toDatetimeLocalUTC(
       new Date(Date.now() - oneHour),
@@ -227,7 +228,7 @@ describe("Events", () => {
 
     cy.get("#editEventForm #eventName").focus();
     cy.get("#editEventForm #eventName").clear();
-    cy.get("#editEventForm #eventName").type("Edited While Ongoing");
+    cy.get("#editEventForm #eventName").type(updatedEventName);
 
     cy.get("#editEventForm #eventStart").focus();
     cy.get("#editEventForm #eventStart").clear();
@@ -244,7 +245,7 @@ describe("Events", () => {
 
     cy.get("#editEventForm").submit();
 
-    cy.get(".p-name").should("have.text", "Edited While Ongoing");
+    cy.get(".p-name").should("have.text", updatedEventName);
   });
 
   it("sets a group for an event", function () {
