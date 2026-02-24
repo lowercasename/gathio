@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
-import Event, { IAttendee } from "../models/Event.js";
+import Event, { IAttendee, getApprovedAttendeeCount } from "../models/Event.js";
 import { sendDirectMessage } from "../activitypub.js";
 import { successfulRSVPResponse } from "./activitypub/templates.js";
+import getConfig from "./config.js";
 
 interface APObject {
   type: "Note";
@@ -138,6 +139,28 @@ export const handlePollResponse = async (req: Request, res: Response) => {
 
     // If the actor is not already attending the event, add them
     if (!event.attendees?.some((el) => el.id === attributedTo)) {
+      // Check if the event is at capacity
+      if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
+        if (getApprovedAttendeeCount(event) >= event.maxAttendees) {
+          const domain = getConfig().general.domain;
+          const jsonObject = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            type: "Note" as const,
+            name: `RSVP to ${event.name}`,
+            content: `<span class="h-card"><a href="${attributedTo}" class="u-url mention">@<span>${attributedTo}</span></a></span> Sorry, ${event.name} is now at capacity and we couldn't add you to the list. You can check the event page at <a href="https://${domain}/${eventID}">https://${domain}/${eventID}</a> for updates.`,
+            tag: [
+              {
+                type: "Mention",
+                href: attributedTo,
+                name: attributedTo,
+              },
+            ],
+          };
+          sendDirectMessage(jsonObject, attributedTo, event.id);
+          return res.status(200).send("Event is at capacity.");
+        }
+      }
+
       const attendeeName =
         apActor.preferredUsername || apActor.name || attributedTo;
       const requiresApproval = !!event.approveRegistrations;
