@@ -16,6 +16,7 @@ type EmailTemplateName =
   | "addEventComment"
   | "attendeeAwaitingApproval"
   | "attendeeApproved"
+  | "attendeePendingConfirmation"
   | "createEvent"
   | "createEventGroup"
   | "createEventMagicLink"

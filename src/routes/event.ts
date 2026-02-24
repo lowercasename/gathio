@@ -829,7 +829,7 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
       `Attendee added to event ${req.params.eventID}`,
     );
 
-    // Send confirmation email to attendee (only if they're approved, not if pending)
+    // Send confirmation email to attendee
     if (attendeeEmail && attendee.approved) {
       req.emailService
         .sendEmailFromTemplate({
@@ -846,6 +846,27 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
         })
         .catch((e) => {
           console.error("Error sending addEventAttendee email:", e);
+        });
+    } else if (attendeeEmail && !attendee.approved) {
+      // Send pending confirmation with their secret link so they have it via email
+      req.emailService
+        .sendEmailFromTemplate({
+          to: attendeeEmail,
+          subject: i18next.t("routes.attendeependingconfirmationsubject", {
+            eventName: event.name,
+          }),
+          templateName: "attendeePendingConfirmation",
+          templateData: {
+            eventID: req.params.eventID,
+            eventName: event.name,
+            removalPassword,
+          },
+        })
+        .catch((e) => {
+          console.error(
+            "Error sending attendeePendingConfirmation email:",
+            e,
+          );
         });
     }
 
