@@ -863,10 +863,7 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
           },
         })
         .catch((e) => {
-          console.error(
-            "Error sending attendeePendingConfirmation email:",
-            e,
-          );
+          console.error("Error sending attendeePendingConfirmation email:", e);
         });
     }
 
