@@ -1,6 +1,8 @@
 import eventData from "../fixtures/eventData.json";
 import crypto from "crypto";
 
+const toDatetimeLocalUTC = (date: Date) => date.toISOString().slice(0, 16);
+
 describe("Events", () => {
   beforeEach(() => {
     cy.visit("/new");
@@ -212,6 +214,38 @@ describe("Events", () => {
     cy.get("#postComment").should("not.exist");
     // Check that the attendee form is not visible
     cy.get("#attendEvent").should("not.exist");
+  });
+
+  it("allows editing an event after it starts", function () {
+    const updatedEventName = "Edited While";
+    const oneHour = 60 * 60 * 1000;
+    const startedEventStart = toDatetimeLocalUTC(
+      new Date(Date.now() - oneHour),
+    );
+    const startedEventEnd = toDatetimeLocalUTC(new Date(Date.now() + oneHour));
+
+    cy.get("#editEvent").click();
+
+    cy.get("#editEventForm #eventName").focus();
+    cy.get("#editEventForm #eventName").clear();
+    cy.get("#editEventForm #eventName").type(updatedEventName);
+
+    cy.get("#editEventForm #eventStart").focus();
+    cy.get("#editEventForm #eventStart").clear();
+    cy.get("#editEventForm #eventStart").type(startedEventStart);
+
+    cy.get("#editEventForm #eventEnd").focus();
+    cy.get("#editEventForm #eventEnd").clear();
+    cy.get("#editEventForm #eventEnd").type(startedEventEnd);
+
+    cy.get("#editEventForm select#timezone + span.select2").click();
+    cy.get(".select2-results__option")
+      .contains("Etc/UTC")
+      .click({ force: true });
+
+    cy.get("#editEventForm").submit();
+
+    cy.get(".p-name").should("have.text", updatedEventName);
   });
 
   it("sets a group for an event", function () {
