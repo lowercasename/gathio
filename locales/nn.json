@@ -68,7 +68,6 @@
   "util.validation.eventtime.endisbefore": "Slutt-tid må vere i framtida.",
   "util.validation.eventtime.endyears": "Arrangementet kan ikkje vare lengre enn 1 år.",
   "util.validation.eventtime.startisafter": "Start-tid må vere før slutt-tid.",
-  "util.validation.eventtime.startisbefore": "Start-tid må vere i framtida.",
   "util.validation.groupdata.creatoremail": "Ugyldig e-postadresse.",
   "util.validation.groupdata.eventgroupdescription": "Skildring av arrangementsgruppa er påkravd.",
   "util.validation.groupdata.eventgroupname": "Namn på arrangementsgruppa er påkravd.",

@@ -68,7 +68,6 @@
   "util.validation.eventtime.endisbefore": "終了日時は未来にしてください。",
   "util.validation.eventtime.endyears": "1 年を超えるイベントは作成できません。",
   "util.validation.eventtime.startisafter": "開始日時は、終了日時より前にしてください。",
-  "util.validation.eventtime.startisbefore": "開始日時は未来にしてください。",
   "util.validation.groupdata.creatoremail": "メールアドレスが無効です。",
   "util.validation.groupdata.eventgroupdescription": "説明は必須です。",
   "util.validation.groupdata.eventgroupname": "グループ名は必須です。",
