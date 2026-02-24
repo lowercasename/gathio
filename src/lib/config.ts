@@ -171,9 +171,6 @@ export const instanceDescription = (): string => {
   const instancedescfile =
     "./static/instance-description-" + i18next.language + ".md";
   try {
-    console.log(
-      "Attempting to load instance description file: " + instancedescfile,
-    );
     if (fs.existsSync(instancedescfile)) {
       const fileBody = fs.readFileSync(instancedescfile, "utf-8");
       instanceDescription = markdownToSanitizedHTML(fileBody);

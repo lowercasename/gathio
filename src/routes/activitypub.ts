@@ -163,10 +163,10 @@ router.get(
           'Bad request. Please make sure "acct:USER@DOMAIN" is what you are sending as the "resource" query parameter.',
         );
     } else {
-      // "foo@domain"
+      // "foo@domain" or "@foo@domain"
       const activityPubAccount = resource.replace("acct:", "");
-      // "foo"
-      const eventID = activityPubAccount.replace(/@.*/, "");
+      // "foo" (strip optional leading @ before extracting the username)
+      const eventID = activityPubAccount.replace(/^@/, "").replace(/@.*/, "");
 
       try {
         const event = await Event.findOne({ id: eventID });

@@ -192,6 +192,10 @@ export function updateActivityPubActor(
 
 export function signAndSend(message, eventID, targetDomain, inbox, callback) {
   if (!isFederated) return;
+  if (!inbox) {
+    callback(new Error(`No inbox URL for ${targetDomain}`), null, 500);
+    return;
+  }
   let inboxFragment = inbox.replace("https://" + targetDomain, "");
   // get the private key
   Event.findOne({
@@ -497,6 +501,13 @@ export function broadcastDeleteMessage(apObject, followers, eventID, callback) {
               if (follower) {
                 const actorJson = JSON.parse(follower.actorJson);
                 const inbox = actorJson.inbox;
+                if (!inbox) {
+                  console.log(
+                    `No inbox found for follower ${actorId}, skipping`,
+                  );
+                  resolve(`No inbox for ${actorId}`);
+                  return;
+                }
                 const createMessage = {
                   "@context": "https://www.w3.org/ns/activitystreams",
                   id: `https://${domain}/${eventID}/m/${guidUpdate}`,
