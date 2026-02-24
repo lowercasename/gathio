@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, type Request, type Response } from "express";
 import moment from "moment-timezone";
 import { marked } from "marked";
 import { markdownToSanitizedHTML, renderPlain } from "../util/markdown.js";
@@ -7,10 +7,10 @@ import {
   instanceDescription,
   instanceRules,
 } from "../lib/config.js";
-import { addToLog, exportIcal, ICalEvent } from "../helpers.js";
-import Event from "../models/Event.js";
-import EventGroup, { IEventGroup } from "../models/EventGroup.js";
-import mongoose from "mongoose";
+import { addToLog, exportIcal, type ICalEvent } from "../helpers.js";
+import Event, { getApprovedAttendeeCount } from "../models/Event.js";
+import EventGroup, { type IEventGroup } from "../models/EventGroup.js";
+import type mongoose from "mongoose";
 import {
   acceptsActivityPub,
   activityPubContentType,
@@ -18,7 +18,7 @@ import {
 import MagicLink from "../models/MagicLink.js";
 import { getConfigMiddleware } from "../lib/middleware.js";
 import { getMessage } from "../util/messages.js";
-import { EventListEvent, bucketEventsByMonth } from "../lib/event.js";
+import { type EventListEvent, bucketEventsByMonth } from "../lib/event.js";
 import i18next from "i18next";
 
 const router = Router();
@@ -477,14 +477,9 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         .reduce((acc, a) => acc + (a.number || 1), 0);
     }
 
-    // Capacity calculation - only count approved attendees
-    const approvedAttendeesCount = rawAttendees
-      .filter((a) => !approveRegistrations || a.approved)
-      .reduce((acc, a) => acc + (a.number || 1), 0);
-
     let spotsRemaining, noMoreSpots;
     if (event.maxAttendees) {
-      spotsRemaining = event.maxAttendees - approvedAttendeesCount;
+      spotsRemaining = event.maxAttendees - getApprovedAttendeeCount(event);
       if (spotsRemaining <= 0) {
         noMoreSpots = true;
       }

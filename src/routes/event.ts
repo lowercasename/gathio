@@ -1,4 +1,4 @@
-import { Router, Response, Request } from "express";
+import { Router, type Response, type Request } from "express";
 import multer from "multer";
 import Jimp from "jimp";
 import moment from "moment-timezone";
@@ -10,7 +10,7 @@ import {
 } from "../util/generator.js";
 import { validateEventData } from "../util/validation.js";
 import { addToLog } from "../helpers.js";
-import Event from "../models/Event.js";
+import Event, { getApprovedAttendeeCount } from "../models/Event.js";
 import EventGroup from "../models/EventGroup.js";
 import {
   broadcastCreateMessage,
@@ -791,13 +791,7 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
 
     // Check capacity - for approval-required events, only count approved attendees
     if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
-      const currentCount =
-        event.attendees?.reduce((acc, a) => {
-          if (a.status !== "attending") return acc;
-          if (event.approveRegistrations && !a.approved) return acc;
-          return acc + (a.number || 1);
-        }, 0) || 0;
-      const freeSpots = event.maxAttendees - currentCount;
+      const freeSpots = event.maxAttendees - getApprovedAttendeeCount(event);
       if (attendeeNumber > freeSpots) {
         return res.status(403).json({ error: "Not enough spots available." });
       }
