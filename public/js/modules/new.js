@@ -50,6 +50,7 @@ function newEventForm() {
       joinCheckbox: false,
       maxAttendeesCheckbox: false,
       maxAttendees: "",
+      approveRegistrationsCheckbox: false,
     },
     errors: [],
     submitting: false,
@@ -67,6 +68,7 @@ function newEventForm() {
       this.data.joinCheckbox = false;
       this.data.maxAttendeesCheckbox = false;
       this.data.publicCheckbox = false;
+      this.data.approveRegistrationsCheckbox = false;
     },
     updateEventEnd() {
       if (

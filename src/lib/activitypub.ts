@@ -140,15 +140,17 @@ export const handlePollResponse = async (req: Request, res: Response) => {
     if (!event.attendees?.some((el) => el.id === attributedTo)) {
       const attendeeName =
         apActor.preferredUsername || apActor.name || attributedTo;
+      const requiresApproval = !!event.approveRegistrations;
       const newAttendee: Pick<
         IAttendee,
-        "name" | "status" | "id" | "number" | "visibility"
+        "name" | "status" | "id" | "number" | "visibility" | "approved"
       > = {
         name: attendeeName,
         status: "attending",
         id: attributedTo,
         number: 1,
         visibility,
+        approved: !requiresApproval,
       };
       const updatedEvent = await Event.findOneAndUpdate(
         { id: eventID },
@@ -160,26 +162,43 @@ export const handlePollResponse = async (req: Request, res: Response) => {
       );
       if (!fullAttendee) throw new Error("Full attendee not found");
 
-      // send a "click here to remove yourself" link back to the user as a DM
-      const jsonObject = {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        name: `RSVP to ${event.name}`,
-        type: "Note",
-        content: successfulRSVPResponse({
-          event,
-          newAttendee,
-          fullAttendee,
-        }),
-        tag: [
-          {
-            type: "Mention",
-            href: newAttendee.id,
-            name: newAttendee.name,
-          },
-        ],
-      };
-      // send direct message to user
-      sendDirectMessage(jsonObject, newAttendee.id, event.id);
+      if (requiresApproval) {
+        // Send a "pending approval" DM to the user
+        const jsonObject = {
+          "@context": "https://www.w3.org/ns/activitystreams",
+          name: `RSVP to ${event.name}`,
+          type: "Note",
+          content: `<span class="h-card"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing to ${event.name}! Your attendance is pending approval from the host. You'll receive a message here once you've been approved.`,
+          tag: [
+            {
+              type: "Mention",
+              href: newAttendee.id,
+              name: newAttendee.name,
+            },
+          ],
+        };
+        sendDirectMessage(jsonObject, newAttendee.id, event.id);
+      } else {
+        // send a "click here to remove yourself" link back to the user as a DM
+        const jsonObject = {
+          "@context": "https://www.w3.org/ns/activitystreams",
+          name: `RSVP to ${event.name}`,
+          type: "Note",
+          content: successfulRSVPResponse({
+            event,
+            newAttendee,
+            fullAttendee,
+          }),
+          tag: [
+            {
+              type: "Mention",
+              href: newAttendee.id,
+              name: newAttendee.name,
+            },
+          ],
+        };
+        sendDirectMessage(jsonObject, newAttendee.id, event.id);
+      }
       return res.sendStatus(200);
     } else {
       return res.status(200).send("Attendee is already registered.");

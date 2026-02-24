@@ -18,7 +18,6 @@ import Event from "./models/Event.js";
 import EventGroup from "./models/EventGroup.js";
 import path from "path";
 import { activityPubContentType } from "./lib/activitypub.js";
-import { hashString } from "./util/generator.js";
 import i18next from "i18next";
 
 const config = getConfig();
@@ -480,12 +479,6 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", (req, res) => {
 
 router.post("/attendee/provision", async (req, res) => {
   const removalPassword = niceware.generatePassphrase(6).join("-");
-  const newAttendee = {
-    status: "provisioned",
-    removalPassword,
-    created: Date.now(),
-  };
-
   const event = await Event.findOne({ id: req.query.eventID }).catch((e) => {
     addToLog(
       "provisionEventAttendee",
@@ -501,6 +494,13 @@ router.post("/attendee/provision", async (req, res) => {
   if (!event) {
     return res.sendStatus(404);
   }
+
+  const newAttendee = {
+    status: "provisioned",
+    removalPassword,
+    created: Date.now(),
+    approved: !event.approveRegistrations, // Auto approve if this event does not require approvals
+  };
 
   event.attendees.push(newAttendee);
   await event.save().catch((e) => {
@@ -522,118 +522,24 @@ router.post("/attendee/provision", async (req, res) => {
   );
 
   // Return the removal password and the number of free spots remaining
+  // For approval-required events, only count approved attendees toward capacity
   let freeSpots;
   if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
     freeSpots =
       event.maxAttendees -
       event.attendees.reduce(
-        (acc, a) => acc + (a.status === "attending" ? a.number || 1 : 0),
+        (acc, a) =>
+          acc +
+          (a.status === "attending" &&
+          (!event.approveRegistrations || a.approved)
+            ? a.number || 1
+            : 0),
         0,
       );
   } else {
     freeSpots = undefined;
   }
   return res.json({ removalPassword, freeSpots });
-});
-
-router.post("/attendevent/:eventID", async (req, res) => {
-  // Do not allow empty removal passwords
-  if (!req.body.removalPassword) {
-    return res.sendStatus(500);
-  }
-  const event = await Event.findOne({ id: req.params.eventID }).catch((e) => {
-    addToLog(
-      "attendEvent",
-      "error",
-      "Attempt to attend event " +
-        req.params.eventID +
-        " failed with error: " +
-        e,
-    );
-    return res.sendStatus(500);
-  });
-  if (!event) {
-    return res.sendStatus(404);
-  }
-  const attendee = event.attendees.find(
-    (a) => a.removalPassword === req.body.removalPassword,
-  );
-  if (!attendee) {
-    return res.sendStatus(404);
-  }
-  // Do we have enough free spots in this event to accomodate this attendee?
-  // First, check if the event has a max number of attendees
-  if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
-    const freeSpots =
-      event.maxAttendees -
-      event.attendees.reduce(
-        (acc, a) => acc + (a.status === "attending" ? a.number || 1 : 0),
-        0,
-      );
-    if (req.body.attendeeNumber > freeSpots) {
-      return res.sendStatus(403);
-    }
-  }
-
-  Event.findOneAndUpdate(
-    {
-      id: req.params.eventID,
-      "attendees.removalPassword": req.body.removalPassword,
-    },
-    {
-      $set: {
-        "attendees.$.status": "attending",
-        "attendees.$.name": req.body.attendeeName,
-        "attendees.$.email": req.body.attendeeEmail,
-        "attendees.$.number": req.body.attendeeNumber,
-        "attendees.$.visibility": req.body.attendeeVisible
-          ? "public"
-          : "private",
-      },
-    },
-  )
-    .then((event) => {
-      if (!event) {
-        return res.sendStatus(404);
-      }
-
-      addToLog(
-        "addEventAttendee",
-        "success",
-        "Attendee added to event " + req.params.eventID,
-      );
-      if (req.body.attendeeEmail) {
-        req.emailService
-          .sendEmailFromTemplate({
-            to: req.body.attendeeEmail,
-            subject: i18next.t("routes.addeventattendeesubject", {
-              eventName: event?.name,
-            }),
-            templateName: "addEventAttendee",
-            templateData: {
-              eventID: req.params.eventID,
-              removalPassword: req.body.removalPassword,
-              removalPasswordHash: hashString(req.body.removalPassword),
-            },
-          })
-          .catch((e) => {
-            console.error("error sending addEventAttendee email", e.toString());
-            res.status(500).end();
-          });
-      }
-      res.redirect(`/${req.params.eventID}`);
-    })
-    .catch((error) => {
-      res.send("Database error, please try again :(");
-      addToLog(
-        "addEventAttendee",
-        "error",
-        "Attempt to add attendee to event " +
-          req.params.eventID +
-          " failed with error: " +
-          error,
-      );
-    });
 });
 
 // this is a one-click unattend that requires a secret URL that only the person who RSVPed over
@@ -660,57 +566,6 @@ router.get("/oneclickunattendevent/:eventID/:attendeeID", (req, res) => {
         "oneClickUnattend",
         "success",
         "Attendee removed via one click unattend " + req.params.eventID,
-      );
-      // currently this is never called because we don't have the email address
-      if (req.body.attendeeEmail) {
-        req.emailService
-          .sendEmailFromTemplate({
-            to: req.body.attendeeEmail,
-            subject: i18next.t("routes.removeeventattendeesubject"),
-            templateName: "removeEventAttendee",
-            templateData: {
-              eventName: event.name,
-            },
-          })
-          .catch((e) => {
-            console.error(
-              "error sending removeEventAttendeeHtml email",
-              e.toString(),
-            );
-            res.status(500).end();
-          });
-      }
-      res.writeHead(302, {
-        Location: "/" + req.params.eventID,
-      });
-      res.end();
-    })
-    .catch((err) => {
-      res.send("Database error, please try again :(");
-      addToLog(
-        "removeEventAttendee",
-        "error",
-        "Attempt to remove attendee by admin from event " +
-          req.params.eventID +
-          " failed with error: " +
-          err,
-      );
-    });
-});
-
-router.post("/removeattendee/:eventID/:attendeeID", (req, res) => {
-  Event.findOneAndUpdate(
-    { id: req.params.eventID },
-    { $pull: { attendees: { _id: req.params.attendeeID } } },
-  )
-    .then((event) => {
-      if (!event) {
-        return res.sendStatus(404);
-      }
-      addToLog(
-        "removeEventAttendee",
-        "success",
-        "Attendee removed by admin from event " + req.params.eventID,
       );
       // currently this is never called because we don't have the email address
       if (req.body.attendeeEmail) {

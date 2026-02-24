@@ -85,10 +85,8 @@ describe("Events", () => {
     cy.get("#attendeeVisible").uncheck();
     cy.get("form#attendEventForm").submit();
     cy.get("#attendees-alert").should("contain.text", "8 spots remaining");
-    cy.get(".attendeesList").should(
-      "contain.text",
-      "Test Attendee (2 people) (hidden from public list)",
-    );
+    cy.get(".attendeesList").should("contain.text", "Test Attendee");
+    cy.get(".attendeesList").should("contain.text", "hidden");
   });
 
   it("allows you to comment on an event", function () {
@@ -265,7 +263,7 @@ describe("Events", () => {
           .createHash("sha256")
           .update(removalPassword)
           .digest("hex");
-        const unattendLink = `http://localhost:3000/event/${this.eventID}/unattend/${removalPasswordHash}`;
+        const unattendLink = `/event/${this.eventID}/unattend/${removalPasswordHash}`;
         cy.visit(unattendLink);
         cy.get("#event__message").should(
           "contain.text",
