@@ -507,10 +507,16 @@ router.get("/:eventID", async (req: Request, res: Response) => {
     };
     if (acceptsActivityPub(req)) {
       const actorObj = JSON.parse(event.activityPubActor || "{}");
-      if (approveRegistrations && !viewerApprovedForLocation) {
-        // Attempt to sanitize obvious location fields
+      if (approveRegistrations) {
+        // Strip location from the actor summary HTML
+        if (actorObj.summary) {
+          actorObj.summary = actorObj.summary.replace(
+            /<p>Location:.*?<\/p>/gi,
+            "",
+          );
+        }
         if (actorObj.location) {
-          actorObj.location = i18next.t("views.event.location_hidden");
+          delete actorObj.location;
         }
       }
       res.header("Content-Type", activityPubContentType).send(actorObj);

@@ -157,7 +157,10 @@ router.post(
         publicKey,
         markdownToSanitizedHTML(eventData.eventDescription),
         eventData.eventName,
-        eventData.eventLocation,
+        // Don't store location in ActivityPub data if approval is required
+        eventData.approveRegistrationsBoolean && eventData.joinBoolean
+          ? null
+          : eventData.eventLocation,
         eventImageFilename,
         startUTC,
         endUTC,
@@ -169,7 +172,9 @@ router.post(
         endUTC,
         eventData.timezone,
         eventData.eventDescription,
-        eventData.eventLocation,
+        eventData.approveRegistrationsBoolean && eventData.joinBoolean
+          ? null
+          : eventData.eventLocation,
       ),
       activityPubMessages: [
         {
@@ -182,7 +187,9 @@ router.post(
               endUTC,
               eventData.timezone,
               eventData.eventDescription,
-              eventData.eventLocation,
+              eventData.approveRegistrationsBoolean && eventData.joinBoolean
+                ? null
+                : eventData.eventLocation,
             ),
           ),
         },
@@ -378,7 +385,10 @@ router.put(
               JSON.parse(event.activityPubActor),
               eventData.eventDescription,
               eventData.eventName,
-              eventData.eventLocation,
+              // Don't store location in ActivityPub data if approval is required
+              eventData.approveRegistrationsBoolean && eventData.joinBoolean
+                ? null
+                : eventData.eventLocation,
               eventImageFilename,
               startUTC,
               endUTC,
@@ -392,6 +402,11 @@ router.put(
               startUTC,
               endUTC,
               eventData.timezone,
+              eventData.eventDescription,
+              // Don't store location in ActivityPub data if approval is required
+              eventData.approveRegistrationsBoolean && eventData.joinBoolean
+                ? null
+                : eventData.eventLocation,
             )
           : undefined,
         approveRegistrations:
