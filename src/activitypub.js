@@ -868,11 +868,13 @@ function _handleAcceptEvent(req, res) {
             // if this account is NOT already in our attendees list, add it
             if (!event.attendees.map((el) => el.id).includes(actor)) {
               const attendeeName = body.preferredUsername || body.name || actor;
+              const requiresApproval = !!event.approveRegistrations;
               const newAttendee = {
                 name: attendeeName,
                 status: "attending",
                 id: actor,
                 number: 1,
+                approved: !requiresApproval,
               };
               event.attendees.push(newAttendee);
               event
@@ -887,20 +889,38 @@ function _handleAcceptEvent(req, res) {
                   let fullAttendee = fullEvent.attendees.find(
                     (el) => el.id === actor,
                   );
-                  // send a "click here to remove yourself" link back to the user as a DM
-                  const jsonObject = {
-                    "@context": "https://www.w3.org/ns/activitystreams",
-                    name: `RSVP to ${event.name}`,
-                    type: "Note",
-                    content: `<span class="h-card"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
-                    tag: [
-                      {
-                        type: "Mention",
-                        href: newAttendee.id,
-                        name: newAttendee.name,
-                      },
-                    ],
-                  };
+                  let jsonObject;
+                  if (requiresApproval) {
+                    // Send a "pending approval" DM to the user
+                    jsonObject = {
+                      "@context": "https://www.w3.org/ns/activitystreams",
+                      name: `RSVP to ${event.name}`,
+                      type: "Note",
+                      content: `<span class="h-card"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing to ${event.name}! Your attendance is pending approval from the host. You'll receive a message here once you've been approved.`,
+                      tag: [
+                        {
+                          type: "Mention",
+                          href: newAttendee.id,
+                          name: newAttendee.name,
+                        },
+                      ],
+                    };
+                  } else {
+                    // send a "click here to remove yourself" link back to the user as a DM
+                    jsonObject = {
+                      "@context": "https://www.w3.org/ns/activitystreams",
+                      name: `RSVP to ${event.name}`,
+                      type: "Note",
+                      content: `<span class="h-card"><a href="${newAttendee.id}" class="u-url mention">@<span>${newAttendee.name}</span></a></span> Thanks for RSVPing! You can remove yourself from the RSVP list by clicking here: <a href="https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}">https://${domain}/oneclickunattendevent/${event.id}/${fullAttendee._id}</a>`,
+                      tag: [
+                        {
+                          type: "Mention",
+                          href: newAttendee.id,
+                          name: newAttendee.name,
+                        },
+                      ],
+                    };
+                  }
                   // send direct message to user
                   sendDirectMessage(jsonObject, newAttendee.id, event.id);
                   return res.sendStatus(200);

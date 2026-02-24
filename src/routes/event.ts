@@ -948,20 +948,43 @@ router.patch(
         "success",
         `Attendee ${req.params.attendeeID} approved in event ${req.params.eventID}`,
       );
-      // Send notification email to attendee if they have an email and were approved
-      if (req.body.approved && attendee.email) {
-        await req.emailService.sendEmailFromTemplate({
-          to: attendee.email,
-          subject: i18next.t("routes.attendeeapprovedsubject", {
-            eventName: event.name,
-          }),
-          templateName: "attendeeApproved",
-          templateData: {
-            eventID: req.params.eventID,
-            eventName: event.name,
-            removalPassword: attendee.removalPassword,
-          },
-        });
+      // Notify the attendee they've been approved
+      if (req.body.approved) {
+        if (attendee.email) {
+          // Web attendee - send email
+          await req.emailService.sendEmailFromTemplate({
+            to: attendee.email,
+            subject: i18next.t("routes.attendeeapprovedsubject", {
+              eventName: event.name,
+            }),
+            templateName: "attendeeApproved",
+            templateData: {
+              eventID: req.params.eventID,
+              eventName: event.name,
+              removalPassword: attendee.removalPassword,
+            },
+          });
+        } else if (attendee.id && attendee.id.startsWith("https://")) {
+          // Fediverse attendee - send DM
+          const fullAttendee = event.attendees?.find(
+            (a) => a._id?.toString() === req.params.attendeeID,
+          );
+          const unattendLink = `https://${res.locals.config?.general.domain}/oneclickunattendevent/${req.params.eventID}/${fullAttendee?._id}`;
+          const jsonObject = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            name: `Approved for ${event.name}`,
+            type: "Note",
+            content: `<span class="h-card"><a href="${attendee.id}" class="u-url mention">@<span>${attendee.name}</span></a></span> You've been approved to attend ${event.name}! You can view the event here: <a href="https://${res.locals.config?.general.domain}/${req.params.eventID}">https://${res.locals.config?.general.domain}/${req.params.eventID}</a>. To remove yourself from the RSVP list, click <a href="${unattendLink}">here</a>.`,
+            tag: [
+              {
+                type: "Mention",
+                href: attendee.id,
+                name: attendee.name,
+              },
+            ],
+          };
+          sendDirectMessage(jsonObject, attendee.id, req.params.eventID);
+        }
       }
       // Redirect back to event page in edit mode
       return res.redirect(
