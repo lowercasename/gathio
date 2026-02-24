@@ -71,6 +71,7 @@
   "util.validation.eventtime.endisbefore": "End time must be in the future.",
   "util.validation.eventtime.endyears": "Event duration cannot be longer than 1 year.",
   "util.validation.eventtime.startisafter": "Start time must be before end time.",
+  "util.validation.eventtime.startisbefore": "Start time must be in the future.",
   "util.validation.groupdata.creatoremail": "Email address is invalid.",
   "util.validation.groupdata.eventgroupdescription": "Event group description is required.",
   "util.validation.groupdata.eventgroupname": "Event group name is required.",

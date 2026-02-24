@@ -68,6 +68,7 @@
   "util.validation.eventtime.endisbefore": "Die Endzeit muss in der Zukunft liegen.",
   "util.validation.eventtime.endyears": "Die Dauer der Veranstaltung darf nicht länger als 1 Jahr sein.",
   "util.validation.eventtime.startisafter": "Die Startzeit muss vor der Endzeit liegen.",
+  "util.validation.eventtime.startisbefore": "Die Startzeit muss in der Zukunft liegen.",
   "util.validation.groupdata.creatoremail": "E-Mail-Adresse ist ungültig.",
   "util.validation.groupdata.eventgroupdescription": "Eine Beschreibung der Veranstaltungsgruppe wird benötigt.",
   "util.validation.groupdata.eventgroupname": "Der Name der Veranstaltungsgruppe wird benötigt.",
