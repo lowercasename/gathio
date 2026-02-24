@@ -1,6 +1,6 @@
 {
   "name": "gathio",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "A simple, federated, privacy-first event hosting platform",
   "main": "index.js",
   "type": "module",
