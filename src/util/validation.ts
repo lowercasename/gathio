@@ -107,12 +107,6 @@ export const validateEventTime = (
       field: "eventStart",
     };
   }
-  if (startMoment.isBefore(now)) {
-    return {
-      message: i18next.t("util.validation.eventtime.startisbefore"),
-      field: "eventStart",
-    };
-  }
   if (endMoment.isBefore(now)) {
     return {
       message: i18next.t("util.validation.eventtime.endisbefore"),
