@@ -788,12 +788,13 @@ async function _handleDelete(req: Request, res: Response) {
   }
 
   // delete the comment
-  const indexOfComment = eventWithComment.comments?.findIndex((comment) => {
-    return (
-      comment.activityJson &&
-      JSON.parse(comment.activityJson).object.id === req.body.object.id
-    );
-  }) ?? -1;
+  const indexOfComment =
+    eventWithComment.comments?.findIndex((comment) => {
+      return (
+        comment.activityJson &&
+        JSON.parse(comment.activityJson).object.id === req.body.object.id
+      );
+    }) ?? -1;
   if (indexOfComment === -1) {
     return res.sendStatus(404);
   }
@@ -893,13 +894,16 @@ async function _handleCreateNoteComment(req: Request, res: Response) {
       );
       const jsonObject = req.body.object;
       jsonObject.attributedTo = newComment.actorId;
-      broadcastAnnounceMessage(jsonObject, event.followers ?? [], eventID).catch(
-        (err) =>
-          addToLog(
-            "handleCreateNoteComment",
-            "error",
-            `Error broadcasting comment: ${err}`,
-          ),
+      broadcastAnnounceMessage(
+        jsonObject,
+        event.followers ?? [],
+        eventID,
+      ).catch((err) =>
+        addToLog(
+          "handleCreateNoteComment",
+          "error",
+          `Error broadcasting comment: ${err}`,
+        ),
       );
       return res.sendStatus(200);
     } catch (err) {

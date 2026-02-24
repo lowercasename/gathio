@@ -334,7 +334,11 @@ router.post(
         .join("\n");
       const verifier = crypto.createVerify("RSA-SHA256");
       verifier.update(comparison_string, "ascii");
-      const result = verifier.verify(publicKey, signature_header.signature, "base64");
+      const result = verifier.verify(
+        publicKey,
+        signature_header.signature,
+        "base64",
+      );
       if (result) {
         // actually process the ActivityPub message now that it's been verified
         await processInbox(req, res);
