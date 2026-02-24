@@ -78,6 +78,17 @@ export interface IEvent extends mongoose.Document {
   approveRegistrations?: boolean; // Per-event: hide location until attendee approved
 }
 
+export const getApprovedAttendeeCount = (
+  event: Pick<IEvent, "attendees" | "approveRegistrations">,
+): number => {
+  if (!event.attendees) return 0;
+  return event.attendees.reduce((acc, a) => {
+    if (a.status !== "attending") return acc;
+    if (event.approveRegistrations && !a.approved) return acc;
+    return acc + (a.number || 1);
+  }, 0);
+};
+
 const Attendees = new mongoose.Schema({
   name: {
     type: String,
