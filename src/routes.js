@@ -5,24 +5,20 @@ import { frontendConfig, getConfig } from "./lib/config.js";
 import { addToLog } from "./helpers.js";
 import moment from "moment-timezone";
 import crypto from "crypto";
-import request from "request";
 import niceware from "niceware";
 import fileUpload from "express-fileupload";
 import schedule from "node-schedule";
 import {
   broadcastCreateMessage,
   broadcastDeleteMessage,
-  processInbox,
 } from "./activitypub.js";
 import Event from "./models/Event.js";
 import EventGroup from "./models/EventGroup.js";
 import path from "path";
-import { activityPubContentType } from "./lib/activitypub.js";
 import i18next from "i18next";
 
 const config = getConfig();
 const domain = config.general.domain;
-const isFederated = config.general.is_federated || true;
 
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'
 // because ActivityPub doesn't like it in IDs
@@ -107,21 +103,25 @@ schedule.scheduleJob("59 23 * * *", function (_fireDate) {
           const jsonUpdateObject = JSON.parse(event.activityPubActor);
           const jsonEventObject = JSON.parse(event.activityPubEvent);
           // first broadcast AP messages, THEN delete from DB
-          broadcastDeleteMessage(
-            jsonUpdateObject,
-            event.followers,
-            event.id,
-            function (_statuses) {
+          broadcastDeleteMessage(jsonUpdateObject, event.followers, event.id)
+            .then(() =>
               broadcastDeleteMessage(
                 jsonEventObject,
                 event.followers,
                 event.id,
-                function (_statuses) {
-                  deleteEventFromDB(event._id);
-                },
-              );
-            },
-          );
+              ),
+            )
+            .then(() => deleteEventFromDB(event._id))
+            .catch((err) =>
+              addToLog(
+                "deleteOldEvents",
+                "error",
+                "Attempt to broadcast delete for old event " +
+                  event.id +
+                  " failed with error: " +
+                  err,
+              ),
+            );
         } else {
           // No ActivityPub data - simply delete the event
           deleteEventFromDB(event._id);
@@ -236,101 +236,81 @@ router.post("/deleteevent/:eventID/:editToken", (req, res) => {
         }
 
         // broadcast a Delete profile message to all followers so that at least Mastodon servers will delete their local profile information
-        // const guidUpdateObject = crypto.randomBytes(16).toString("hex");
         const jsonUpdateObject = JSON.parse(event.activityPubActor);
         // first broadcast AP messages, THEN delete from DB
         broadcastDeleteMessage(
           jsonUpdateObject,
           event.followers,
           req.params.eventID,
-          function (_statuses) {
-            Event.deleteOne({ id: req.params.eventID }, function (err, _raw) {
-              if (err) {
-                res.send(err);
-                addToLog(
-                  "deleteEvent",
-                  "error",
-                  "Attempt to delete event " +
-                    req.params.eventID +
-                    " failed with error: " +
-                    err,
-                );
-              }
-            })
-              .then(() => {
-                // Delete image
-                if (eventImage) {
-                  fs.unlink(
-                    path.join(process.cwd(), "/public/events/" + eventImage),
-                    (err) => {
-                      if (err) {
-                        res.send(err);
-                        addToLog(
-                          "deleteEvent",
-                          "error",
-                          "Attempt to delete event image for event " +
-                            req.params.eventID +
-                            " failed with error: " +
-                            err,
-                        );
-                      }
-                      // Image removed
-                      addToLog(
-                        "deleteEvent",
-                        "success",
-                        "Event " + req.params.eventID + " deleted",
-                      );
-                    },
+        )
+          .then(() => Event.deleteOne({ id: req.params.eventID }))
+          .then(() => {
+            // Delete image
+            if (eventImage) {
+              fs.unlink(
+                path.join(process.cwd(), "/public/events/" + eventImage),
+                (err) => {
+                  if (err) {
+                    res.send(err);
+                    addToLog(
+                      "deleteEvent",
+                      "error",
+                      "Attempt to delete event image for event " +
+                        req.params.eventID +
+                        " failed with error: " +
+                        err,
+                    );
+                  }
+                  // Image removed
+                  addToLog(
+                    "deleteEvent",
+                    "success",
+                    "Event " + req.params.eventID + " deleted",
                   );
-                }
-                res.writeHead(302, {
-                  Location: "/",
-                });
-                res.end();
+                },
+              );
+            }
+            res.writeHead(302, {
+              Location: "/",
+            });
+            res.end();
 
-                const attendeeEmails =
-                  event?.attendees
-                    ?.filter((o) => o.status === "attending" && o.email)
-                    .map((o) => o.email || "") || [];
-                if (attendeeEmails.length) {
-                  console.log("Sending emails to: " + attendeeEmails);
-                  req.emailService
-                    .sendEmailFromTemplate({
-                      to: attendeeEmails,
-                      subject: i18next.t("routes.deleteeventsubject", {
-                        eventName: event?.name,
-                      }),
-                      templateName: "deleteEvent",
-                      templateData: {
-                        eventName: event?.name,
-                      },
-                    })
-                    .catch((e) => {
-                      console.error(
-                        "error sending attendee email",
-                        e.toString(),
-                      );
-                      res.status(500).end();
-                    });
-                } else {
-                  console.log("Nothing to send!");
-                }
-              })
-              .catch((err) => {
-                res.send(
-                  "Sorry! Something went wrong (error deleting): " + err,
-                );
-                addToLog(
-                  "deleteEvent",
-                  "error",
-                  "Attempt to delete event " +
-                    req.params.eventID +
-                    " failed with error: " +
-                    err,
-                );
-              });
-          },
-        );
+            const attendeeEmails =
+              event?.attendees
+                ?.filter((o) => o.status === "attending" && o.email)
+                .map((o) => o.email || "") || [];
+            if (attendeeEmails.length) {
+              console.log("Sending emails to: " + attendeeEmails);
+              req.emailService
+                .sendEmailFromTemplate({
+                  to: attendeeEmails,
+                  subject: i18next.t("routes.deleteeventsubject", {
+                    eventName: event?.name,
+                  }),
+                  templateName: "deleteEvent",
+                  templateData: {
+                    eventName: event?.name,
+                  },
+                })
+                .catch((e) => {
+                  console.error("error sending attendee email", e.toString());
+                  res.status(500).end();
+                });
+            } else {
+              console.log("Nothing to send!");
+            }
+          })
+          .catch((err) => {
+            res.send("Sorry! Something went wrong (error deleting): " + err);
+            addToLog(
+              "deleteEvent",
+              "error",
+              "Attempt to delete event " +
+                req.params.eventID +
+                " failed with error: " +
+                err,
+            );
+          });
       } else {
         // Token doesn't match
         res.send("Sorry! Something went wrong");
@@ -951,75 +931,6 @@ router.post("/deletecomment/:eventID/:commentID/:editToken", (req, res) => {
           err,
       );
     });
-});
-
-router.post("/activitypub/inbox", (req, res) => {
-  if (!isFederated) return res.sendStatus(404);
-  // validate the incoming message
-  const signature = req.get("signature");
-  if (!signature) {
-    return res.status(401).send("No signature provided.");
-  }
-  let signature_header = signature
-    .split(",")
-    .map((pair) => {
-      return pair.split("=").map((value) => {
-        return value.replace(/^"/g, "").replace(/"$/g, "");
-      });
-    })
-    .reduce((acc, el) => {
-      acc[el[0]] = el[1];
-      return acc;
-    }, {});
-  // get the actor
-  // TODO if this is a Delete for an Actor this won't work
-  request(
-    {
-      url: signature_header.keyId,
-      headers: {
-        Accept: activityPubContentType,
-        "Content-Type": activityPubContentType,
-        "User-Agent": `Gathio - ${domain}`,
-      },
-    },
-    function (error, response, actor) {
-      let publicKey = "";
-
-      try {
-        if (JSON.parse(actor).publicKey) {
-          publicKey = JSON.parse(actor).publicKey.publicKeyPem;
-        }
-      } catch (err) {
-        return res.status(500).send("Actor could not be parsed" + err);
-      }
-
-      let comparison_string = signature_header.headers
-        .split(" ")
-        .map((header) => {
-          if (header === "(request-target)") {
-            return "(request-target): post /activitypub/inbox";
-          } else {
-            return `${header}: ${req.get(header)}`;
-          }
-        })
-        .join("\n");
-      const verifier = crypto.createVerify("RSA-SHA256");
-      verifier.update(comparison_string, "ascii");
-      const publicKeyBuf = Buffer.from(publicKey, "ascii");
-      const signatureBuf = Buffer.from(signature_header.signature, "base64");
-      try {
-        const result = verifier.verify(publicKeyBuf, signatureBuf);
-        if (result) {
-          // actually process the ActivityPub message now that it's been verified
-          processInbox(req, res);
-        } else {
-          return res.status(401).send("Signature could not be verified.");
-        }
-      } catch (err) {
-        return res.status(401).send("Signature could not be verified: " + err);
-      }
-    },
-  );
 });
 
 router.use(function (req, res, _next) {

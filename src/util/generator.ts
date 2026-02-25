@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { customAlphabet } from "nanoid";
 
 // This alphabet (used to generate all event, group, etc. IDs) is missing '-'

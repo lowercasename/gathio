@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import crypto from "node:crypto";
 import Event, { IAttendee, getApprovedAttendeeCount } from "../models/Event.js";
 import { sendDirectMessage } from "../activitypub.js";
 import { successfulRSVPResponse } from "./activitypub/templates.js";
@@ -41,7 +42,7 @@ export const acceptsActivityPub = (req: Request) => {
 export const getNoteRecipient = (object: APObject): string | null => {
   const { to, cc } = object;
   if (!to && !cc) {
-    return "";
+    return null;
   }
   if (to && to.length > 0) {
     if (Array.isArray(to)) {
@@ -71,6 +72,41 @@ export const getEventId = (url: string): string => {
   }
 };
 
+// Fetch a remote ActivityPub resource with an HTTP Signature, required by
+// instances that enable Authorized Fetch / Secure Mode.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function signedFetch(url: string, eventID: string): Promise<any> {
+  const config = getConfig();
+  const domain = config.general.domain;
+  const targetUrl = new URL(url);
+  const targetDomain = targetUrl.hostname;
+  const pathFragment = targetUrl.pathname;
+  const fetchDate = new Date().toUTCString();
+
+  const headers: Record<string, string> = {
+    Host: targetDomain,
+    Date: fetchDate,
+    Accept: activityPubContentType,
+    "User-Agent": `Gathio - ${domain}`,
+  };
+
+  const event = await Event.findOne({ id: eventID });
+  if (event?.privateKey) {
+    const stringToSign = `(request-target): get ${pathFragment}\nhost: ${targetDomain}\ndate: ${fetchDate}`;
+    const signer = crypto.createSign("sha256");
+    signer.update(stringToSign);
+    signer.end();
+    const sig_b64 = signer.sign(event.privateKey).toString("base64");
+    headers.Signature = `keyId="https://${domain}/${eventID}#main-key",algorithm="rsa-sha256",headers="(request-target) host date",signature="${sig_b64}"`;
+  }
+
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new Error(`Signed fetch of ${url} failed: ${response.status}`);
+  }
+  return response.json();
+}
+
 export const handlePollResponse = async (req: Request, res: Response) => {
   try {
     // figure out what this is in reply to -- it should be addressed specifically to us
@@ -93,11 +129,11 @@ export const handlePollResponse = async (req: Request, res: Response) => {
     // compare the inReplyTo to its stored message, if it exists and
     // it's going to the right follower then this is a valid reply
     const matchingMessage = event.activityPubMessages?.find((el) => {
-      const content = JSON.parse(el.content || "");
+      const content = JSON.parse(el.content || "{}");
       return inReplyTo === content?.object?.id;
     });
     if (!matchingMessage) throw new Error("No matching message found");
-    const messageContent = JSON.parse(matchingMessage.content || "");
+    const messageContent = JSON.parse(matchingMessage.content || "{}");
     // check if the message we sent out was sent to the actor this incoming
     // message is attributedTo
     const messageRecipient = getNoteRecipient(messageContent.object);
@@ -127,15 +163,8 @@ export const handlePollResponse = async (req: Request, res: Response) => {
     const visibility =
       name === "Yes, and show me in the public list" ? "public" : "private";
 
-    // fetch the profile information of the user
-    const response = await fetch(attributedTo, {
-      headers: {
-        Accept: activityPubContentType,
-        "Content-Type": activityPubContentType,
-      },
-    });
-    if (!response.ok) throw new Error("Actor not found");
-    const apActor = await response.json();
+    // fetch the profile information of the user (signed for Authorized Fetch)
+    const apActor = await signedFetch(attributedTo, eventID);
 
     // If the actor is not already attending the event, add them
     if (!event.attendees?.some((el) => el.id === attributedTo)) {
@@ -200,7 +229,9 @@ export const handlePollResponse = async (req: Request, res: Response) => {
             },
           ],
         };
-        sendDirectMessage(jsonObject, newAttendee.id, event.id);
+        if (newAttendee.id) {
+          sendDirectMessage(jsonObject, newAttendee.id, event.id);
+        }
       } else {
         // send a "click here to remove yourself" link back to the user as a DM
         const jsonObject = {
@@ -220,7 +251,9 @@ export const handlePollResponse = async (req: Request, res: Response) => {
             },
           ],
         };
-        sendDirectMessage(jsonObject, newAttendee.id, event.id);
+        if (newAttendee.id) {
+          sendDirectMessage(jsonObject, newAttendee.id, event.id);
+        }
       }
       return res.sendStatus(200);
     } else {

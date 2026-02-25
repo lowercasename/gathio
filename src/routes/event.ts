@@ -22,7 +22,7 @@ import {
   updateActivityPubActor,
   updateActivityPubEvent,
 } from "../activitypub.js";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import ical from "ical";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
 import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
@@ -82,7 +82,7 @@ router.post(
 
     const eventID = generateEventID();
     const editToken = generateEditToken();
-    let eventImageFilename;
+    let eventImageFilename: string | undefined;
     let isPartOfEventGroup = false;
 
     if (req.file?.buffer) {
@@ -94,12 +94,13 @@ router.post(
             .write("./public/events/" + eventID + ".jpg"); // save
           return eventID + ".jpg";
         })
-        .catch((err) => {
+        .catch((err): undefined => {
           addToLog(
             "Jimp",
             "error",
             "Attempt to edit image failed with error: " + err,
           );
+          return undefined;
         });
     }
 
@@ -179,19 +180,7 @@ router.post(
       activityPubMessages: [
         {
           id: `https://${res.locals.config?.general.domain}/${eventID}/m/featuredPost`,
-          content: JSON.stringify(
-            createFeaturedPost(
-              eventID,
-              eventData.eventName,
-              startUTC,
-              endUTC,
-              eventData.timezone,
-              eventData.eventDescription,
-              eventData.approveRegistrationsBoolean && eventData.joinBoolean
-                ? null
-                : eventData.eventLocation,
-            ),
-          ),
+          content: JSON.stringify(createFeaturedPost(eventID)),
         },
       ],
       publicKey,
@@ -490,13 +479,25 @@ router.put(
         cc: "https://www.w3.org/ns/activitystreams#Public",
         content: `${diffText} See here: <a href="https://${res.locals.config?.general.domain}/${req.params.eventID}">https://${res.locals.config?.general.domain}/${req.params.eventID}</a>`,
       };
-      broadcastCreateMessage(jsonObject, event.followers, eventID);
+      broadcastCreateMessage(jsonObject, event.followers || [], eventID).catch(
+        (err) => console.log("Error broadcasting create message:", err),
+      );
       // also broadcast an Update profile message to all followers so that at least Mastodon servers will update the local profile information
       const jsonUpdateObject = JSON.parse(event.activityPubActor || "{}");
-      broadcastUpdateMessage(jsonUpdateObject, event.followers, eventID);
+      broadcastUpdateMessage(
+        jsonUpdateObject,
+        event.followers || [],
+        eventID,
+      ).catch((err) => console.log("Error broadcasting update message:", err));
       // also broadcast an Update/Event for any calendar apps that are consuming our Events
       const jsonEventObject = JSON.parse(event.activityPubEvent || "{}");
-      broadcastUpdateMessage(jsonEventObject, event.followers, eventID);
+      broadcastUpdateMessage(
+        jsonEventObject,
+        event.followers || [],
+        eventID,
+      ).catch((err) =>
+        console.log("Error broadcasting event update message:", err),
+      );
 
       // DM to attendees
       if (attendees?.length) {
@@ -515,7 +516,11 @@ router.put(
             ],
           };
           // send direct message to user
-          sendDirectMessage(jsonObject, attendee.id, eventID);
+          if (attendee.id) {
+            sendDirectMessage(jsonObject, attendee.id, eventID).catch((err) =>
+              console.log(`Error sending DM to ${attendee.id}:`, err),
+            );
+          }
         }
       }
       // Send update to all attendees
@@ -974,7 +979,15 @@ router.patch(
               },
             ],
           };
-          sendDirectMessage(jsonObject, attendee.id, req.params.eventID);
+          if (attendee.id) {
+            sendDirectMessage(
+              jsonObject,
+              attendee.id,
+              req.params.eventID,
+            ).catch((err) =>
+              console.log(`Error sending approval DM to ${attendee.id}:`, err),
+            );
+          }
         }
       }
       // Redirect back to event page in edit mode
