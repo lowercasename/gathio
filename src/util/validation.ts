@@ -35,6 +35,7 @@ interface EventData {
   joinCheckbox: string;
   maxAttendeesCheckbox: string;
   maxAttendees: number;
+  approveRegistrationsCheckbox?: string; // optional checkbox value
 }
 
 // EventData without the 'checkbox' fields
@@ -45,12 +46,14 @@ export type ValidatedEventData = Omit<
   | "interactionCheckbox"
   | "joinCheckbox"
   | "maxAttendeesCheckbox"
+  | "approveRegistrationsCheckbox"
 > & {
   publicBoolean: boolean;
   eventGroupBoolean: boolean;
   interactionBoolean: boolean;
   joinBoolean: boolean;
   maxAttendeesBoolean: boolean;
+  approveRegistrationsBoolean: boolean;
 };
 
 interface EventGroupData {
@@ -88,27 +91,30 @@ const validateUrl = (url: string) => {
   return validUrl.protocol === "http:" || validUrl.protocol === "https:";
 };
 
-export const validateEventTime = (start: Date, end: Date): Error | boolean => {
-  if (moment(start).isAfter(moment(end))) {
+export const validateEventTime = (
+  start: string,
+  end: string,
+  timezone: string,
+): Error | boolean => {
+  // Parse the datetime-local values in the event's timezone
+  const startMoment = moment.tz(start, timezone);
+  const endMoment = moment.tz(end, timezone);
+  const now = moment();
+
+  if (startMoment.isAfter(endMoment)) {
     return {
       message: i18next.t("util.validation.eventtime.startisafter"),
       field: "eventStart",
     };
   }
-  if (moment(start).isBefore(moment())) {
-    return {
-      message: i18next.t("util.validation.eventtime.startisbefore"),
-      field: "eventStart",
-    };
-  }
-  if (moment(end).isBefore(moment())) {
+  if (endMoment.isBefore(now)) {
     return {
       message: i18next.t("util.validation.eventtime.endisbefore"),
       field: "eventEnd",
     };
   }
   // Duration cannot be longer than 1 year
-  if (moment(end).diff(moment(start), "years") > 1) {
+  if (endMoment.diff(startMoment, "years") > 1) {
     return {
       message: i18next.t("util.validation.eventtime.endyears"),
       field: "eventEnd",
@@ -127,6 +133,8 @@ export const validateEventData = (
     interactionBoolean: eventData.interactionCheckbox === "true",
     joinBoolean: eventData.joinCheckbox === "true",
     maxAttendeesBoolean: eventData.maxAttendeesCheckbox === "true",
+    approveRegistrationsBoolean:
+      eventData.approveRegistrationsCheckbox === "true",
   };
   const errors: Error[] = [];
   if (!validatedData.eventName) {
@@ -154,8 +162,9 @@ export const validateEventData = (
     });
   }
   const timeValidation = validateEventTime(
-    new Date(validatedData.eventStart),
-    new Date(validatedData.eventEnd),
+    validatedData.eventStart,
+    validatedData.eventEnd,
+    validatedData.timezone,
   );
   if (timeValidation !== true && timeValidation !== false) {
     errors.push({

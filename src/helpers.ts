@@ -4,7 +4,6 @@ import i18next from "i18next";
 import handlebars from "handlebars";
 import Log from "./models/Log.js";
 import { getConfig } from "./lib/config.js";
-import { IEvent } from "./models/Event.js";
 
 const config = getConfig();
 const domain = config.general.domain;
@@ -23,7 +22,23 @@ export function addToLog(process: string, status: string, message: string) {
   });
 }
 
-export function exportIcal(events: IEvent | IEvent[], calendarName?: string) {
+// Minimal event shape for iCal export (works with both documents and lean objects)
+export interface ICalEvent {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  start: Date;
+  end: Date;
+  timezone: string;
+  hostName?: string;
+  creatorEmail?: string;
+}
+
+export function exportIcal(
+  events: ICalEvent | ICalEvent[],
+  calendarName?: string,
+) {
   // Ical -> ICal
   // Create a new icalGenerator... generator
   const cal = icalGenerator({

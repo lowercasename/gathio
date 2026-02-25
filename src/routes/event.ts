@@ -1,4 +1,4 @@
-import { Router, Response, Request } from "express";
+import { Router, type Response, type Request } from "express";
 import multer from "multer";
 import Jimp from "jimp";
 import moment from "moment-timezone";
@@ -10,7 +10,7 @@ import {
 } from "../util/generator.js";
 import { validateEventData } from "../util/validation.js";
 import { addToLog } from "../helpers.js";
-import Event from "../models/Event.js";
+import Event, { getApprovedAttendeeCount } from "../models/Event.js";
 import EventGroup from "../models/EventGroup.js";
 import {
   broadcastCreateMessage,
@@ -22,7 +22,7 @@ import {
   updateActivityPubActor,
   updateActivityPubEvent,
 } from "../activitypub.js";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import ical from "ical";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
 import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
@@ -82,7 +82,7 @@ router.post(
 
     const eventID = generateEventID();
     const editToken = generateEditToken();
-    let eventImageFilename;
+    let eventImageFilename: string | undefined;
     let isPartOfEventGroup = false;
 
     if (req.file?.buffer) {
@@ -94,12 +94,13 @@ router.post(
             .write("./public/events/" + eventID + ".jpg"); // save
           return eventID + ".jpg";
         })
-        .catch((err) => {
+        .catch((err): undefined => {
           addToLog(
             "Jimp",
             "error",
             "Attempt to edit image failed with error: " + err,
           );
+          return undefined;
         });
     }
 
@@ -157,7 +158,10 @@ router.post(
         publicKey,
         markdownToSanitizedHTML(eventData.eventDescription),
         eventData.eventName,
-        eventData.eventLocation,
+        // Don't store location in ActivityPub data if approval is required
+        eventData.approveRegistrationsBoolean && eventData.joinBoolean
+          ? null
+          : eventData.eventLocation,
         eventImageFilename,
         startUTC,
         endUTC,
@@ -169,26 +173,20 @@ router.post(
         endUTC,
         eventData.timezone,
         eventData.eventDescription,
-        eventData.eventLocation,
+        eventData.approveRegistrationsBoolean && eventData.joinBoolean
+          ? null
+          : eventData.eventLocation,
       ),
       activityPubMessages: [
         {
           id: `https://${res.locals.config?.general.domain}/${eventID}/m/featuredPost`,
-          content: JSON.stringify(
-            createFeaturedPost(
-              eventID,
-              eventData.eventName,
-              startUTC,
-              endUTC,
-              eventData.timezone,
-              eventData.eventDescription,
-              eventData.eventLocation,
-            ),
-          ),
+          content: JSON.stringify(createFeaturedPost(eventID)),
         },
       ],
       publicKey,
       privateKey,
+      approveRegistrations:
+        eventData.approveRegistrationsBoolean && eventData.joinBoolean,
     });
     try {
       await event.save();
@@ -376,7 +374,10 @@ router.put(
               JSON.parse(event.activityPubActor),
               eventData.eventDescription,
               eventData.eventName,
-              eventData.eventLocation,
+              // Don't store location in ActivityPub data if approval is required
+              eventData.approveRegistrationsBoolean && eventData.joinBoolean
+                ? null
+                : eventData.eventLocation,
               eventImageFilename,
               startUTC,
               endUTC,
@@ -390,8 +391,15 @@ router.put(
               startUTC,
               endUTC,
               eventData.timezone,
+              eventData.eventDescription,
+              // Don't store location in ActivityPub data if approval is required
+              eventData.approveRegistrationsBoolean && eventData.joinBoolean
+                ? null
+                : eventData.eventLocation,
             )
           : undefined,
+        approveRegistrations:
+          eventData.approveRegistrationsBoolean && eventData.joinBoolean,
       };
       let diffText = "<p>" + i18next.t("routes.event.difftext") + "</p><ul>";
       let displayDate;
@@ -471,13 +479,25 @@ router.put(
         cc: "https://www.w3.org/ns/activitystreams#Public",
         content: `${diffText} See here: <a href="https://${res.locals.config?.general.domain}/${req.params.eventID}">https://${res.locals.config?.general.domain}/${req.params.eventID}</a>`,
       };
-      broadcastCreateMessage(jsonObject, event.followers, eventID);
+      broadcastCreateMessage(jsonObject, event.followers || [], eventID).catch(
+        (err) => console.log("Error broadcasting create message:", err),
+      );
       // also broadcast an Update profile message to all followers so that at least Mastodon servers will update the local profile information
       const jsonUpdateObject = JSON.parse(event.activityPubActor || "{}");
-      broadcastUpdateMessage(jsonUpdateObject, event.followers, eventID);
+      broadcastUpdateMessage(
+        jsonUpdateObject,
+        event.followers || [],
+        eventID,
+      ).catch((err) => console.log("Error broadcasting update message:", err));
       // also broadcast an Update/Event for any calendar apps that are consuming our Events
       const jsonEventObject = JSON.parse(event.activityPubEvent || "{}");
-      broadcastUpdateMessage(jsonEventObject, event.followers, eventID);
+      broadcastUpdateMessage(
+        jsonEventObject,
+        event.followers || [],
+        eventID,
+      ).catch((err) =>
+        console.log("Error broadcasting event update message:", err),
+      );
 
       // DM to attendees
       if (attendees?.length) {
@@ -496,7 +516,11 @@ router.put(
             ],
           };
           // send direct message to user
-          sendDirectMessage(jsonObject, attendee.id, eventID);
+          if (attendee.id) {
+            sendDirectMessage(jsonObject, attendee.id, eventID).catch((err) =>
+              console.log(`Error sending DM to ${attendee.id}:`, err),
+            );
+          }
         }
       }
       // Send update to all attendees
@@ -640,6 +664,7 @@ router.post(
   },
 );
 
+// Remove self from event (attendee action)
 router.delete(
   "/event/attendee/:eventID",
   async (req: Request, res: Response) => {
@@ -739,6 +764,291 @@ router.get(
       });
     }
     return res.redirect(`/${req.params.eventID}?m=unattend`);
+  },
+);
+
+// Finalize attendance (convert provisioned attendee to attending)
+router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
+  const {
+    removalPassword,
+    attendeeName,
+    attendeeEmail,
+    attendeeNumber,
+    attendeeVisible,
+  } = req.body;
+
+  if (!removalPassword) {
+    return res.status(400).json({ error: "Removal password is required." });
+  }
+
+  try {
+    const event = await Event.findOne({ id: req.params.eventID });
+    if (!event) {
+      return res.status(404).json({ error: "Event not found." });
+    }
+
+    const attendee = event.attendees?.find(
+      (a) => a.removalPassword === removalPassword,
+    );
+    if (!attendee) {
+      return res.status(404).json({ error: "Attendee not found." });
+    }
+
+    // Check capacity - for approval-required events, only count approved attendees
+    if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
+      const freeSpots = event.maxAttendees - getApprovedAttendeeCount(event);
+      if (attendeeNumber > freeSpots) {
+        return res.status(403).json({ error: "Not enough spots available." });
+      }
+    }
+
+    // Check if this is the host adding an attendee (via edit token)
+    const editToken = req.query.e || req.body.editToken;
+    const isHostAdding = editToken && editToken === event.editToken;
+
+    // Update attendee
+    attendee.status = "attending";
+    attendee.name = attendeeName;
+    attendee.email = attendeeEmail;
+    attendee.number = parseInt(attendeeNumber, 10) || 1;
+    attendee.visibility = attendeeVisible ? "public" : "private";
+
+    // Auto-approve if host is adding, or if event doesn't require approval
+    if (isHostAdding || !event.approveRegistrations) {
+      attendee.approved = true;
+    }
+
+    // Mark subdocument as modified so Mongoose detects changes
+    event.markModified("attendees");
+    await event.save();
+
+    addToLog(
+      "addEventAttendee",
+      "success",
+      `Attendee added to event ${req.params.eventID}`,
+    );
+
+    // Send confirmation email to attendee
+    if (attendeeEmail && attendee.approved) {
+      req.emailService
+        .sendEmailFromTemplate({
+          to: attendeeEmail,
+          subject: i18next.t("routes.addeventattendeesubject", {
+            eventName: event.name,
+          }),
+          templateName: "addEventAttendee",
+          templateData: {
+            eventID: req.params.eventID,
+            removalPassword,
+            removalPasswordHash: hashString(removalPassword),
+          },
+        })
+        .catch((e) => {
+          console.error("Error sending addEventAttendee email:", e);
+        });
+    } else if (attendeeEmail && !attendee.approved) {
+      // Send pending confirmation with their secret link so they have it via email
+      req.emailService
+        .sendEmailFromTemplate({
+          to: attendeeEmail,
+          subject: i18next.t("routes.attendeependingconfirmationsubject", {
+            eventName: event.name,
+          }),
+          templateName: "attendeePendingConfirmation",
+          templateData: {
+            eventID: req.params.eventID,
+            eventName: event.name,
+            removalPassword,
+          },
+        })
+        .catch((e) => {
+          console.error("Error sending attendeePendingConfirmation email:", e);
+        });
+    }
+
+    // Notify host if approval is required (but not if host added the attendee themselves)
+    if (event.approveRegistrations && event.creatorEmail && !isHostAdding) {
+      req.emailService
+        .sendEmailFromTemplate({
+          to: event.creatorEmail,
+          subject: i18next.t("routes.attendeeawaitingapprovalsubject", {
+            eventName: event.name,
+          }),
+          templateName: "attendeeAwaitingApproval",
+          templateData: {
+            eventID: req.params.eventID,
+            eventName: event.name,
+            attendeeName,
+            editToken: event.editToken,
+          },
+        })
+        .catch((e) => {
+          console.error("Error sending attendeeAwaitingApproval email:", e);
+        });
+    }
+
+    // Redirect appropriately based on who is adding the attendee
+    if (isHostAdding) {
+      // Host added attendee - redirect back to edit view
+      return res.redirect(`/${req.params.eventID}?e=${editToken}`);
+    } else if (event.approveRegistrations) {
+      // Approval required - show save link modal since location is hidden until approved
+      return res.redirect(
+        `/${req.params.eventID}?p=${encodeURIComponent(removalPassword)}&m=rsvppending`,
+      );
+    } else {
+      // No approval needed - just redirect with ?p
+      return res.redirect(
+        `/${req.params.eventID}?p=${encodeURIComponent(removalPassword)}`,
+      );
+    }
+  } catch (e) {
+    addToLog(
+      "addEventAttendee",
+      "error",
+      `Attempt to add attendee to event ${req.params.eventID} failed with error: ${e}`,
+    );
+    return res.status(500).json({ error: "An unexpected error occurred." });
+  }
+});
+
+// Approve an attendee (host action for approval-required events)
+router.patch(
+  "/event/:eventID/attendee/:attendeeID",
+  async (req: Request, res: Response) => {
+    const editToken = req.query.e || req.body.editToken;
+    if (!editToken) {
+      return res.status(401).json({ error: "Edit token required." });
+    }
+    try {
+      const event = await Event.findOne({ id: req.params.eventID });
+      if (!event) {
+        return res.status(404).json({ error: "Event not found." });
+      }
+      if (event.editToken !== editToken) {
+        return res.status(403).json({ error: "Invalid edit token." });
+      }
+      const attendee = event.attendees?.find(
+        (a) => a._id?.toString() === req.params.attendeeID,
+      );
+      if (!attendee) {
+        return res.status(404).json({ error: "Attendee not found." });
+      }
+      // Update approval status
+      if (req.body.approved !== undefined) {
+        attendee.approved = req.body.approved;
+      }
+      await event.save();
+      addToLog(
+        "approveEventAttendee",
+        "success",
+        `Attendee ${req.params.attendeeID} approved in event ${req.params.eventID}`,
+      );
+      // Notify the attendee they've been approved
+      if (req.body.approved) {
+        if (attendee.email) {
+          // Web attendee - send email
+          await req.emailService.sendEmailFromTemplate({
+            to: attendee.email,
+            subject: i18next.t("routes.attendeeapprovedsubject", {
+              eventName: event.name,
+            }),
+            templateName: "attendeeApproved",
+            templateData: {
+              eventID: req.params.eventID,
+              eventName: event.name,
+              removalPassword: attendee.removalPassword,
+            },
+          });
+        } else if (attendee.id && attendee.id.startsWith("https://")) {
+          // Fediverse attendee - send DM
+          const fullAttendee = event.attendees?.find(
+            (a) => a._id?.toString() === req.params.attendeeID,
+          );
+          const unattendLink = `https://${res.locals.config?.general.domain}/oneclickunattendevent/${req.params.eventID}/${fullAttendee?._id}`;
+          const jsonObject = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            name: `Approved for ${event.name}`,
+            type: "Note",
+            content: `<span class="h-card"><a href="${attendee.id}" class="u-url mention">@<span>${attendee.name}</span></a></span> You've been approved to attend ${event.name}! You can view the event here: <a href="https://${res.locals.config?.general.domain}/${req.params.eventID}">https://${res.locals.config?.general.domain}/${req.params.eventID}</a>. To remove yourself from the RSVP list, click <a href="${unattendLink}">here</a>.`,
+            tag: [
+              {
+                type: "Mention",
+                href: attendee.id,
+                name: attendee.name,
+              },
+            ],
+          };
+          if (attendee.id) {
+            sendDirectMessage(
+              jsonObject,
+              attendee.id,
+              req.params.eventID,
+            ).catch((err) =>
+              console.log(`Error sending approval DM to ${attendee.id}:`, err),
+            );
+          }
+        }
+      }
+      // Redirect back to event page in edit mode
+      return res.redirect(
+        `/${req.params.eventID}?e=${event.editToken}&m=approved`,
+      );
+    } catch (e) {
+      addToLog(
+        "approveEventAttendee",
+        "error",
+        `Attempt to approve attendee in event ${req.params.eventID} failed with error: ${e}`,
+      );
+      return res.status(500).json({ error: "An unexpected error occurred." });
+    }
+  },
+);
+
+// Deny/remove an attendee (host action)
+router.delete(
+  "/event/:eventID/attendee/:attendeeID",
+  async (req: Request, res: Response) => {
+    const editToken = req.query.e || req.body.editToken;
+    if (!editToken) {
+      return res.status(401).json({ error: "Edit token required." });
+    }
+    try {
+      const event = await Event.findOne({ id: req.params.eventID });
+      if (!event) {
+        return res.status(404).json({ error: "Event not found." });
+      }
+      if (event.editToken !== editToken) {
+        return res.status(403).json({ error: "Invalid edit token." });
+      }
+      const attendee = event.attendees?.find(
+        (a) => a._id?.toString() === req.params.attendeeID,
+      );
+      if (!attendee) {
+        return res.status(404).json({ error: "Attendee not found." });
+      }
+      // Remove the attendee
+      event.attendees = event.attendees?.filter(
+        (a) => a._id?.toString() !== req.params.attendeeID,
+      );
+      await event.save();
+      addToLog(
+        "denyEventAttendee",
+        "success",
+        `Attendee ${req.params.attendeeID} removed from event ${req.params.eventID}`,
+      );
+      // Redirect back to event page in edit mode
+      return res.redirect(
+        `/${req.params.eventID}?e=${event.editToken}&m=denied`,
+      );
+    } catch (e) {
+      addToLog(
+        "denyEventAttendee",
+        "error",
+        `Attempt to deny attendee in event ${req.params.eventID} failed with error: ${e}`,
+      );
+      return res.status(500).json({ error: "An unexpected error occurred." });
+    }
   },
 );
 

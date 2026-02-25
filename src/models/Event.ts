@@ -10,6 +10,7 @@ export interface IAttendee {
   created?: Date;
   _id: string;
   visibility?: "public" | "private";
+  approved?: boolean; // Host has approved this attendee to view protected info
 }
 
 export interface IReply {
@@ -74,7 +75,19 @@ export interface IEvent extends mongoose.Document {
   followers?: IFollower[];
   activityPubMessages?: IActivityPubMessage[];
   showOnPublicList?: boolean;
+  approveRegistrations?: boolean; // Per-event: hide location until attendee approved
 }
+
+export const getApprovedAttendeeCount = (
+  event: Pick<IEvent, "attendees" | "approveRegistrations">,
+): number => {
+  if (!event.attendees) return 0;
+  return event.attendees.reduce((acc, a) => {
+    if (a.status !== "attending") return acc;
+    if (event.approveRegistrations && !a.approved) return acc;
+    return acc + (a.number || 1);
+  }, 0);
+};
 
 const Attendees = new mongoose.Schema({
   name: {
@@ -113,6 +126,10 @@ const Attendees = new mongoose.Schema({
     default: "public",
   },
   created: Date,
+  approved: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const Followers = new mongoose.Schema(
@@ -336,6 +353,10 @@ const EventSchema = new mongoose.Schema({
   followers: [Followers],
   activityPubMessages: [ActivityPubMessages],
   showOnPublicList: {
+    type: Boolean,
+    default: false,
+  },
+  approveRegistrations: {
     type: Boolean,
     default: false,
   },

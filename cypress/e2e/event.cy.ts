@@ -1,6 +1,8 @@
 import eventData from "../fixtures/eventData.json";
 import crypto from "crypto";
 
+const toDatetimeLocalUTC = (date: Date) => date.toISOString().slice(0, 16);
+
 describe("Events", () => {
   beforeEach(() => {
     cy.visit("/new");
@@ -85,10 +87,8 @@ describe("Events", () => {
     cy.get("#attendeeVisible").uncheck();
     cy.get("form#attendEventForm").submit();
     cy.get("#attendees-alert").should("contain.text", "8 spots remaining");
-    cy.get(".attendeesList").should(
-      "contain.text",
-      "Test Attendee (2 people) (hidden from public list)",
-    );
+    cy.get(".attendeesList").should("contain.text", "Test Attendee");
+    cy.get(".attendeesList").should("contain.text", "hidden");
   });
 
   it("allows you to comment on an event", function () {
@@ -216,6 +216,38 @@ describe("Events", () => {
     cy.get("#attendEvent").should("not.exist");
   });
 
+  it("allows editing an event after it starts", function () {
+    const updatedEventName = "Edited While";
+    const oneHour = 60 * 60 * 1000;
+    const startedEventStart = toDatetimeLocalUTC(
+      new Date(Date.now() - oneHour),
+    );
+    const startedEventEnd = toDatetimeLocalUTC(new Date(Date.now() + oneHour));
+
+    cy.get("#editEvent").click();
+
+    cy.get("#editEventForm #eventName").focus();
+    cy.get("#editEventForm #eventName").clear();
+    cy.get("#editEventForm #eventName").type(updatedEventName);
+
+    cy.get("#editEventForm #eventStart").focus();
+    cy.get("#editEventForm #eventStart").clear();
+    cy.get("#editEventForm #eventStart").type(startedEventStart);
+
+    cy.get("#editEventForm #eventEnd").focus();
+    cy.get("#editEventForm #eventEnd").clear();
+    cy.get("#editEventForm #eventEnd").type(startedEventEnd);
+
+    cy.get("#editEventForm select#timezone + span.select2").click();
+    cy.get(".select2-results__option")
+      .contains("Etc/UTC")
+      .click({ force: true });
+
+    cy.get("#editEventForm").submit();
+
+    cy.get(".p-name").should("have.text", updatedEventName);
+  });
+
   it("sets a group for an event", function () {
     // For this we need to create a group first. This will load the group edit token
     // into our localStorage, and will then appear in the group select dropdown.
@@ -265,7 +297,7 @@ describe("Events", () => {
           .createHash("sha256")
           .update(removalPassword)
           .digest("hex");
-        const unattendLink = `http://localhost:3000/event/${this.eventID}/unattend/${removalPasswordHash}`;
+        const unattendLink = `/event/${this.eventID}/unattend/${removalPasswordHash}`;
         cy.visit(unattendLink);
         cy.get("#event__message").should(
           "contain.text",
