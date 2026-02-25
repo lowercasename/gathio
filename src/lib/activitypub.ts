@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import crypto from "node:crypto";
+import i18next from "i18next";
 import Event, { IAttendee, getApprovedAttendeeCount } from "../models/Event.js";
 import { sendDirectMessage } from "../activitypub.js";
 import { successfulRSVPResponse } from "./activitypub/templates.js";
@@ -231,6 +232,30 @@ export const handlePollResponse = async (req: Request, res: Response) => {
         };
         if (newAttendee.id) {
           sendDirectMessage(jsonObject, newAttendee.id, event.id);
+        }
+        // Notify host by email
+        if (event.creatorEmail) {
+          req.emailService
+            .sendEmailFromTemplate({
+              to: event.creatorEmail,
+              subject: i18next.t(
+                "routes.attendeeawaitingapprovalsubject",
+                { eventName: event.name },
+              ),
+              templateName: "attendeeAwaitingApproval",
+              templateData: {
+                eventID,
+                eventName: event.name,
+                attendeeName: newAttendee.name,
+                editToken: event.editToken,
+              },
+            })
+            .catch((e: unknown) => {
+              console.error(
+                "Error sending attendeeAwaitingApproval email:",
+                e,
+              );
+            });
         }
       } else {
         // send a "click here to remove yourself" link back to the user as a DM

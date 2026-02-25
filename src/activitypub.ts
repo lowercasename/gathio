@@ -3,6 +3,7 @@ import { addToLog } from "./helpers.js";
 import crypto from "node:crypto";
 import { customAlphabet } from "nanoid";
 import moment from "moment-timezone";
+import i18next from "i18next";
 import sanitizeHtml from "sanitize-html";
 import { getConfig } from "./lib/config.js";
 const config = getConfig();
@@ -715,6 +716,30 @@ async function _handleAcceptEvent(req: Request, res: Response) {
             `Error sending DM to new attendee: ${err}`,
           ),
         );
+        // Notify host by email if approval is required
+        if (requiresApproval && event.creatorEmail) {
+          req.emailService
+            .sendEmailFromTemplate({
+              to: event.creatorEmail,
+              subject: i18next.t(
+                "routes.attendeeawaitingapprovalsubject",
+                { eventName: event.name },
+              ),
+              templateName: "attendeeAwaitingApproval",
+              templateData: {
+                eventID,
+                eventName: event.name,
+                attendeeName: newAttendee.name,
+                editToken: event.editToken,
+              },
+            })
+            .catch((e: unknown) => {
+              console.error(
+                "Error sending attendeeAwaitingApproval email:",
+                e,
+              );
+            });
+        }
         return res.sendStatus(200);
       } catch (err) {
         addToLog(
