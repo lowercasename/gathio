@@ -691,6 +691,18 @@ router.post("/post/comment/:eventID", (req, res) => {
       id: req.params.eventID,
     },
     async function (err, event) {
+      if (err) {
+        res.send("Database error, please try again :(" + err);
+        addToLog(
+          "addEventComment",
+          "error",
+          "Attempt to add comment to event " +
+            req.params.eventID +
+            " failed with error: " +
+            err,
+        );
+        return;
+      }
       if (!event) {
         return res.sendStatus(404);
       }
@@ -720,7 +732,6 @@ router.post("/post/comment/:eventID", (req, res) => {
           return res.sendStatus(404);
         }
 
-        const event = await Event.findOne({ id: req.params.eventID });
         const attendeeEmails =
           event.attendees
             .filter((o) => o.status === "attending" && o.email)
