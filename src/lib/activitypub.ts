@@ -235,8 +235,8 @@ export const handlePollResponse = async (req: Request, res: Response) => {
         }
         // Notify host by email
         if (event.creatorEmail) {
-          req.emailService
-            .sendEmailFromTemplate({
+          try {
+            await req.emailService.sendEmailFromTemplate({
               to: event.creatorEmail,
               subject: i18next.t("routes.attendeeawaitingapprovalsubject", {
                 eventName: event.name,
@@ -248,10 +248,10 @@ export const handlePollResponse = async (req: Request, res: Response) => {
                 attendeeName: newAttendee.name,
                 editToken: event.editToken,
               },
-            })
-            .catch((e: unknown) => {
-              console.error("Error sending attendeeAwaitingApproval email:", e);
             });
+          } catch (e) {
+            console.error("Error sending attendeeAwaitingApproval email:", e);
+          }
         }
       } else {
         // send a "click here to remove yourself" link back to the user as a DM

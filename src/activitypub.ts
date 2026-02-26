@@ -708,18 +708,21 @@ async function _handleAcceptEvent(req: Request, res: Response) {
             ],
           };
         }
-        // send direct message to user
-        sendDirectMessage(jsonObject, newAttendee.id, event.id).catch((err) =>
-          addToLog(
+
+        try {
+          await sendDirectMessage(jsonObject, newAttendee.id, event.id);
+        } catch (err) {
+          return addToLog(
             "handleAcceptEvent",
             "error",
             `Error sending DM to new attendee: ${err}`,
-          ),
-        );
+          );
+        }
+
         // Notify host by email if approval is required
         if (requiresApproval && event.creatorEmail) {
-          req.emailService
-            .sendEmailFromTemplate({
+          try {
+            await req.emailService.sendEmailFromTemplate({
               to: event.creatorEmail,
               subject: i18next.t("routes.attendeeawaitingapprovalsubject", {
                 eventName: event.name,
@@ -731,10 +734,10 @@ async function _handleAcceptEvent(req: Request, res: Response) {
                 attendeeName: newAttendee.name,
                 editToken: event.editToken,
               },
-            })
-            .catch((e: unknown) => {
-              console.error("Error sending attendeeAwaitingApproval email:", e);
             });
+          } catch (e) {
+            console.error("Error sending attendeeAwaitingApproval email:", e);
+          }
         }
         return res.sendStatus(200);
       } catch (err) {
@@ -915,17 +918,21 @@ async function _handleCreateNoteComment(req: Request, res: Response) {
       );
       const jsonObject = req.body.object;
       jsonObject.attributedTo = newComment.actorId;
-      broadcastAnnounceMessage(
-        jsonObject,
-        event.followers ?? [],
-        eventID,
-      ).catch((err) =>
-        addToLog(
+
+      try {
+        await broadcastAnnounceMessage(
+          jsonObject,
+          event.followers ?? [],
+          eventID,
+        );
+      } catch (err) {
+        return addToLog(
           "handleCreateNoteComment",
           "error",
           `Error broadcasting comment: ${err}`,
-        ),
-      );
+        );
+      }
+
       return res.sendStatus(200);
     } catch (err) {
       addToLog(

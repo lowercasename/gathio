@@ -86,22 +86,21 @@ router.post(
     let isPartOfEventGroup = false;
 
     if (req.file?.buffer) {
-      eventImageFilename = await Jimp.read(req.file.buffer)
-        .then((img) => {
-          img
-            .resize(920, Jimp.AUTO) // resize
-            .quality(80) // set JPEG quality
-            .write("./public/events/" + eventID + ".jpg"); // save
-          return eventID + ".jpg";
-        })
-        .catch((err): undefined => {
-          addToLog(
-            "Jimp",
-            "error",
-            "Attempt to edit image failed with error: " + err,
-          );
-          return undefined;
-        });
+      try {
+        const img = await Jimp.read(req.file.buffer);
+        img
+          .resize(920, Jimp.AUTO) // resize
+          .quality(80) // set JPEG quality
+          .write("./public/events/" + eventID + ".jpg"); // save
+        eventImageFilename = eventID + ".jpg";
+      } catch (err) {
+        addToLog(
+          "Jimp",
+          "error",
+          "Attempt to edit image failed with error: " + err,
+        );
+        eventImageFilename = undefined;
+      }
     }
 
     const startUTC = moment.tz(eventData.eventStart, eventData.timezone);
@@ -320,20 +319,20 @@ router.put(
       const eventID = req.params.eventID;
       let eventImageFilename = event.image;
       if (req.file?.buffer) {
-        Jimp.read(req.file.buffer)
-          .then((img) => {
-            img
-              .resize(920, Jimp.AUTO) // resize
-              .quality(80) // set JPEG quality
-              .write(`./public/events/${eventID}.jpg`); // save
-          })
-          .catch((err) => {
-            addToLog(
-              "Jimp",
-              "error",
-              "Attempt to edit image failed with error: " + err,
-            );
-          });
+        try {
+          const img = await Jimp.read(req.file.buffer);
+          img
+            .resize(920, Jimp.AUTO) // resize
+            .quality(80) // set JPEG quality
+            .write(`./public/events/${eventID}.jpg`); // save
+        } catch (err) {
+          addToLog(
+            "Jimp",
+            "error",
+            "Attempt to edit image failed with error: " + err,
+          );
+        }
+
         eventImageFilename = eventID + ".jpg";
       }
 
@@ -479,25 +478,42 @@ router.put(
         cc: "https://www.w3.org/ns/activitystreams#Public",
         content: `${diffText} See here: <a href="https://${res.locals.config?.general.domain}/${req.params.eventID}">https://${res.locals.config?.general.domain}/${req.params.eventID}</a>`,
       };
-      broadcastCreateMessage(jsonObject, event.followers || [], eventID).catch(
-        (err) => console.log("Error broadcasting create message:", err),
-      );
+
+      try {
+        await broadcastCreateMessage(
+          jsonObject,
+          event.followers || [],
+          eventID,
+        );
+      } catch (err) {
+        return console.log("Error broadcasting create message:", err);
+      }
+
       // also broadcast an Update profile message to all followers so that at least Mastodon servers will update the local profile information
       const jsonUpdateObject = JSON.parse(event.activityPubActor || "{}");
-      broadcastUpdateMessage(
-        jsonUpdateObject,
-        event.followers || [],
-        eventID,
-      ).catch((err) => console.log("Error broadcasting update message:", err));
+
+      try {
+        await broadcastUpdateMessage(
+          jsonUpdateObject,
+          event.followers || [],
+          eventID,
+        );
+      } catch (err) {
+        return console.log("Error broadcasting update message:", err);
+      }
+
       // also broadcast an Update/Event for any calendar apps that are consuming our Events
       const jsonEventObject = JSON.parse(event.activityPubEvent || "{}");
-      broadcastUpdateMessage(
-        jsonEventObject,
-        event.followers || [],
-        eventID,
-      ).catch((err) =>
-        console.log("Error broadcasting event update message:", err),
-      );
+
+      try {
+        await broadcastUpdateMessage(
+          jsonEventObject,
+          event.followers || [],
+          eventID,
+        );
+      } catch (err) {
+        return console.log("Error broadcasting event update message:", err);
+      }
 
       // DM to attendees
       if (attendees?.length) {
@@ -517,9 +533,11 @@ router.put(
           };
           // send direct message to user
           if (attendee.id) {
-            sendDirectMessage(jsonObject, attendee.id, eventID).catch((err) =>
-              console.log(`Error sending DM to ${attendee.id}:`, err),
-            );
+            try {
+              await sendDirectMessage(jsonObject, attendee.id, eventID);
+            } catch (err) {
+              return console.log(`Error sending DM to ${attendee.id}:`, err);
+            }
           }
         }
       }
@@ -830,8 +848,8 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
 
     // Send confirmation email to attendee
     if (attendeeEmail && attendee.approved) {
-      req.emailService
-        .sendEmailFromTemplate({
+      try {
+        await req.emailService.sendEmailFromTemplate({
           to: attendeeEmail,
           subject: i18next.t("routes.addeventattendeesubject", {
             eventName: event.name,
@@ -842,14 +860,13 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
             removalPassword,
             removalPasswordHash: hashString(removalPassword),
           },
-        })
-        .catch((e) => {
-          console.error("Error sending addEventAttendee email:", e);
         });
+      } catch (e) {
+        console.error("Error sending addEventAttendee email:", e);
+      }
     } else if (attendeeEmail && !attendee.approved) {
-      // Send pending confirmation with their secret link so they have it via email
-      req.emailService
-        .sendEmailFromTemplate({
+      try {
+        await req.emailService.sendEmailFromTemplate({
           to: attendeeEmail,
           subject: i18next.t("routes.attendeependingconfirmationsubject", {
             eventName: event.name,
@@ -860,16 +877,16 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
             eventName: event.name,
             removalPassword,
           },
-        })
-        .catch((e) => {
-          console.error("Error sending attendeePendingConfirmation email:", e);
         });
+      } catch (e) {
+        console.error("Error sending attendeePendingConfirmation email:", e);
+      }
     }
 
     // Notify host if approval is required (but not if host added the attendee themselves)
     if (event.approveRegistrations && event.creatorEmail && !isHostAdding) {
-      req.emailService
-        .sendEmailFromTemplate({
+      try {
+        await req.emailService.sendEmailFromTemplate({
           to: event.creatorEmail,
           subject: i18next.t("routes.attendeeawaitingapprovalsubject", {
             eventName: event.name,
@@ -881,10 +898,10 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
             attendeeName,
             editToken: event.editToken,
           },
-        })
-        .catch((e) => {
-          console.error("Error sending attendeeAwaitingApproval email:", e);
         });
+      } catch (e) {
+        console.error("Error sending attendeeAwaitingApproval email:", e);
+      }
     }
 
     // Redirect appropriately based on who is adding the attendee
@@ -980,13 +997,18 @@ router.patch(
             ],
           };
           if (attendee.id) {
-            sendDirectMessage(
-              jsonObject,
-              attendee.id,
-              req.params.eventID,
-            ).catch((err) =>
-              console.log(`Error sending approval DM to ${attendee.id}:`, err),
-            );
+            try {
+              await sendDirectMessage(
+                jsonObject,
+                attendee.id,
+                req.params.eventID,
+              );
+            } catch (err) {
+              return console.log(
+                `Error sending approval DM to ${attendee.id}:`,
+                err,
+              );
+            }
           }
         }
       }

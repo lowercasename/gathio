@@ -192,6 +192,10 @@ async function initializeApp() {
   app.use("/", routes);
 }
 
-initializeApp().catch(console.error);
+try {
+  await initializeApp();
+} catch (err) {
+  console.error();
+}
 
 export default app;

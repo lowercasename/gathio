@@ -53,21 +53,20 @@ router.post(
       let groupImageFilename;
 
       if (req.file?.buffer) {
-        groupImageFilename = await Jimp.read(req.file.buffer)
-          .then((img) => {
-            img
-              .resize(920, Jimp.AUTO) // resize
-              .quality(80) // set JPEG quality
-              .write("./public/events/" + groupID + ".jpg"); // save
-            return groupID + ".jpg";
-          })
-          .catch((err) => {
-            addToLog(
-              "Jimp",
-              "error",
-              "Attempt to edit image failed with error: " + err,
-            );
-          });
+        try {
+          const img = await Jimp.read(req.file.buffer);
+          img
+            .resize(920, Jimp.AUTO) // resize
+            .quality(80) // set JPEG quality
+            .write("./public/events/" + groupID + ".jpg"); // save
+          groupImageFilename = groupID + ".jpg";
+        } catch (err) {
+          addToLog(
+            "Jimp",
+            "error",
+            "Attempt to edit image failed with error: " + err,
+          );
+        }
       }
 
       const eventGroup = new EventGroup({
@@ -180,20 +179,20 @@ router.put(
       const eventGroupID = req.params.eventGroupID;
       let eventGroupImageFilename = eventGroup.image;
       if (req.file?.buffer) {
-        Jimp.read(req.file.buffer)
-          .then((img) => {
-            img
-              .resize(920, Jimp.AUTO) // resize
-              .quality(80) // set JPEG quality
-              .write(`./public/events/${eventGroupID}.jpg`); // save
-          })
-          .catch((err) => {
-            addToLog(
-              "Jimp",
-              "error",
-              "Attempt to edit image failed with error: " + err,
-            );
-          });
+        try {
+          const img = await Jimp.read(req.file.buffer);
+          img
+            .resize(920, Jimp.AUTO) // resize
+            .quality(80) // set JPEG quality
+            .write(`./public/events/${eventGroupID}.jpg`); // save
+        } catch (err) {
+          addToLog(
+            "Jimp",
+            "error",
+            "Attempt to edit image failed with error: " + err,
+          );
+        }
+
         eventGroupImageFilename = eventGroupID + ".jpg";
       }
 
