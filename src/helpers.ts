@@ -10,16 +10,23 @@ const domain = config.general.domain;
 const siteName = config.general.site_name;
 
 // LOGGING
-export function addToLog(process: string, status: string, message: string) {
+export async function addToLog(
+  process: string,
+  status: string,
+  message: string,
+) {
   const logEntry = {
     status,
     process,
     message,
     timestamp: new Date(),
   };
-  new Log(logEntry).save().catch(() => {
+
+  try {
+    await new Log(logEntry).save();
+  } catch (err) {
     console.log("Error saving log entry!");
-  });
+  }
 }
 
 // Minimal event shape for iCal export (works with both documents and lean objects)
