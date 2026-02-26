@@ -52,7 +52,7 @@ schedule.scheduleJob("59 23 * * *", async function (_fireDate) {
     oldEvents.forEach(async (event) => {
       const deleteEventFromDB = async (id) => {
         try {
-          const _response = await Event.deleteOne({ _id: id });
+          await Event.deleteOne({ _id: id });
           addToLog(
             "deleteOldEvents",
             "success",
@@ -200,7 +200,7 @@ router.post("/deleteimage/:eventID/:editToken", async (req, res) => {
         event.image = "";
 
         try {
-          const _response = await event.save();
+          await event.save();
 
           res.status(200).send("Success");
         } catch (err) {
@@ -396,7 +396,7 @@ router.post("/deleteeventgroup/:eventGroupID/:editToken", async (req, res) => {
         }
 
         try {
-          const _response = await Event.updateOne(
+          await Event.updateOne(
             { _id: { $in: linkedEventIDs } },
             { $set: { eventGroup: null } },
             { multi: true },
@@ -656,7 +656,7 @@ router.get("/unsubscribe/:eventGroupID", async (req, res) => {
   }
 
   try {
-    const _response = await EventGroup.updateOne(
+    await EventGroup.updateOne(
       { id: req.params.eventGroupID },
       { $pull: { subscribers: { email } } },
     );
