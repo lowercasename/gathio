@@ -25,7 +25,7 @@ export async function addToLog(
   try {
     await new Log(logEntry).save();
   } catch (err) {
-    console.log("Error saving log entry!");
+    console.log("Error saving log entry!", err);
   }
 }
 

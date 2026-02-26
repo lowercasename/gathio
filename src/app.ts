@@ -195,7 +195,7 @@ async function initializeApp() {
 try {
   await initializeApp();
 } catch (err) {
-  console.error();
+  console.error("error starting app", err);
 }
 
 export default app;
