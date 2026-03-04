@@ -44,3 +44,25 @@ Gathio is configured through a config file located at `config/config.toml`. The 
 | Option         | Description                                                                                                   |
 | -------------- | ------------------------------------------------------------------------------------------------------------- |
 | `static_pages` | Links to static pages, which will be displayed in the footer. See [Customization](customization.md) for more. |
+
+## Environment variable substitution
+
+Any string value in `config.toml` can reference an environment variable using the `${GATHIO_VARIABLE_NAME}` syntax. Only variables prefixed with `GATHIO_` are supported, to avoid accidentally leaking unrelated environment variables into your config.
+
+For example:
+
+```toml
+[database]
+mongodb_url = "${GATHIO_MONGODB_URL}"
+
+[mailgun]
+api_key = "${GATHIO_MAILGUN_API_KEY}"
+```
+
+This can be useful when deploying Gathio, to avoid putting secrets in config files:
+
+```bash
+GATHIO_MONGODB_URL="mongodb://prod-server:27017/gathio" GATHIO_MAILGUN_API_KEY="key-abc123" npm start
+```
+
+If a referenced environment variable is not set, Gathio will log a warning at startup and leave the original `${...}` string in place.
