@@ -238,10 +238,9 @@ export const handlePollResponse = async (req: Request, res: Response) => {
           req.emailService
             .sendEmailFromTemplate({
               to: event.creatorEmail,
-              subject: i18next.t(
-                "routes.attendeeawaitingapprovalsubject",
-                { eventName: event.name },
-              ),
+              subject: i18next.t("routes.attendeeawaitingapprovalsubject", {
+                eventName: event.name,
+              }),
               templateName: "attendeeAwaitingApproval",
               templateData: {
                 eventID,
@@ -251,10 +250,7 @@ export const handlePollResponse = async (req: Request, res: Response) => {
               },
             })
             .catch((e: unknown) => {
-              console.error(
-                "Error sending attendeeAwaitingApproval email:",
-                e,
-              );
+              console.error("Error sending attendeeAwaitingApproval email:", e);
             });
         }
       } else {
