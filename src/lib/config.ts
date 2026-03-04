@@ -221,6 +221,13 @@ export const getConfig = (): GathioConfig => {
     return _resolvedConfig;
   }
 
+  if (!fs.existsSync("./config/config.toml")) {
+    exitWithError(
+      "Configuration file not found! Have you renamed './config/config-example.toml' to './config/config.toml'?",
+    );
+    return process.exit(1);
+  }
+
   try {
     const rawConfig = toml.parse(
       fs.readFileSync("./config/config.toml", "utf-8"),
@@ -240,10 +247,8 @@ export const getConfig = (): GathioConfig => {
     }
     _resolvedConfig = resolvedConfig;
     return resolvedConfig;
-  } catch {
-    exitWithError(
-      "Configuration file not found! Have you renamed './config/config-example.toml' to './config/config.toml'?",
-    );
+  } catch (e: unknown) {
+    console.error(`Error parsing configuration: ${e}`);
     return process.exit(1);
   }
 };
