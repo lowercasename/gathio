@@ -187,22 +187,30 @@ export const instanceDescription = (): string => {
   }
 };
 
-const processConfigEnv = (config: GathioConfig) => {
-  for (const configValue of Object.values(config)) {
-    if (typeof configValue !== "object") continue;
-    for (const [subConfigKey, subConfigValue] of Object.entries(configValue)) {
-      if (typeof subConfigValue === "string") {
-        configValue[subConfigKey as keyof typeof configValue] =
-          subConfigValue.replace(/\$\{(\w+)\}/g, (orig, match) => {
-            if (!match) return orig;
-            if (match.startsWith("GATHIO_")) {
-              return process.env[match] || orig;
-            }
-            return orig;
-          });
+const replaceEnvVars = (value: string): string =>
+  value.replace(/\$\{(\w+)\}/g, (orig, match) => {
+    if (match.startsWith("GATHIO_")) {
+      const resolved = process.env[match];
+      if (resolved === undefined) {
+        console.warn(
+          `Config references environment variable "${match}" which is not set. The literal string "${orig}" will be used instead.`,
+        );
+        return orig;
       }
+      return resolved;
     }
+    return orig;
+  });
+
+const processConfigEnv = <T>(obj: T): T => {
+  if (typeof obj === "string") return replaceEnvVars(obj) as T;
+  if (Array.isArray(obj)) return obj.map(processConfigEnv) as T;
+  if (obj && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, processConfigEnv(v)]),
+    ) as T;
   }
+  return obj;
 };
 
 let _resolvedConfig: GathioConfig | null = null;
@@ -214,18 +222,18 @@ export const getConfig = (): GathioConfig => {
   }
 
   try {
-    const config = toml.parse(
+    const rawConfig = toml.parse(
       fs.readFileSync("./config/config.toml", "utf-8"),
     ) as GathioConfig;
-    processConfigEnv(config);
+    const configWithEnvValues = processConfigEnv(rawConfig);
     const resolvedConfig = {
       ...defaultConfig,
-      ...config,
+      ...configWithEnvValues,
     };
     if (process.env.CYPRESS || process.env.CI) {
-      config.general.mail_service = "none";
+      resolvedConfig.general.mail_service = "none";
       console.log("Running in Cypress or CI, not initializing email service.");
-    } else if (config.general.mail_service === "none") {
+    } else if (resolvedConfig.general.mail_service === "none") {
       console.warn(
         "You have not configured this Gathio instance to send emails! This means that event creators will not receive emails when their events are created, which means they may end up locked out of editing events. Consider setting up an email service.",
       );
