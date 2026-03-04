@@ -248,7 +248,7 @@ export const getConfig = (): GathioConfig => {
     _resolvedConfig = resolvedConfig;
     return resolvedConfig;
   } catch (e: unknown) {
-    console.error(`Error parsing configuration: ${e}`);
+    console.error(`Error parsing configuration:`, e);
     return process.exit(1);
   }
 };
