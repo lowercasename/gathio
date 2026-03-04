@@ -1,3 +1,7 @@
+# Any string value in this file can reference an environment variable using
+# ${GATHIO_VARIABLE_NAME} syntax. Only variables prefixed with GATHIO_ are supported.
+# For example: mongodb_url = "${GATHIO_MONGODB_URL}"
+
 [general]
 # Your domain goes here. If there is a port it should be 'domain.com:port', but
 # otherwise just 'domain.com'.
