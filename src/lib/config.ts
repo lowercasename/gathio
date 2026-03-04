@@ -223,7 +223,7 @@ export const getConfig = (): GathioConfig => {
 
   if (!fs.existsSync("./config/config.toml")) {
     exitWithError(
-      "Configuration file not found! Have you renamed './config/config-example.toml' to './config/config.toml'?",
+      "Configuration file not found! Have you renamed './config/config.example.toml' to './config/config.toml'?",
     );
     return process.exit(1);
   }
