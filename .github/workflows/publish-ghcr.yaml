@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  release:
+    types: [published]
 
 jobs:
   publish:
@@ -40,6 +42,8 @@ jobs:
             type=raw,value=${{ github.sha }}
             type=raw,value=${{ steps.package-version.outputs.current-version }}
             type=raw,value=latest
+            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=semver,pattern={{major}}.{{minor}}
 
       - name: Publish to GHCR
         uses: docker/build-push-action@v4
