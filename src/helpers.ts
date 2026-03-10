@@ -53,6 +53,7 @@ export function exportIcal(
       end: moment.tz(event.end, event.timezone),
       timezone: event.timezone,
       summary: event.name,
+      uid: "@" + event.id + "@" + domain,
       description: event.description,
       organizer: {
         name: event.hostName || "Anonymous",
