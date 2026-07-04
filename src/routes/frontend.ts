@@ -570,9 +570,10 @@ router.get("/:eventID", async (req: Request, res: Response) => {
           eventGroupID: event.eventGroup
             ? (event.eventGroup as unknown as IEventGroup).id
             : null,
-          eventGroupEditToken: event.eventGroup
-            ? (event.eventGroup as unknown as IEventGroup).editToken
-            : null,
+          eventGroupEditToken:
+            editingEnabled && event.eventGroup
+              ? (event.eventGroup as unknown as IEventGroup).editToken
+              : null,
           usersCanAttend: event.usersCanAttend,
           usersCanComment: event.usersCanComment,
           maxAttendees: event.maxAttendees,
