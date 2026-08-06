@@ -4,7 +4,7 @@
 
 config.toml
 dist
-public/events/*
+public
 !public/events/.gitkeep
 
 # CI files

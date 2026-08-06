@@ -17,6 +17,19 @@
       data-admin-email="{{adminEmail}}">Edit</button>
   </div>
 
+  <hr>
+
+  <h4 class="mb-3">Passkey sign-in</h4>
+  <p>
+    Register this device as a passkey so you can log in without requesting a new
+    email magic link each time.
+  </p>
+  <div class="form-group text-center">
+    <button id="registerPasskey" class="button button--primary w-50"
+      data-admin-email="{{adminEmail}}">Add this device as a passkey</button>
+  </div>
+  <p id="passkeyStatus" class="text-center small"></p>
+
   <script>
     // Persist admin session so future visits don't require a new magic link
     (function() {
@@ -43,6 +56,45 @@
 
     document.getElementById('eventInput').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') document.getElementById('goToEvent').click();
+    });
+
+    // Register this device as a passkey for passkey sign-in
+    document.getElementById('registerPasskey').addEventListener('click', async function () {
+      var btn = this;
+      var status = document.getElementById('passkeyStatus');
+      var session = getAdminSession();
+      if (!session) { status.textContent = 'No active admin session. Please log in again.'; return; }
+      btn.disabled = true;
+      status.textContent = '';
+      try {
+        var res = await fetch('/passkey/register/options', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminToken: session.token, adminEmail: session.email })
+        });
+        if (!res.ok) {
+          var data = await res.json().catch(function () { return {}; });
+          throw new Error(data.error || 'Could not start passkey registration.');
+        }
+        var opts = await res.json();
+        var attResp = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: opts, useAutoRegister: true });
+        var regRes = await fetch('/passkey/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: session.email, response: attResp, deviceName: (navigator.userAgent || '').slice(0, 64) })
+        });
+        var regData = await regRes.json().catch(function () { return {}; });
+        if (!regRes.ok) throw new Error(regData.error || 'Passkey registration failed.');
+        // Refresh the admin session from the freshly minted one.
+        if (regData.token && regData.email && regData.expiry) {
+          setAdminSession(regData.token, regData.email, regData.expiry);
+        }
+        status.textContent = 'Passkey registered. You can now log in without an email link.';
+        btn.textContent = 'Passkey registered';
+      } catch (e) {
+        status.textContent = e.message || 'Registration failed.';
+        btn.disabled = false;
+      }
     });
   </script>
 </main>
