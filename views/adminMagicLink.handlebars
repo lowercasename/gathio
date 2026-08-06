@@ -10,6 +10,23 @@
 <main class="page">
   <h2 class="mb-4">Admin login</h2>
 
+  <h4 class="mb-3">Sign in with a passkey</h4>
+  <p>
+    If you have already registered a passkey, sign in here without requesting a new email link.
+  </p>
+  <div class="form-group">
+    <label for="passkeyEmail">Email address</label>
+    <input type="email" class="form-control" id="passkeyEmail" placeholder="Email address" required name="passkeyEmail">
+  </div>
+  <div class="form-group text-center">
+    <button id="passkeyLogin" class="button button--primary w-50">Sign in with passkey</button>
+  </div>
+  <p id="passkeyLoginStatus" class="text-center small"></p>
+
+  <hr>
+
+  <h4 class="mb-3">…or request an email magic link</h4>
+
   <form
     action="/magic-link/admin"
     method="post"
@@ -33,3 +50,38 @@
     </div>
   </form>
 </main>
+
+<script>
+  document.getElementById('passkeyLogin').addEventListener('click', async function () {
+    var status = document.getElementById('passkeyLoginStatus');
+    var email = document.getElementById('passkeyEmail').value.trim().toLowerCase();
+    if (!email) { status.textContent = 'Please enter your email address.'; return; }
+    this.disabled = true;
+    status.textContent = '';
+    try {
+      var res = await fetch('/passkey/login/options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      });
+      if (!res.ok) {
+        var err = await res.json().catch(function () { return {}; });
+        throw new Error(err.error || 'No passkey is registered for this address.');
+      }
+      var data = await res.json();
+      var attResp = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: data.options });
+      var loginRes = await fetch('/passkey/challenge/' + data.challengeId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: attResp })
+      });
+      var loginData = await loginRes.json().catch(function () { return {}; });
+      if (!loginRes.ok) throw new Error(loginData.error || 'Passkey sign-in failed.');
+      setAdminSession(loginData.token, loginData.email, loginData.expiry);
+      window.location.href = '/admin/' + encodeURIComponent(loginData.token);
+    } catch (e) {
+      status.textContent = e.message || 'Sign-in failed.';
+      document.getElementById('passkeyLogin').disabled = false;
+    }
+  });
+</script>

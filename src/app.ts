@@ -19,6 +19,7 @@ import event from "./routes/event.js";
 import group from "./routes/group.js";
 import staticPages from "./routes/static.js";
 import magicLink from "./routes/magicLink.js";
+import passkey from "./routes/passkey.js";
 import api from "./routes/api.js";
 import { getI18nHelpers } from "./helpers.js";
 import moment from "moment";
@@ -194,6 +195,7 @@ async function initializeApp() {
   app.use("/", event);
   app.use("/", group);
   app.use("/", magicLink);
+  app.use("/", passkey);
   app.use("/", routes);
 }
 

@@ -22,6 +22,8 @@
   "dependencies": {
     "@sendgrid/helpers": "^8.0.0",
     "@sendgrid/mail": "^6.5.5",
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.2",
     "activitypub-types": "^1.1.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
