@@ -702,9 +702,6 @@ window.eventData = {{{ json jsonData }}};
       $(this).html('<i class="fas fa-copy"></i> {{t "common.copied" }}');
       setTimeout(function(){ $("#copyAPLink").html('<i class="fas fa-copy"></i> {{t "common.copy" }}');}, 5000);
     })
-    if ($("#joinCheckbox").is(':checked')){
-      $("#maxAttendeesCheckboxContainer").css("display","flex");
-    }
     $('#attendEvent').on('click', function(event) {
       const modal = $('#attendModal');
       const eventID = $(this).attr('data-event-id');
