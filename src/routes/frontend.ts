@@ -412,8 +412,10 @@ router.get("/:eventID", async (req: Request, res: Response) => {
       event,
       req.query as Record<string, string | string[] | undefined>,
     );
+    // Only show the welcome message (and use up the firstLoad flag) for the
+    // event's host - anyone could load the event page before they do
     let firstLoad = false;
-    if (event.firstLoad === true) {
+    if (event.firstLoad === true && editingEnabled) {
       firstLoad = true;
       await Event.findOneAndUpdate(
         { id: req.params.eventID },
@@ -717,8 +719,10 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
       }
     }
 
+    // Only show the welcome message (and use up the firstLoad flag) for the
+    // group's host - anyone could load the group page before they do
     let firstLoad = false;
-    if (eventGroup.firstLoad === true) {
+    if (eventGroup.firstLoad === true && editingEnabled) {
       firstLoad = true;
       await EventGroup.findOneAndUpdate(
         { id: req.params.eventGroupID },

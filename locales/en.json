@@ -8,6 +8,7 @@
   "common.datetimeformat": "dddd D MMMM YYYY h:mm a",
   "common.emailaddr": "Email address",
   "common.eventend": "Ends",
+  "common.eventgroupedittoken": "Event group edit token",
   "common.eventgroupid": "Event group ID",
   "common.eventgroupname": "Event group name",
   "common.eventgroups": "Event groups",
