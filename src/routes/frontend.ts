@@ -18,7 +18,12 @@ import {
 import MagicLink from "../models/MagicLink.js";
 import { getConfigMiddleware } from "../lib/middleware.js";
 import { getMessage } from "../util/messages.js";
-import { type EventListEvent, bucketEventsByMonth } from "../lib/event.js";
+import {
+  type CustomQuestionView,
+  type EventListEvent,
+  bucketEventsByMonth,
+  getCustomQuestionsForDisplay,
+} from "../lib/event.js";
 import i18next from "i18next";
 
 const router = Router();
@@ -33,6 +38,20 @@ interface AttendeeLite {
   visibility?: string;
   removalPassword?: string;
   approved?: boolean;
+  answers?: AttendeeAnswerLite[];
+}
+
+interface AttendeeAnswerLite {
+  questionId: string;
+  prompt: string;
+  answer: string;
+}
+
+// One row of the host-only answer listing. An empty `answer` means the
+// attendee didn't answer that question.
+interface AttendeeAnswerView {
+  prompt: string;
+  answer: string;
 }
 
 // Unified attendee view object with all computed state for templates
@@ -47,6 +66,31 @@ interface AttendeeView {
   canRemove: boolean;
   canCopyLink: boolean;
   removalPassword?: string;
+  // Answers to the event's custom questions - only included for the host
+  answers?: AttendeeAnswerView[];
+}
+
+// Build the host-only listing of one attendee's answers: every question the
+// event currently asks, in order, followed by answers to questions the host
+// has since removed - those keep the prompt they were answered under.
+function buildAttendeeAnswers(
+  customQuestions: CustomQuestionView[],
+  attendeeAnswers: AttendeeAnswerLite[] = [],
+): AttendeeAnswerView[] {
+  const currentAnswers = customQuestions.map((question) => ({
+    prompt: question.prompt,
+    answer:
+      attendeeAnswers.find((answer) => answer.questionId === question.id)
+        ?.answer || "",
+  }));
+  const removedQuestionAnswers = attendeeAnswers
+    .filter(
+      (answer) =>
+        answer.answer &&
+        !customQuestions.some((question) => question.id === answer.questionId),
+    )
+    .map((answer) => ({ prompt: answer.prompt, answer: answer.answer }));
+  return [...currentAnswers, ...removedQuestionAnswers];
 }
 
 // Generate a consistent HSL color from a string
@@ -358,14 +402,6 @@ router.get("/:eventID", async (req: Request, res: Response) => {
     } else {
       eventHasHost = false;
     }
-    let firstLoad = false;
-    if (event.firstLoad === true) {
-      firstLoad = true;
-      await Event.findOneAndUpdate(
-        { id: req.params.eventID },
-        { firstLoad: false },
-      );
-    }
     const {
       viewerApprovedForLocation,
       viewerRegistered,
@@ -376,6 +412,14 @@ router.get("/:eventID", async (req: Request, res: Response) => {
       event,
       req.query as Record<string, string | string[] | undefined>,
     );
+    let firstLoad = false;
+    if (event.firstLoad === true) {
+      firstLoad = true;
+      await Event.findOneAndUpdate(
+        { id: req.params.eventID },
+        { firstLoad: false },
+      );
+    }
     const approveRegistrations = !!event.approveRegistrations;
     const parsedLocation = viewerApprovedForLocation
       ? parsedLocationOriginal
@@ -390,6 +434,10 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         ? i18next.t("views.event.location_hidden")
         : event.location,
     };
+
+    // Custom RSVP questions, for the attend modal, the edit form's Alpine
+    // component, and the host's per-attendee answer listing
+    const customQuestions = getCustomQuestionsForDisplay(event);
 
     // Build unified attendee list with computed state
     // Visibility rules:
@@ -455,6 +503,10 @@ router.get("/:eventID", async (req: Request, res: Response) => {
             // Only include removalPassword for host
             ...(editingEnabled && a.removalPassword
               ? { removalPassword: a.removalPassword }
+              : {}),
+            // Custom question answers are only ever shown to the host
+            ...(editingEnabled && (customQuestions.length || a.answers?.length)
+              ? { answers: buildAttendeeAnswers(customQuestions, a.answers) }
               : {}),
           };
         });
@@ -528,6 +580,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         viewerRegisteredUnapproved,
         attendeesListHidden: canSeeOnlySelf,
         attendees,
+        customQuestions,
         numberOfAttendees: totalAttendees,
         numberOfHiddenAttendees,
         spotsRemaining: spotsRemaining,
@@ -584,6 +637,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
           endForDateInput: parsedEndForDateInput,
           image: event.image,
           editToken: editingEnabled ? eventEditToken : null,
+          customQuestions,
         },
         message: getMessage(req.query.m as string),
       });
@@ -654,15 +708,6 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
       .filter((event) => event.eventHasConcluded)
       .reduce(bucketEventsByMonth, []);
 
-    let firstLoad = false;
-    if (eventGroup.firstLoad === true) {
-      firstLoad = true;
-      await EventGroup.findOneAndUpdate(
-        { id: req.params.eventGroupID },
-        { firstLoad: false },
-      );
-    }
-
     let editingEnabled = false;
     if (Object.keys(req.query).length !== 0) {
       if (!req.query.e) {
@@ -670,6 +715,15 @@ router.get("/group/:eventGroupID", async (req: Request, res: Response) => {
       } else {
         editingEnabled = req.query.e === eventGroupEditToken;
       }
+    }
+
+    let firstLoad = false;
+    if (eventGroup.firstLoad === true) {
+      firstLoad = true;
+      await EventGroup.findOneAndUpdate(
+        { id: req.params.eventGroupID },
+        { firstLoad: false },
+      );
     }
 
     const metadata = {

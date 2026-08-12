@@ -1,5 +1,12 @@
 import i18next from "i18next";
 import moment from "moment-timezone";
+import {
+  ICustomQuestion,
+  maxCustomQuestions,
+  maxCustomQuestionOptions,
+  maxCustomQuestionPromptLength,
+} from "../models/Event.js";
+import { generateEventID } from "./generator.js";
 
 type Error = {
   message?: string;
@@ -36,6 +43,7 @@ interface EventData {
   maxAttendeesCheckbox: string;
   maxAttendees: number;
   approveRegistrationsCheckbox?: string; // optional checkbox value
+  customQuestions?: string; // JSON-encoded array of questions
 }
 
 // EventData without the 'checkbox' fields
@@ -47,6 +55,7 @@ export type ValidatedEventData = Omit<
   | "joinCheckbox"
   | "maxAttendeesCheckbox"
   | "approveRegistrationsCheckbox"
+  | "customQuestions"
 > & {
   publicBoolean: boolean;
   eventGroupBoolean: boolean;
@@ -54,6 +63,7 @@ export type ValidatedEventData = Omit<
   joinBoolean: boolean;
   maxAttendeesBoolean: boolean;
   approveRegistrationsBoolean: boolean;
+  customQuestions: ICustomQuestion[];
 };
 
 interface EventGroupData {
@@ -123,9 +133,134 @@ export const validateEventTime = (
   return true;
 };
 
+// Matches IDs produced by generateEventID (21 chars of the nanoid alphabet)
+const customQuestionIDPattern = /^[A-Za-z0-9_]{21}$/;
+
+// Parses and validates the JSON-encoded custom questions field submitted by
+// the event form. Returns the cleaned-up questions (with stable IDs assigned
+// to any new ones) and any validation errors.
+export const validateCustomQuestions = (
+  rawQuestions: string | undefined,
+): { questions: ICustomQuestion[]; errors: Error[] } => {
+  const errors: Error[] = [];
+  if (!rawQuestions) {
+    return { questions: [], errors };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawQuestions);
+  } catch {
+    errors.push({
+      message: i18next.t("util.validation.customquestions.invalid"),
+      field: "customQuestions",
+    });
+    return { questions: [], errors };
+  }
+  if (!Array.isArray(parsed)) {
+    errors.push({
+      message: i18next.t("util.validation.customquestions.invalid"),
+      field: "customQuestions",
+    });
+    return { questions: [], errors };
+  }
+  if (parsed.length > maxCustomQuestions) {
+    errors.push({
+      message: i18next.t("util.validation.customquestions.maxquestions", {
+        max: maxCustomQuestions,
+      }),
+      field: "customQuestions",
+    });
+    return { questions: [], errors };
+  }
+  const questions: ICustomQuestion[] = [];
+  const seenQuestionIDs = new Set<string>();
+  for (const rawQuestion of parsed) {
+    if (typeof rawQuestion !== "object" || rawQuestion === null) {
+      errors.push({
+        message: i18next.t("util.validation.customquestions.invalid"),
+        field: "customQuestions",
+      });
+      continue;
+    }
+    const question = rawQuestion as Record<string, unknown>;
+    const prompt =
+      typeof question.prompt === "string" ? question.prompt.trim() : "";
+    if (!prompt) {
+      errors.push({
+        message: i18next.t("util.validation.customquestions.prompt"),
+        field: "customQuestions",
+      });
+      continue;
+    }
+    if (prompt.length > maxCustomQuestionPromptLength) {
+      errors.push({
+        message: i18next.t("util.validation.customquestions.promptlength", {
+          max: maxCustomQuestionPromptLength,
+        }),
+        field: "customQuestions",
+      });
+      continue;
+    }
+    const type = question.type === "multipleChoice" ? "multipleChoice" : "text";
+    let options: string[] = [];
+    if (type === "multipleChoice") {
+      options = (Array.isArray(question.options) ? question.options : [])
+        .filter((option): option is string => typeof option === "string")
+        .map((option) => option.trim())
+        .filter((option) => option !== "");
+      if (options.length < 2) {
+        errors.push({
+          message: i18next.t("util.validation.customquestions.minoptions"),
+          field: "customQuestions",
+        });
+        continue;
+      }
+      if (options.length > maxCustomQuestionOptions) {
+        errors.push({
+          message: i18next.t("util.validation.customquestions.maxoptions", {
+            max: maxCustomQuestionOptions,
+          }),
+          field: "customQuestions",
+        });
+        continue;
+      }
+      if (
+        options.some((option) => option.length > maxCustomQuestionPromptLength)
+      ) {
+        errors.push({
+          message: i18next.t("util.validation.customquestions.optionlength", {
+            max: maxCustomQuestionPromptLength,
+          }),
+          field: "customQuestions",
+        });
+        continue;
+      }
+    }
+    // Keep the existing ID on edit so attendee answers stay linked - but only
+    // accept well-formed, unique IDs from the client (a duplicate ID would
+    // make two questions alias each other's answers, and IDs are used in form
+    // field names, so arbitrary strings could corrupt request parsing)
+    let id = typeof question.id === "string" ? question.id.trim() : "";
+    if (!customQuestionIDPattern.test(id) || seenQuestionIDs.has(id)) {
+      id = generateEventID();
+    }
+    seenQuestionIDs.add(id);
+    questions.push({
+      id,
+      prompt,
+      type,
+      options,
+    });
+  }
+  return { questions, errors };
+};
+
 export const validateEventData = (
   eventData: EventData,
 ): EventValidationResponse => {
+  const customQuestionValidation = validateCustomQuestions(
+    eventData.customQuestions,
+  );
   const validatedData: ValidatedEventData = {
     ...eventData,
     publicBoolean: eventData.publicCheckbox === "true",
@@ -135,8 +270,9 @@ export const validateEventData = (
     maxAttendeesBoolean: eventData.maxAttendeesCheckbox === "true",
     approveRegistrationsBoolean:
       eventData.approveRegistrationsCheckbox === "true",
+    customQuestions: customQuestionValidation.questions,
   };
-  const errors: Error[] = [];
+  const errors: Error[] = [...customQuestionValidation.errors];
   if (!validatedData.eventName) {
     errors.push({
       message: i18next.t("util.validation.eventdata.eventname"),

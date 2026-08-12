@@ -1,6 +1,13 @@
 {{t "views.emails.addeventattendee.preface" }}
 
 {{t "views.emails.addeventattendee.eventlink" }}: https://{{domain}}/{{eventID}}
+{{#if answers.length}}
+
+{{t "views.emails.youranswers" }}
+{{#each answers}}
+{{this.prompt}}: {{this.answer}}
+{{/each}}
+{{/if}}
 
 {{t "views.emails.addeventattendee.removelink" }}: https://{{domain}}/event/{{eventID}}/unattend/{{removalPasswordHash}}
 

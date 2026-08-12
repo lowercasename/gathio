@@ -98,3 +98,8 @@ typings/
 
 # DynamoDB Local files
 .dynamodb
+
+# Cypress artifacts
+cypress/downloads
+cypress/screenshots
+cypress/videos

@@ -177,9 +177,14 @@
           <li data-attendee-name="{{this.name}}" data-attendee-id="{{this.id}}">
             <span class="attendee-avatar" style="background-color: {{this.avatarColor}}">{{this.avatarLetter}}</span>
             <span class="attendee-info">
-              <span class="attendee-name">{{this.name}}</span>
-              {{#if this.isPending}}
-                <span class="badge badge-warning">{{t "views.event.pending" }}</span>
+              <span class="attendee-info__main">
+                <span class="attendee-name">{{this.name}}</span>
+                {{#if this.isPending}}
+                  <span class="badge badge-warning">{{t "views.event.pending" }}</span>
+                {{/if}}
+              </span>
+              {{#if this.answers}}
+                {{> attendeeAnswers this.answers}}
               {{/if}}
             </span>
             {{#if this.canRemove}}
@@ -201,10 +206,15 @@
             <li data-attendee-name="{{this.name}}" data-attendee-id="{{this.id}}" class="hidden-attendee">
               <span class="attendee-avatar" style="background-color: {{this.avatarColor}}">{{this.avatarLetter}}</span>
               <span class="attendee-info">
-                <span class="attendee-name">{{this.name}}</span>
-                <span class="text-muted">{{t "views.event.hidden" }}</span>
-                {{#if this.isPending}}
-                  <span class="badge badge-warning">{{t "views.event.pending" }}</span>
+                <span class="attendee-info__main">
+                  <span class="attendee-name">{{this.name}}</span>
+                  <span class="text-muted">{{t "views.event.hidden" }}</span>
+                  {{#if this.isPending}}
+                    <span class="badge badge-warning">{{t "views.event.pending" }}</span>
+                  {{/if}}
+                </span>
+                {{#if this.answers}}
+                  {{> attendeeAnswers this.answers}}
                 {{/if}}
               </span>
               <span class="attendee-actions">
@@ -288,6 +298,11 @@
         </label>
         <p class="form-text small">{{t "views.event.attendeevisibledesc" }}</p>
       </div>
+      {{#if customQuestions.length}}
+        <hr>
+        <label class="d-block">{{t "views.event.customquestionsdesc" }}</label>
+        {{> customQuestionFields customQuestions}}
+      {{/if}}
       <div class="form-group">
         <label for="removalPassword">{{t "views.event.removepswd" }}</label>
         <p class="form-text small">{{{t "views.event.removepswddesc" }}}</p>

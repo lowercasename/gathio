@@ -1,5 +1,26 @@
 import mongoose from "mongoose";
 
+export interface ICustomQuestionAnswer {
+  questionId: string;
+  // A snapshot of the question prompt at the time of answering, so answers
+  // stay legible if the host later edits or removes the question
+  prompt: string;
+  answer: string;
+}
+
+export interface ICustomQuestion {
+  id: string;
+  prompt: string;
+  type: "text" | "multipleChoice";
+  // Always present; empty for text questions
+  options: string[];
+}
+
+export const maxCustomQuestions = 6;
+export const maxCustomQuestionOptions = 10;
+export const maxCustomQuestionPromptLength = 200;
+export const maxCustomQuestionAnswerLength = 500;
+
 export interface IAttendee {
   name: string;
   status?: string;
@@ -11,6 +32,7 @@ export interface IAttendee {
   _id: string;
   visibility?: "public" | "private";
   approved?: boolean; // Host has approved this attendee to view protected info
+  answers?: ICustomQuestionAnswer[];
 }
 
 export interface IReply {
@@ -76,6 +98,7 @@ export interface IEvent extends mongoose.Document {
   activityPubMessages?: IActivityPubMessage[];
   showOnPublicList?: boolean;
   approveRegistrations?: boolean; // Per-event: hide location until attendee approved
+  customQuestions?: ICustomQuestion[];
 }
 
 export const getApprovedAttendeeCount = (
@@ -88,6 +111,58 @@ export const getApprovedAttendeeCount = (
     return acc + (a.number || 1);
   }, 0);
 };
+
+const CustomQuestionAnswers = new mongoose.Schema(
+  {
+    questionId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    prompt: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    answer: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: maxCustomQuestionAnswerLength,
+    },
+  },
+  { _id: false },
+);
+
+const CustomQuestions = new mongoose.Schema(
+  {
+    id: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
+    prompt: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: maxCustomQuestionPromptLength,
+    },
+    type: {
+      type: String,
+      enum: ["text", "multipleChoice"],
+      default: "text",
+    },
+    options: [
+      {
+        type: String,
+        trim: true,
+        maxlength: maxCustomQuestionPromptLength,
+      },
+    ],
+  },
+  { _id: false },
+);
 
 const Attendees = new mongoose.Schema({
   name: {
@@ -130,6 +205,7 @@ const Attendees = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  answers: [CustomQuestionAnswers],
 });
 
 const Followers = new mongoose.Schema(
@@ -360,6 +436,7 @@ const EventSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  customQuestions: [CustomQuestions],
 });
 
 export default mongoose.model<IEvent>("Event", EventSchema);

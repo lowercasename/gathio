@@ -1,10 +1,13 @@
 import sgMail from "@sendgrid/mail";
 import sgHelpers from "@sendgrid/helpers";
 import { ExpressHandlebars } from "express-handlebars";
+import i18next from "i18next";
 import nodemailer, { Transporter } from "nodemailer";
 import { GathioConfig, getConfig } from "./config.js";
 import SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import { exitWithError } from "./process.js";
+import { addToLog } from "../helpers.js";
+import { ICustomQuestionAnswer, IEvent } from "../models/Event.js";
 import Mailgun from "mailgun.js";
 import { IMailgunClient } from "node_modules/mailgun.js/Types/Interfaces/index.js";
 
@@ -15,7 +18,9 @@ type EmailTemplateName =
   | "addEventAttendee"
   | "addEventComment"
   | "attendeeAwaitingApproval"
+  | "attendeeAnswered"
   | "attendeeApproved"
+  | "attendeeJoined"
   | "attendeePendingConfirmation"
   | "createEvent"
   | "createEventGroup"
@@ -259,5 +264,62 @@ export class EmailService {
       text,
       html,
     });
+  }
+}
+
+// Tell an event's host that someone has RSVPed. Events which require approval
+// get the "awaiting approval" email, which asks the host to review the
+// request; everything else gets a plain "new RSVP" notification. Delivery
+// problems are logged rather than thrown, so a failed notification can't fail
+// the RSVP which triggered it.
+export async function notifyHostOfNewAttendee({
+  emailService,
+  event,
+  attendeeName,
+  answers = [],
+  logProcess,
+}: {
+  emailService: EmailService;
+  event: Pick<
+    IEvent,
+    "id" | "name" | "creatorEmail" | "editToken" | "approveRegistrations"
+  >;
+  attendeeName: string;
+  answers?: ICustomQuestionAnswer[];
+  // The `process` name failures are logged under, i.e. the calling handler
+  logProcess: string;
+}): Promise<void> {
+  if (!event.creatorEmail) {
+    return;
+  }
+  const requiresApproval = !!event.approveRegistrations;
+  const templateName: EmailTemplateName = requiresApproval
+    ? "attendeeAwaitingApproval"
+    : "attendeeJoined";
+  const subjectKey = requiresApproval
+    ? "routes.attendeeawaitingapprovalsubject"
+    : "routes.attendeejoinedsubject";
+  try {
+    const sent = await emailService.sendEmailFromTemplate({
+      to: event.creatorEmail,
+      subject: i18next.t(subjectKey, { eventName: event.name }),
+      templateName,
+      templateData: {
+        eventID: event.id,
+        eventName: event.name,
+        attendeeName,
+        editToken: event.editToken,
+        answers,
+      },
+    });
+    if (!sent) {
+      addToLog(
+        logProcess,
+        "error",
+        `Failed to send ${templateName} email for event ${event.id}`,
+      );
+    }
+  } catch (e) {
+    console.error(`Error sending ${templateName} email:`, e);
   }
 }
