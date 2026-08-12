@@ -685,7 +685,10 @@ ul#sidebar__nav a {
    custom questions */
 .attendee-answers {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  /* Size the question column to its content, but never wider than half the
+     card - question prompts can be up to 200 characters and must wrap
+     rather than crush the answer column */
+  grid-template-columns: fit-content(50%) 1fr;
   column-gap: 0.75rem;
   row-gap: 0.125rem;
   margin-top: 0.375rem;
@@ -702,10 +705,24 @@ ul#sidebar__nav a {
 .attendee-answers__question {
   font-weight: 600;
   color: var(--color-grey-30);
+  overflow-wrap: anywhere;
 }
 
 .attendee-answers__answer {
   overflow-wrap: anywhere;
+}
+
+/* On narrow screens, stack each answer under its question instead of
+   fighting for column space */
+@media (max-width: 576px) {
+  .attendee-answers {
+    grid-template-columns: 1fr;
+    row-gap: 0;
+  }
+
+  .attendee-answers__answer {
+    margin-bottom: 0.375rem;
+  }
 }
 
 .attendee-answers__answer--empty {
