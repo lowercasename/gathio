@@ -98,6 +98,24 @@ describe("Events", () => {
     cy.get(".comment").should("contain.text", "Test Comment");
   });
 
+  // Regression test for #250, where every reply failed with a database error
+  it("allows you to reply to a comment", function () {
+    cy.get("#commentAuthor").type("Test Author");
+    cy.get("#commentContent").type("Test Comment");
+    cy.get("#postComment").click();
+    cy.get(".comment").should("contain.text", "Test Comment");
+
+    cy.get(".comment .openReplyBox").first().click();
+    cy.get(".comment #replyAuthor").type("Reply Author");
+    cy.get(".comment #replyContent").type("Test Reply");
+    cy.get(".comment #postReply").click();
+
+    cy.get(".comment .repliesContainer")
+      .should("contain.text", "Reply Author")
+      .and("contain.text", "Test Reply");
+    cy.contains("Database error").should("not.exist");
+  });
+
   it("rejects comments longer than the configured limit", function () {
     cy.setCookie(
       "cypressConfigOverride",
