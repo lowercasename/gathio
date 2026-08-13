@@ -1,0 +1,15 @@
+{{!-- A host-only listing of one attendee's answers to the event's custom
+      questions. Pass the attendee's answers as the partial's context; an
+      empty answer means they skipped that question. --}}
+<span class="attendee-answers">
+  {{#each this}}
+    <span class="attendee-answers__row">
+      <span class="attendee-answers__question">{{this.prompt}}</span>
+      {{#if this.answer}}
+        <span class="attendee-answers__answer">{{this.answer}}</span>
+      {{else}}
+        <span class="attendee-answers__answer attendee-answers__answer--empty">{{t "views.event.noanswer" }}</span>
+      {{/if}}
+    </span>
+  {{/each}}
+</span>

@@ -1,0 +1,19 @@
+<main class="page">
+  <h2 class="mb-4">{{t "views.eventanswers.title" }}</h2>
+
+  {{#if message}}
+    <div class="alert alert-warning" role="alert">{{message}}</div>
+  {{/if}}
+  {{#if alreadyAnswered}}
+    <p>{{t "views.eventanswers.alreadyanswered" }}</p>
+    <p><a href="/{{eventID}}" class="button button--primary">{{t "views.eventanswers.backtoevent" }}</a></p>
+  {{else}}
+    <p>{{t "views.eventanswers.desc" }}</p>
+    <form action="/event/{{eventID}}/answers/{{removalPasswordHash}}" method="post">
+      {{> customQuestionFields customQuestions}}
+      <div class="form-group text-center">
+        <button type="submit" class="button button--primary">{{t "views.eventanswers.submit" }}</button>
+      </div>
+    </form>
+  {{/if}}
+</main>

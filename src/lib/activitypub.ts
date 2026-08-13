@@ -1,10 +1,19 @@
 import { Request, Response } from "express";
 import crypto from "node:crypto";
-import i18next from "i18next";
-import Event, { IAttendee, getApprovedAttendeeCount } from "../models/Event.js";
+import Event, {
+  IAttendee,
+  IEvent,
+  getApprovedAttendeeCount,
+} from "../models/Event.js";
 import { sendDirectMessage } from "../activitypub.js";
-import { successfulRSVPResponse } from "./activitypub/templates.js";
+import { addToLog } from "../helpers.js";
+import { generateEditToken, hashString } from "../util/generator.js";
+import {
+  customQuestionsPromptResponse,
+  successfulRSVPResponse,
+} from "./activitypub/templates.js";
 import getConfig from "./config.js";
+import { notifyHostOfNewAttendee } from "./email.js";
 
 interface APObject {
   type: "Note";
@@ -108,6 +117,48 @@ export async function signedFetch(url: string, eventID: string): Promise<any> {
   return response.json();
 }
 
+// If the event has custom questions, DM a fediverse attendee a link to the
+// web form where they can answer them. The link is keyed on a hash of the
+// attendee's removal password, so only the DM's recipient can answer.
+export const sendCustomQuestionsPrompt = async (
+  event: Pick<IEvent, "id" | "name" | "customQuestions">,
+  attendee: { id?: string; name: string; removalPassword?: string },
+) => {
+  if (
+    !event.customQuestions?.length ||
+    !attendee.id ||
+    !attendee.removalPassword
+  ) {
+    return;
+  }
+  const jsonObject = {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    name: `Questions about ${event.name}`,
+    type: "Note" as const,
+    content: customQuestionsPromptResponse({
+      event,
+      attendee,
+      removalPasswordHash: hashString(attendee.removalPassword),
+    }),
+    tag: [
+      {
+        type: "Mention",
+        href: attendee.id,
+        name: attendee.name,
+      },
+    ],
+  };
+  try {
+    await sendDirectMessage(jsonObject, attendee.id, event.id);
+  } catch (err) {
+    addToLog(
+      "sendCustomQuestionsPrompt",
+      "error",
+      `Failed to send custom questions DM to ${attendee.id} for event ${event.id}: ${err}`,
+    );
+  }
+};
+
 export const handlePollResponse = async (req: Request, res: Response) => {
   try {
     // figure out what this is in reply to -- it should be addressed specifically to us
@@ -196,7 +247,13 @@ export const handlePollResponse = async (req: Request, res: Response) => {
       const requiresApproval = !!event.approveRegistrations;
       const newAttendee: Pick<
         IAttendee,
-        "name" | "status" | "id" | "number" | "visibility" | "approved"
+        | "name"
+        | "status"
+        | "id"
+        | "number"
+        | "visibility"
+        | "approved"
+        | "removalPassword"
       > = {
         name: attendeeName,
         status: "attending",
@@ -204,6 +261,8 @@ export const handlePollResponse = async (req: Request, res: Response) => {
         number: 1,
         visibility,
         approved: !requiresApproval,
+        // Used (hashed) to authenticate the custom questions answer link
+        removalPassword: generateEditToken(),
       };
       const updatedEvent = await Event.findOneAndUpdate(
         { id: eventID },
@@ -233,26 +292,6 @@ export const handlePollResponse = async (req: Request, res: Response) => {
         if (newAttendee.id) {
           sendDirectMessage(jsonObject, newAttendee.id, event.id);
         }
-        // Notify host by email
-        if (event.creatorEmail) {
-          try {
-            await req.emailService.sendEmailFromTemplate({
-              to: event.creatorEmail,
-              subject: i18next.t("routes.attendeeawaitingapprovalsubject", {
-                eventName: event.name,
-              }),
-              templateName: "attendeeAwaitingApproval",
-              templateData: {
-                eventID,
-                eventName: event.name,
-                attendeeName: newAttendee.name,
-                editToken: event.editToken,
-              },
-            });
-          } catch (e) {
-            console.error("Error sending attendeeAwaitingApproval email:", e);
-          }
-        }
       } else {
         // send a "click here to remove yourself" link back to the user as a DM
         const jsonObject = {
@@ -276,6 +315,13 @@ export const handlePollResponse = async (req: Request, res: Response) => {
           sendDirectMessage(jsonObject, newAttendee.id, event.id);
         }
       }
+      await sendCustomQuestionsPrompt(event, fullAttendee);
+      await notifyHostOfNewAttendee({
+        emailService: req.emailService,
+        event,
+        attendeeName: newAttendee.name,
+        logProcess: "handlePollResponse",
+      });
       return res.sendStatus(200);
     } else {
       return res.status(200).send("Attendee is already registered.");

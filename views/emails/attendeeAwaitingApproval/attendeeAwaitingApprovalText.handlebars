@@ -2,6 +2,13 @@
 
 {{t "views.emails.attendeeawaitingapproval.attendeename" }}: {{attendeeName}}
 {{t "views.emails.attendeeawaitingapproval.eventname" }}: {{eventName}}
+{{#if answers.length}}
+
+{{t "views.emails.answers" }}
+{{#each answers}}
+{{this.prompt}}: {{this.answer}}
+{{/each}}
+{{/if}}
 
 {{t "views.emails.attendeeawaitingapproval.action" }}
 

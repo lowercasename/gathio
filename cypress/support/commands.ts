@@ -87,7 +87,6 @@ Cypress.Commands.add("createEventWithApproval", (eventData) => {
 
   // Set max attendees if provided
   if (eventData.maxAttendees) {
-    cy.get("#maxAttendeesCheckbox").check();
     cy.get("#maxAttendees").type(eventData.maxAttendees.toString());
   }
 

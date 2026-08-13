@@ -40,7 +40,6 @@ describe("Events", () => {
     }
 
     if (eventData.maxAttendeesCheckbox) {
-      cy.get("#maxAttendeesCheckbox").check();
       cy.get("#maxAttendees").type(eventData.maxAttendees.toString());
     }
 

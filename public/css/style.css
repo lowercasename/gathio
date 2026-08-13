@@ -57,6 +57,159 @@ h3 {
   --transition: 0.15s ease-in;
 }
 
+label {
+  font-weight: 600;
+}
+
+.form-check-label {
+  font-weight: 400;
+}
+
+/* Feature cards: the event form's options, presented as toggleable features */
+.feature-card {
+  border: 1px solid var(--color-grey-90);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  background: var(--color-grey-99);
+  transition:
+    border-color var(--transition),
+    background var(--transition);
+}
+
+.feature-card--active {
+  border-color: var(--color-purple-lighter);
+  background: var(--color-purple-light);
+}
+
+/* The header is a label wrapping the toggle, so the whole header row toggles
+   the feature on click (card bodies with their own controls sit outside it) */
+.feature-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0;
+  font-weight: 400;
+  cursor: pointer;
+  user-select: none;
+}
+
+.feature-card__icon {
+  color: var(--color-purple);
+  width: 1.5rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.feature-card__text {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.feature-card__title {
+  font-weight: 600;
+}
+
+.feature-card__desc {
+  font-size: 0.85rem;
+  color: var(--color-grey-40);
+  text-wrap: balance;
+}
+
+/* A card nested inside another card's body, e.g. the attendance requests
+   toggle inside the RSVPs card. Stays white so it stands out against the
+   parent card's active tint. */
+.feature-card--nested {
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+}
+
+.feature-card--nested.feature-card--active {
+  background: #fff;
+}
+
+.feature-card__toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 2.75rem;
+  height: 1.5rem;
+  border-radius: 1rem;
+  background: var(--color-grey-80);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin: 0;
+  transition: background var(--transition);
+}
+
+.feature-card__toggle::after {
+  content: "";
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.1875rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform var(--transition);
+}
+
+.feature-card__toggle:checked {
+  background: var(--color-purple);
+}
+
+.feature-card__toggle:checked::after {
+  transform: translateX(1.25rem);
+}
+
+.feature-card__toggle:focus-visible {
+  outline: 2px solid var(--color-purple-dark);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-card,
+  .feature-card__toggle,
+  .feature-card__toggle::after {
+    transition: none;
+  }
+}
+
+.feature-card__body {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-grey-85);
+}
+
+#customQuestionsContainer > label {
+  margin-bottom: 0;
+}
+
+/* Host-authored question prompts read as questions, not form chrome, so
+   they stay regular weight in the RSVP modal and on the answers page */
+.custom-question label {
+  font-weight: 400;
+}
+
+.custom-question-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.custom-question-option .button {
+  flex-shrink: 0;
+}
+
+#customQuestionsContainer .form-text {
+  margin-top: 0.125rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-grey-40);
+  text-wrap: balance;
+}
+
 .flex-gap {
   display: flex;
   gap: 1rem;
@@ -481,7 +634,10 @@ ul#sidebar__nav a {
 
 .attendeesList > li {
   display: flex;
-  align-items: center;
+  /* Top-aligned so the avatar and actions stay put on tall cards (e.g. with
+     custom question answers); the first row's 2rem min-height keeps
+     single-line cards looking vertically centered */
+  align-items: flex-start;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   background: #f8f9fa;
@@ -511,9 +667,67 @@ ul#sidebar__nav a {
 .attendee-info {
   flex-grow: 1;
   display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.attendee-info__main {
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
+  min-height: 2rem;
+}
+
+/* A host-only two-column listing of an attendee's answers to the event's
+   custom questions */
+.attendee-answers {
+  display: grid;
+  /* Size the question column to its content, but never wider than half the
+     card - question prompts can be up to 200 characters and must wrap
+     rather than crush the answer column */
+  grid-template-columns: fit-content(50%) 1fr;
+  column-gap: 0.75rem;
+  row-gap: 0.125rem;
+  margin-top: 0.375rem;
+  padding-top: 0.375rem;
+  border-top: 1px dashed var(--color-grey-85);
+  font-size: 0.85rem;
+  color: var(--color-grey-40);
+}
+
+.attendee-answers__row {
+  display: contents;
+}
+
+.attendee-answers__question {
+  font-weight: 600;
+  color: var(--color-grey-30);
+  overflow-wrap: anywhere;
+}
+
+.attendee-answers__answer {
+  overflow-wrap: anywhere;
+}
+
+/* On narrow screens, stack each answer under its question instead of
+   fighting for column space */
+@media (max-width: 576px) {
+  .attendee-answers {
+    grid-template-columns: 1fr;
+    row-gap: 0;
+  }
+
+  .attendee-answers__answer {
+    margin-bottom: 0.375rem;
+  }
+}
+
+.attendee-answers__answer--empty {
+  font-style: italic;
+  color: var(--color-grey-60);
 }
 
 .attendee-info .attendee-name {
@@ -525,9 +739,11 @@ ul#sidebar__nav a {
 
 .attendeesList > li .attendee-actions {
   display: flex;
+  align-items: center;
   gap: 0.25rem;
   flex-shrink: 0;
   margin-left: auto;
+  min-height: 2rem;
 }
 
 .attendeesList > li.hidden-attendee a {
