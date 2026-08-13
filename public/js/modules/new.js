@@ -48,10 +48,10 @@ function newEventForm() {
       publicCheckbox: false,
       interactionCheckbox: false,
       joinCheckbox: false,
-      maxAttendeesCheckbox: false,
       maxAttendees: "",
       approveRegistrationsCheckbox: false,
     },
+    ...customQuestionsForm([]),
     errors: [],
     submitting: false,
     init() {
@@ -66,7 +66,6 @@ function newEventForm() {
       this.data.eventGroupCheckbox = false;
       this.data.interactionCheckbox = false;
       this.data.joinCheckbox = false;
-      this.data.maxAttendeesCheckbox = false;
       this.data.publicCheckbox = false;
       this.data.approveRegistrationsCheckbox = false;
     },
@@ -87,6 +86,12 @@ function newEventForm() {
       }
       formData.append("imageUpload", this.$refs.eventImageUpload.files[0]);
       formData.append("magicLinkToken", this.$refs.magicLinkToken.value);
+      formData.append("customQuestions", this.serializeCustomQuestions());
+      // An empty attendee limit means no limit
+      formData.append(
+        "maxAttendeesCheckbox",
+        this.data.maxAttendees ? "true" : "false",
+      );
       try {
         const response = await fetch("/event", {
           method: "POST",

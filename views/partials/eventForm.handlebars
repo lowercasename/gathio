@@ -73,26 +73,106 @@
 </div>
 <div class="form-group">
   <label>{{t "views.partials.eventform.options" }}</label>
-  <div >
-    {{#if showPublicEventList}}
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="publicEventCheckbox" name="publicCheckbox" x-model="data.publicCheckbox">
-        <label class="form-check-label" for="publicEventCheckbox">
-          {{t "views.partials.eventform.publicevent" }}
-        </label>
-      </div>
-    {{/if}}
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" id="eventGroupCheckbox" name="eventGroupCheckbox" x-model="data.eventGroupCheckbox">
-      <label class="form-check-label" for="eventGroupCheckbox">
-        {{t "views.partials.eventform.eventgroup" }}
+  {{#if showPublicEventList}}
+    <div class="feature-card" :class="data.publicCheckbox && 'feature-card--active'">
+      <label class="feature-card__header">
+        <i class="fas fa-globe feature-card__icon" aria-hidden="true"></i>
+        <span class="feature-card__text">
+          <span class="feature-card__title">{{t "views.partials.eventform.featurepublictitle" }}</span>
+          <span class="feature-card__desc">{{t "views.partials.eventform.publicevent" }}</span>
+        </span>
+        <input class="feature-card__toggle" type="checkbox" id="publicEventCheckbox" name="publicCheckbox" x-model="data.publicCheckbox">
       </label>
     </div>
-    <div class="card my-2" id="eventGroupData" x-show="data.eventGroupCheckbox">
-      <div class="card-header">
-        <strong>{{t "views.partials.eventform.eventgroupdata" }}</strong>
+  {{/if}}
+  <div class="feature-card" :class="data.interactionCheckbox && 'feature-card--active'">
+    <label class="feature-card__header">
+      <i class="fas fa-comment feature-card__icon" aria-hidden="true"></i>
+      <span class="feature-card__text">
+        <span class="feature-card__title">{{t "views.partials.eventform.featurecommentstitle" }}</span>
+        <span class="feature-card__desc">{{t "views.interaction" }}</span>
+      </span>
+      <input class="feature-card__toggle" type="checkbox" id="interactionCheckbox" name="interactionCheckbox" x-model="data.interactionCheckbox">
+    </label>
+  </div>
+  <div class="feature-card" :class="data.joinCheckbox && 'feature-card--active'">
+    <label class="feature-card__header">
+      <i class="fas fa-user-plus feature-card__icon" aria-hidden="true"></i>
+      <span class="feature-card__text">
+        <span class="feature-card__title">{{t "views.partials.eventform.featurersvptitle" }}</span>
+        <span class="feature-card__desc">{{t "views.join" }}</span>
+      </span>
+      <input class="feature-card__toggle" type="checkbox" id="joinCheckbox" name="joinCheckbox" x-model="data.joinCheckbox">
+    </label>
+    <div class="feature-card__body" x-show="data.joinCheckbox">
+      <div class="feature-card feature-card--nested" :class="data.approveRegistrationsCheckbox && 'feature-card--active'">
+        <label class="feature-card__header">
+          <span class="feature-card__text">
+            <span class="feature-card__title">{{t "views.partials.eventform.featureapprovaltitle" }}</span>
+            <span class="feature-card__desc">{{t "views.partials.eventform.featureapprovaldesc" }}</span>
+          </span>
+          <input class="feature-card__toggle" type="checkbox" id="approveRegistrationsCheckbox" name="approveRegistrationsCheckbox" x-model="data.approveRegistrationsCheckbox" {{#if eventData.approveRegistrations}}checked{{/if}}>
+        </label>
       </div>
-      <div class="card-body" x-data="eventGroupLinker()">
+      <div class="form-group mt-2 mb-0">
+        <label for="maxAttendees">{{t "views.partials.eventform.maxattendees" }}</label>
+        <input type="number" min="1" class="form-control" id="maxAttendees" name="maxAttendees" placeholder="{{t "views.partials.eventform.nolimit" }}" x-model="data.maxAttendees">
+      </div>
+      <div class="mt-3" id="customQuestionsContainer">
+        <label>{{t "views.partials.eventform.customquestions" }}</label>
+        <small class="form-text">{{t "views.partials.eventform.customquestionsdesc" }}</small>
+        <template x-for="(question, questionIndex) in customQuestions" :key="question._uid">
+          <div class="card my-2 custom-question-card">
+            <div class="card-body py-2 px-3">
+              <div class="form-group">
+                <label :for="`customQuestionPrompt${questionIndex}`">{{t "views.partials.eventform.questionprompt" }}</label>
+                <input type="text" class="form-control" maxlength="200" :id="`customQuestionPrompt${questionIndex}`" placeholder="{{t "views.partials.eventform.questionpromptplaceholder" }}" x-model="question.prompt">
+              </div>
+              <div class="form-group">
+                <label :for="`customQuestionType${questionIndex}`">{{t "views.partials.eventform.questiontype" }}</label>
+                <select class="form-control" :id="`customQuestionType${questionIndex}`" x-model="question.type" x-on:change="customQuestionTypeChanged(question)">
+                  <option value="text">{{t "views.partials.eventform.questiontypetext" }}</option>
+                  <option value="multipleChoice">{{t "views.partials.eventform.questiontypemultiplechoice" }}</option>
+                </select>
+              </div>
+              <div class="form-group" x-show="question.type === 'multipleChoice'">
+                <label>{{t "views.partials.eventform.questionoptions" }}</label>
+                <template x-for="(option, optionIndex) in question.options" :key="option._uid">
+                  <div class="custom-question-option mb-2">
+                    <input type="text" class="form-control" maxlength="200" :id="`customQuestion${questionIndex}Option${optionIndex}`" :placeholder="'{{t "views.partials.eventform.optionplaceholder" }} ' + (optionIndex + 1)" x-model="option.text">
+                    <button type="button" class="button button--danger button--sm" x-on:click="removeCustomQuestionOption(question, optionIndex)" aria-label="{{t "views.partials.eventform.removeoption" }}" title="{{t "views.partials.eventform.removeoption" }}"><i class="fas fa-times"></i></button>
+                  </div>
+                </template>
+                <button type="button" class="button button--outline-primary button--sm" x-on:click="addCustomQuestionOption(question)" x-show="question.options.length < maxCustomQuestionOptions">
+                  <i class="fas fa-plus"></i> {{t "views.partials.eventform.addoption" }}
+                </button>
+              </div>
+              <button type="button" class="button button--danger button--sm" :id="`removeCustomQuestion${questionIndex}`" x-on:click="removeCustomQuestion(questionIndex)">
+                <i class="fas fa-trash"></i> {{t "views.partials.eventform.removequestion" }}
+              </button>
+            </div>
+          </div>
+        </template>
+        <button type="button" class="button button--outline-primary" id="addCustomQuestionButton" x-on:click="addCustomQuestion" x-show="customQuestions.length < maxCustomQuestions">
+          <i class="fas fa-plus"></i> {{t "views.partials.eventform.addquestion" }}
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="feature-card" :class="data.eventGroupCheckbox && 'feature-card--active'">
+    <label class="feature-card__header">
+      <i class="fas fa-layer-group feature-card__icon" aria-hidden="true"></i>
+      <span class="feature-card__text">
+        <span class="feature-card__title">{{t "views.partials.eventform.featuregrouptitle" }}</span>
+        <span class="feature-card__desc">{{t "views.partials.eventform.eventgroup" }}</span>
+      </span>
+      <input class="feature-card__toggle" type="checkbox" id="eventGroupCheckbox" name="eventGroupCheckbox" x-model="data.eventGroupCheckbox">
+    </label>
+    {{!-- eventGroupLinker's x-data lives on an inner div so that x-show above
+          still sees the parent form component's `data` rather than the
+          linker's own `data` --}}
+    <div class="feature-card__body" id="eventGroupData" x-show="data.eventGroupCheckbox">
+      <div x-data="eventGroupLinker()">
         <div class="form-group-label" x-show="data.groups.length > 0">
           <label>{{t "views.partials.eventform.eventgrouplinker" }}</label>
         </div>
@@ -125,7 +205,7 @@
             <input type="text" class="form-control text-monospace" id="eventGroupID" name="eventGroupID" x-model="data.eventGroupID" x-on:input="resetGroupSelector">
             <small class="form-text">{{t "views.partials.eventform.eventgroupid" }}</small>
           </div>
-          <label for="eventGroupEditToken">{{t "views.partials.eventform.eventgroupedittoken" }}</label>
+          <label for="eventGroupEditToken">{{t "common.eventgroupedittoken" }}</label>
           <div class="form-group mb-0">
             <input type="text" class="form-control text-monospace" id="eventGroupEditToken" name="eventGroupEditToken" x-model="data.eventGroupEditToken" x-on:input="resetGroupSelector">
             <small class="form-text">{{t "views.partials.eventform.eventgroupedittoken" }}</small>
@@ -133,36 +213,6 @@
         </div>
       </div>
     </div>
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" id="interactionCheckbox" name="interactionCheckbox" x-model="data.interactionCheckbox">
-      <label class="form-check-label" for="interactionCheckbox">
-        {{t "views.interaction" }}
-      </label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" id="joinCheckbox" name="joinCheckbox" x-model="data.joinCheckbox">
-      <label class="form-check-label" for="joinCheckbox">
-        {{t "views.join" }}
-      </label>
-    </div>
-    <div class="form-check ml-4" x-show="data.joinCheckbox">
-      <input class="form-check-input" type="checkbox" id="approveRegistrationsCheckbox" name="approveRegistrationsCheckbox" x-model="data.approveRegistrationsCheckbox" {{#if eventData.approveRegistrations}}checked{{/if}}>
-      <label class="form-check-label" for="approveRegistrationsCheckbox">
-        {{t "views.event.requireapproval" }}
-      </label>
-    </div>
-    <div class="form-check ml-4" id="maxAttendeesCheckboxContainer" x-show="data.joinCheckbox">
-      <input class="form-check-input" type="checkbox" id="maxAttendeesCheckbox" name="maxAttendeesCheckbox" x-model="data.maxAttendeesCheckbox">
-      <label class="form-check-label" for="maxAttendeesCheckbox">
-        {{t "views.partials.eventform.maxattendeestitle" }}
-      </label>
-    </div>
-  </div>
-</div>
-<div class="form-group ml-4" id="maxAttendeesContainer" x-show="data.maxAttendeesCheckbox && data.joinCheckbox">
-  <label for="maxAttendees" >{{t "views.partials.eventform.maxattendees" }}</label>
-  <div class="form-group ">
-    <input type="number" class="form-control" id="maxAttendees" name="maxAttendees" placeholder="{{t "views.event.enternum" }}" x-model="data.maxAttendees" >
   </div>
 </div>
 <div class="form-group">

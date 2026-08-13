@@ -44,10 +44,10 @@ function editEventForm() {
       publicCheckbox: window.eventData.showOnPublicList,
       interactionCheckbox: window.eventData.usersCanComment,
       joinCheckbox: window.eventData.usersCanAttend,
-      maxAttendeesCheckbox: window.eventData.maxAttendees !== null,
       maxAttendees: window.eventData.maxAttendees,
       approveRegistrationsCheckbox: window.eventData.approveRegistrations,
     },
+    ...customQuestionsForm(window.eventData.customQuestions),
     errors: [],
     submitting: false,
     init() {
@@ -62,7 +62,6 @@ function editEventForm() {
       this.data.eventGroupCheckbox = !!window.eventData.eventGroupID;
       this.data.interactionCheckbox = window.eventData.usersCanComment;
       this.data.joinCheckbox = window.eventData.usersCanAttend;
-      this.data.maxAttendeesCheckbox = window.eventData.maxAttendees !== null;
       this.data.publicCheckbox = window.eventData.showOnPublicList;
       this.data.approveRegistrationsCheckbox =
         window.eventData.approveRegistrations;
@@ -84,6 +83,12 @@ function editEventForm() {
       }
       formData.append("imageUpload", this.$refs.eventImageUpload.files[0]);
       formData.append("editToken", window.eventData.editToken);
+      formData.append("customQuestions", this.serializeCustomQuestions());
+      // An empty attendee limit means no limit
+      formData.append(
+        "maxAttendeesCheckbox",
+        this.data.maxAttendees ? "true" : "false",
+      );
       try {
         const response = await fetch(`/event/${window.eventData.id}`, {
           method: "PUT",

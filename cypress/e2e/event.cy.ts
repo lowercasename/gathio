@@ -34,7 +34,6 @@ describe("Events", () => {
     }
 
     if (eventData.maxAttendeesCheckbox) {
-      cy.get("#maxAttendeesCheckbox").check();
       cy.get("#maxAttendees").type(eventData.maxAttendees.toString());
     }
 
@@ -233,8 +232,6 @@ describe("Events", () => {
     cy.get("#editEventForm #eventURL").type("https://edited.example.com");
     cy.get("#editEventForm #hostName").type("Edited Name");
     cy.get("#editEventForm #creatorEmail").type("edited@example.com");
-
-    cy.get("#editEventForm #maxAttendeesCheckbox").uncheck();
 
     cy.get("#editEventForm #interactionCheckbox").uncheck();
 

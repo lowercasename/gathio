@@ -1,0 +1,14 @@
+{{t "views.emails.attendeeanswered.preface" }}
+
+{{t "views.emails.attendeeanswered.attendeename" }}: {{attendeeName}}
+{{t "views.emails.attendeeanswered.eventname" }}: {{eventName}}
+
+{{t "views.emails.answers" }}
+{{#each answers}}
+{{this.prompt}}: {{this.answer}}
+{{/each}}
+
+{{t "views.emails.attendeeanswered.eventlink" }}: https://{{domain}}/{{eventID}}?e={{editToken}}
+
+{{t "views.emails.love" }}
+{{siteName}}

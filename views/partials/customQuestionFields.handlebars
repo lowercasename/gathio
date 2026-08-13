@@ -1,0 +1,19 @@
+{{!-- Answer fields for an event's custom RSVP questions. Used by the event
+      page's attend modal and by the standalone answers form. Pass the list of
+      questions as the partial's context. The maxlength mirrors
+      maxCustomQuestionAnswerLength in src/models/Event.ts. --}}
+{{#each this}}
+  <div class="form-group custom-question">
+    <label for="customQuestionAnswer-{{this.id}}">{{this.prompt}}</label>
+    {{#if this.isMultipleChoice}}
+      <select class="form-control" id="customQuestionAnswer-{{this.id}}" name="customQuestionAnswer-{{this.id}}">
+        <option value="">{{t "views.event.selectananswer" }}</option>
+        {{#each this.options}}
+          <option value="{{this}}">{{this}}</option>
+        {{/each}}
+      </select>
+    {{else}}
+      <input type="text" class="form-control" maxlength="500" id="customQuestionAnswer-{{this.id}}" name="customQuestionAnswer-{{this.id}}">
+    {{/if}}
+  </div>
+{{/each}}

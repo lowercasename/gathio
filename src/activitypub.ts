@@ -11,12 +11,15 @@ const domain = config.general.domain;
 const siteName = config.general.site_name;
 const isFederated = config.general.is_federated;
 import Event, { type IFollower } from "./models/Event.js";
+import { notifyHostOfNewAttendee } from "./lib/email.js";
+import { generateEditToken } from "./util/generator.js";
 import {
   handlePollResponse,
   activityPubContentType,
   alternateActivityPubContentType,
   getEventId,
   getNoteRecipient,
+  sendCustomQuestionsPrompt,
   signedFetch,
 } from "./lib/activitypub.js";
 
@@ -663,6 +666,8 @@ async function _handleAcceptEvent(req: Request, res: Response) {
         id: actor,
         number: 1,
         approved: !requiresApproval,
+        // Used (hashed) to authenticate the custom questions answer link
+        removalPassword: generateEditToken(),
       };
       event.attendees?.push(
         newAttendee as typeof newAttendee & { _id: string },
@@ -712,33 +717,25 @@ async function _handleAcceptEvent(req: Request, res: Response) {
         try {
           await sendDirectMessage(jsonObject, newAttendee.id, event.id);
         } catch (err) {
-          return addToLog(
+          // Log and continue - a failed confirmation DM shouldn't stop the
+          // questions prompt, the host notification, or the HTTP response
+          addToLog(
             "handleAcceptEvent",
             "error",
             `Error sending DM to new attendee: ${err}`,
           );
         }
 
-        // Notify host by email if approval is required
-        if (requiresApproval && event.creatorEmail) {
-          try {
-            await req.emailService.sendEmailFromTemplate({
-              to: event.creatorEmail,
-              subject: i18next.t("routes.attendeeawaitingapprovalsubject", {
-                eventName: event.name,
-              }),
-              templateName: "attendeeAwaitingApproval",
-              templateData: {
-                eventID,
-                eventName: event.name,
-                attendeeName: newAttendee.name,
-                editToken: event.editToken,
-              },
-            });
-          } catch (e) {
-            console.error("Error sending attendeeAwaitingApproval email:", e);
-          }
+        if (fullAttendee) {
+          await sendCustomQuestionsPrompt(event, fullAttendee);
         }
+
+        await notifyHostOfNewAttendee({
+          emailService: req.emailService,
+          event,
+          attendeeName: newAttendee.name,
+          logProcess: "handleAcceptEvent",
+        });
         return res.sendStatus(200);
       } catch (err) {
         addToLog(

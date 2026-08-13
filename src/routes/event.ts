@@ -10,7 +10,12 @@ import {
 } from "../util/generator.js";
 import { validateEventData } from "../util/validation.js";
 import { addToLog } from "../helpers.js";
-import Event, { getApprovedAttendeeCount } from "../models/Event.js";
+import Event, {
+  getApprovedAttendeeCount,
+  maxCustomQuestionAnswerLength,
+  type ICustomQuestionAnswer,
+  type IEvent,
+} from "../models/Event.js";
 import EventGroup from "../models/EventGroup.js";
 import {
   broadcastCreateMessage,
@@ -26,7 +31,10 @@ import crypto from "node:crypto";
 import ical from "ical";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
 import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
-import { getConfig } from "../lib/config.js";
+import { frontendConfig, getConfig } from "../lib/config.js";
+import { getCustomQuestionsForDisplay } from "../lib/event.js";
+import { notifyHostOfNewAttendee } from "../lib/email.js";
+import { getMessage } from "../util/messages.js";
 import i18next from "i18next";
 moment.locale(i18next.language);
 const config = getConfig();
@@ -56,6 +64,40 @@ const icsUpload = multer({
     cb(null, true);
   },
 });
+
+// Collect an attendee's answers to an event's custom questions from submitted
+// form fields named `customQuestionAnswer-<questionID>`. Returns null if an
+// answer wasn't one of its question's choices, which only happens if the host
+// edited the choices while the attendee had the form open - or if the answer
+// was tampered with.
+const collectCustomQuestionAnswers = (
+  event: Pick<IEvent, "customQuestions">,
+  body: Record<string, unknown>,
+): ICustomQuestionAnswer[] | null => {
+  const answers: ICustomQuestionAnswer[] = [];
+  for (const question of event.customQuestions || []) {
+    const rawAnswer = body[`customQuestionAnswer-${question.id}`];
+    const answer =
+      typeof rawAnswer === "string"
+        ? rawAnswer.trim().slice(0, maxCustomQuestionAnswerLength)
+        : "";
+    if (!answer) {
+      continue;
+    }
+    if (
+      question.type === "multipleChoice" &&
+      !question.options.includes(answer)
+    ) {
+      return null;
+    }
+    answers.push({
+      questionId: question.id,
+      prompt: question.prompt,
+      answer,
+    });
+  }
+  return answers;
+};
 
 const router = Router();
 
@@ -186,6 +228,7 @@ router.post(
       privateKey,
       approveRegistrations:
         eventData.approveRegistrationsBoolean && eventData.joinBoolean,
+      customQuestions: eventData.customQuestions,
     });
     try {
       await event.save();
@@ -399,6 +442,7 @@ router.put(
           : undefined,
         approveRegistrations:
           eventData.approveRegistrationsBoolean && eventData.joinBoolean,
+        customQuestions: eventData.customQuestions,
       };
       let diffText = "<p>" + i18next.t("routes.event.difftext") + "</p><ul>";
       let displayDate;
@@ -824,12 +868,21 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
     const editToken = req.query.e || req.body.editToken;
     const isHostAdding = editToken && editToken === event.editToken;
 
+    // Collect answers to the event's custom questions. This is a plain form
+    // POST, so a bad answer redirects with a message rather than serving raw
+    // JSON.
+    const answers = collectCustomQuestionAnswers(event, req.body);
+    if (answers === null) {
+      return res.redirect(`/${req.params.eventID}?m=badanswer`);
+    }
+
     // Update attendee
     attendee.status = "attending";
     attendee.name = attendeeName;
     attendee.email = attendeeEmail;
     attendee.number = parseInt(attendeeNumber, 10) || 1;
     attendee.visibility = attendeeVisible ? "public" : "private";
+    attendee.answers = answers;
 
     // Auto-approve if host is adding, or if event doesn't require approval
     if (isHostAdding || !event.approveRegistrations) {
@@ -859,6 +912,7 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
             eventID: req.params.eventID,
             removalPassword,
             removalPasswordHash: hashString(removalPassword),
+            answers,
           },
         });
       } catch (e) {
@@ -883,25 +937,16 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
       }
     }
 
-    // Notify host if approval is required (but not if host added the attendee themselves)
-    if (event.approveRegistrations && event.creatorEmail && !isHostAdding) {
-      try {
-        await req.emailService.sendEmailFromTemplate({
-          to: event.creatorEmail,
-          subject: i18next.t("routes.attendeeawaitingapprovalsubject", {
-            eventName: event.name,
-          }),
-          templateName: "attendeeAwaitingApproval",
-          templateData: {
-            eventID: req.params.eventID,
-            eventName: event.name,
-            attendeeName,
-            editToken: event.editToken,
-          },
-        });
-      } catch (e) {
-        console.error("Error sending attendeeAwaitingApproval email:", e);
-      }
+    // Notify the host of the new RSVP, unless they added the attendee
+    // themselves
+    if (!isHostAdding) {
+      await notifyHostOfNewAttendee({
+        emailService: req.emailService,
+        event,
+        attendeeName,
+        answers,
+        logProcess: "addEventAttendee",
+      });
     }
 
     // Redirect appropriately based on who is adding the attendee
@@ -1068,6 +1113,125 @@ router.delete(
         "denyEventAttendee",
         "error",
         `Attempt to deny attendee in event ${req.params.eventID} failed with error: ${e}`,
+      );
+      return res.status(500).json({ error: "An unexpected error occurred." });
+    }
+  },
+);
+
+// Standalone form for answering an event's custom questions. Linked from the
+// DM sent to fediverse attendees, who can't answer at RSVP time. The URL is
+// keyed on a hash of the attendee's removal password (like the one-click
+// unattend link) so only that attendee can answer.
+const findAttendeeByRemovalPasswordHash = (
+  event: IEvent,
+  removalPasswordHash: string,
+) =>
+  event.attendees?.find(
+    (a) =>
+      a.removalPassword &&
+      hashString(a.removalPassword) === removalPasswordHash &&
+      a.status === "attending",
+  );
+
+router.get(
+  "/event/:eventID/answers/:removalPasswordHash",
+  async (req: Request, res: Response) => {
+    const event = await Event.findOne({ id: req.params.eventID });
+    if (!event) {
+      return res.status(404).render("404", frontendConfig(res));
+    }
+    const attendee = findAttendeeByRemovalPasswordHash(
+      event,
+      req.params.removalPasswordHash,
+    );
+    if (!attendee || !event.customQuestions?.length) {
+      return res.status(404).render("404", frontendConfig(res));
+    }
+    return res.render("eventAnswers", {
+      ...frontendConfig(res),
+      title: event.name,
+      eventID: event.id,
+      eventName: event.name,
+      removalPasswordHash: req.params.removalPasswordHash,
+      attendeeName: attendee.name,
+      alreadyAnswered: !!attendee.answers?.length,
+      message: getMessage(req.query.m as string),
+      customQuestions: getCustomQuestionsForDisplay(event),
+    });
+  },
+);
+
+router.post(
+  "/event/:eventID/answers/:removalPasswordHash",
+  async (req: Request, res: Response) => {
+    const formURL = `/event/${req.params.eventID}/answers/${req.params.removalPasswordHash}`;
+    try {
+      const event = await Event.findOne({ id: req.params.eventID });
+      if (!event) {
+        return res.status(404).render("404", frontendConfig(res));
+      }
+      const attendee = findAttendeeByRemovalPasswordHash(
+        event,
+        req.params.removalPasswordHash,
+      );
+      if (!attendee || !event.customQuestions?.length) {
+        return res.status(404).render("404", frontendConfig(res));
+      }
+      // Answers are locked in once at least one has been given
+      if (attendee.answers?.length) {
+        return res.redirect(formURL);
+      }
+      const answers = collectCustomQuestionAnswers(event, req.body);
+      if (answers === null) {
+        return res.redirect(`${formURL}?m=badanswer`);
+      }
+      // Don't claim success for an all-blank submission
+      if (!answers.length) {
+        return res.redirect(`${formURL}?m=noanswers`);
+      }
+      attendee.answers = answers;
+      event.markModified("attendees");
+      await event.save();
+      addToLog(
+        "attendeeAnswers",
+        "success",
+        `Attendee answered custom questions for event ${req.params.eventID}`,
+      );
+      // Send the answers to the host
+      if (event.creatorEmail) {
+        try {
+          const sent = await req.emailService.sendEmailFromTemplate({
+            to: event.creatorEmail,
+            subject: i18next.t("routes.attendeeansweredsubject", {
+              eventName: event.name,
+            }),
+            templateName: "attendeeAnswered",
+            templateData: {
+              eventID: req.params.eventID,
+              eventName: event.name,
+              attendeeName: attendee.name,
+              editToken: event.editToken,
+              answers,
+            },
+          });
+          if (!sent) {
+            addToLog(
+              "attendeeAnswers",
+              "error",
+              `Failed to send attendeeAnswered email for event ${req.params.eventID}`,
+            );
+          }
+        } catch (e) {
+          console.error("Error sending attendeeAnswered email:", e);
+        }
+      }
+      return res.redirect(`/${req.params.eventID}?m=answers`);
+    } catch (e) {
+      addToLog(
+        "attendeeAnswers",
+        "error",
+        `Attempt to save answers for event ${req.params.eventID} failed with error: ${e}`,
       );
       return res.status(500).json({ error: "An unexpected error occurred." });
     }
