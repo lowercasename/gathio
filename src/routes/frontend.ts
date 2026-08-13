@@ -72,17 +72,24 @@ interface AttendeeView {
 
 // Build the host-only listing of one attendee's answers: every question the
 // event currently asks, in order, followed by answers to questions the host
-// has since removed - those keep the prompt they were answered under.
+// has since removed. Answered questions show the prompt as it was worded when
+// the attendee answered - a reworded question can change what an old answer
+// means ("Are you vegan?" -> "Any dietary restrictions?" must not present an
+// old "No" as answering the new question). Unanswered questions show the
+// current wording.
 function buildAttendeeAnswers(
   customQuestions: CustomQuestionView[],
   attendeeAnswers: AttendeeAnswerLite[] = [],
 ): AttendeeAnswerView[] {
-  const currentAnswers = customQuestions.map((question) => ({
-    prompt: question.prompt,
-    answer:
-      attendeeAnswers.find((answer) => answer.questionId === question.id)
-        ?.answer || "",
-  }));
+  const currentAnswers = customQuestions.map((question) => {
+    const answer = attendeeAnswers.find(
+      (attendeeAnswer) => attendeeAnswer.questionId === question.id,
+    );
+    return {
+      prompt: answer?.answer ? answer.prompt : question.prompt,
+      answer: answer?.answer || "",
+    };
+  });
   const removedQuestionAnswers = attendeeAnswers
     .filter(
       (answer) =>

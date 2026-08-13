@@ -188,13 +188,28 @@ describe("Custom RSVP Questions", () => {
       cy.get("#editModal #editEventForm").submit();
       cy.get("#editModal").should("not.be.visible");
 
-      // The answer follows the reworded question; the deleted question's
-      // answer survives under its original prompt
+      // Answered questions keep the wording the attendee actually answered
+      // (a reword can change an old answer's meaning), and the deleted
+      // question's answer survives under its original prompt
       cy.get(".attendee-answers")
-        .should("contain.text", "Which pizza would make you happiest?")
+        .should("contain.text", "What pizza would you like?")
+        .and("not.contain.text", "Which pizza would make you happiest?")
         .and("contain.text", "Margherita")
         .and("contain.text", "Choose a team")
         .and("contain.text", "Blue");
+
+      // An attendee who hasn't answered is shown the current wording
+      visitFresh(`/${this.eventID}`);
+      openAttendModal();
+      cy.get("#attendeeName").type("Post-Edit Guest");
+      cy.get("form#attendEventForm").submit();
+      cy.get(".attendeesList").should("contain.text", "Post-Edit Guest");
+      cy.visit(`/${this.eventID}?e=${this.editToken}`);
+      cy.get(".attendeesList li")
+        .contains("li", "Post-Edit Guest")
+        .find(".attendee-answers")
+        .should("contain.text", "Which pizza would make you happiest?")
+        .and("contain.text", "No answer");
     });
 
     it("rejects tampered multiple choice answers", function () {
