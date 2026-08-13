@@ -68,6 +68,10 @@ describe("Events", () => {
 
   it("allows you to attend an event - visible in public list", function () {
     cy.get("button#attendEvent").click();
+    cy.get("#attendModal").should("be.visible");
+    // The focus wait sees out Bootstrap's fade transition, which ends by
+    // stealing focus to the modal, swallowing keystrokes typed until then
+    cy.get("#attendModal").should("have.focus");
     cy.get("#attendeeName").type("Test Attendee");
     cy.get("#attendeeNumber").focus();
     cy.get("#attendeeNumber").clear();
@@ -79,6 +83,8 @@ describe("Events", () => {
 
   it("allows you to attend an event - hidden from public list", function () {
     cy.get("button#attendEvent").click();
+    cy.get("#attendModal").should("be.visible");
+    cy.get("#attendModal").should("have.focus");
     cy.get("#attendeeName").type("Test Attendee");
     cy.get("#attendeeNumber").focus();
     cy.get("#attendeeNumber").clear();
@@ -305,6 +311,8 @@ describe("Events", () => {
 
   it("removes you from the event with a one-click unattend link", function () {
     cy.get("button#attendEvent").click();
+    cy.get("#attendModal").should("be.visible");
+    cy.get("#attendModal").should("have.focus");
     cy.get("#attendeeName").type("Test Attendee");
     cy.get("#attendeeNumber").focus();
     cy.get("#attendeeNumber").clear();

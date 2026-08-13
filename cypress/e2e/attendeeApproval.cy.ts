@@ -12,6 +12,10 @@ function rsvpAsGuest(eventID: string, name: string) {
   visitFresh(`/${eventID}`);
   cy.get("button#attendEvent").click();
   cy.get("#attendModal").should("be.visible");
+  // Wait for Bootstrap's fade transition to finish - when it does, the modal
+  // steals focus (Bootstrap calls modal.focus() on shown), silently
+  // swallowing any keystrokes typed mid-transition
+  cy.get("#attendModal").should("have.focus");
   cy.get("#attendeeName").type(name);
   cy.get("form#attendEventForm").submit();
   cy.get("#rsvpSuccessModal", { timeout: 10000 }).should("be.visible");
@@ -109,6 +113,7 @@ describe("Attendee Approval Feature", () => {
       // RSVP to the event
       cy.get("button#attendEvent").click();
       cy.get("#attendModal").should("be.visible");
+      cy.get("#attendModal").should("have.focus");
       cy.get("#attendeeName").type("Regular Guest");
       cy.get("form#attendEventForm").submit();
 
@@ -121,6 +126,7 @@ describe("Attendee Approval Feature", () => {
 
       cy.get("button#attendEvent").click();
       cy.get("#attendModal").should("be.visible");
+      cy.get("#attendModal").should("have.focus");
       cy.get("#attendeeName").type("Regular Guest");
       cy.get("form#attendEventForm").submit();
 
@@ -149,6 +155,7 @@ describe("Attendee Approval Feature", () => {
 
       cy.get("button#attendEvent").click();
       cy.get("#attendModal").should("be.visible");
+      cy.get("#attendModal").should("have.focus");
       cy.get("#attendeeName").type("Pending Guest");
       cy.get("#removalPassword").invoke("val").as("guestPassword");
       cy.get("form#attendEventForm").submit();
@@ -169,6 +176,7 @@ describe("Attendee Approval Feature", () => {
 
       cy.get("button#attendEvent").click();
       cy.get("#attendModal").should("be.visible");
+      cy.get("#attendModal").should("have.focus");
       cy.get("#attendeeName").type("First Guest");
       cy.get("form#attendEventForm").submit();
 
