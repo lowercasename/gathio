@@ -849,10 +849,9 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
           content: `<p>${req.body.replyAuthor} commented: ${req.body.replyContent}</p><p><a href="https://${domain}/${req.params.eventID}/">See the full conversation here.</a></p>`,
         };
         broadcastCreateMessage(jsonObject, event.followers, req.params.eventID);
-        const event = await Event.findOne({ id: req.params.eventID });
-        if (!event) {
-          return res.sendStatus(404);
-        }
+        // NB: don't declare a new `event` in this block - the shadowing
+        // `const` puts the earlier `event.save()` in its temporal dead zone,
+        // which made every reply fail (#250)
         const attendeeEmails =
           event.attendees
             .filter((o) => o.status === "attending" && o.email)
