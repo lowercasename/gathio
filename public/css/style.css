@@ -574,6 +574,7 @@ ul#sidebar__nav a {
   display: block;
   width: 100%;
   height: auto;
+  object-fit: cover;
 }
 
 #eventImageContainer:before {
