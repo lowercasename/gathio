@@ -5,7 +5,9 @@
 </div>
 {{/if}}
 {{#if eventGroupHasCoverImage}}
-  <div class="event-header-image" id="eventImageContainer" style="background-image: url(/events/{{eventGroupData.image}});"></div>
+  <div class="event-header-image" id="eventImageContainer">
+    <img src="/events/{{eventGroupData.image}}" alt="">
+  </div>
 {{else}}
   <div class="event-header-image" id="genericEventImageContainer" style="background-image: url(/images/seigaiha.png);"></div>
 {{/if}}
