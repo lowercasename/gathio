@@ -24,8 +24,12 @@ export interface ImportedIcsEvent {
 export const icsImportErrors = {
   unparseable: "This file could not be parsed as an ICS file.",
   noUsableEvent:
-    "No event with a name, location, description, and valid start and end times was found in this file.",
+    "No event with a name, description, and valid start and end times was found in this file.",
 } as const;
+
+// Online-meeting invites (Google Meet, Teams) ship an empty LOCATION, but the
+// Event model requires one, so imports fall back to this placeholder.
+export const defaultImportedLocation = "No location";
 
 // Resolve an ICS TZID to an IANA timezone name, or undefined if we can't.
 // Some producers quote the TZID or prefix it with a slash, and Outlook uses
@@ -90,7 +94,6 @@ export const parseEventFromIcs = (
     !(vevent.end instanceof Date) ||
     isNaN(vevent.end.getTime()) ||
     !vevent.summary ||
-    !vevent.location ||
     !vevent.description
   ) {
     return { error: icsImportErrors.noUsableEvent };
@@ -127,7 +130,7 @@ export const parseEventFromIcs = (
 
   return {
     name: vevent.summary,
-    location: vevent.location,
+    location: vevent.location || defaultImportedLocation,
     description: vevent.description,
     startUTC: icsDateToMoment(vevent.start, startTzid),
     endUTC: icsDateToMoment(vevent.end, endTzid),

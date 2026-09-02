@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  defaultImportedLocation,
   icsImportErrors,
   parseEventFromIcs,
   resolveIcsTzid,
@@ -191,8 +192,27 @@ END:VTIMEZONE`),
     assert.deepEqual(result, { error: icsImportErrors.noUsableEvent });
   });
 
+  it("defaults an empty or missing LOCATION, as online-meeting invites have", () => {
+    for (const location of ["LOCATION:", ""]) {
+      const result = parseEventFromIcs(
+        ics(`BEGIN:VEVENT
+UID:nolocation@test
+DTSTAMP:20260901T120000Z
+${location}
+DESCRIPTION:Join with Google Meet: https://meet.google.com/abc-defg-hij
+SUMMARY:Online Meeting
+DTSTART;TZID=Europe/London:20240815T200000
+DTEND;TZID=Europe/London:20240815T213000
+END:VEVENT`),
+      );
+      assert.ok(!("error" in result));
+      assert.equal(result.location, defaultImportedLocation);
+      assert.equal(result.timezone, "Europe/London");
+    }
+  });
+
   it("rejects a VEVENT missing a required field", () => {
-    for (const missing of ["SUMMARY", "LOCATION", "DESCRIPTION"]) {
+    for (const missing of ["SUMMARY", "DESCRIPTION"]) {
       const fields = REQUIRED_FIELDS.split("\n")
         .filter((line) => !line.startsWith(missing))
         .join("\n");
