@@ -667,6 +667,12 @@ router.post(
       }
     }
 
+    // generate RSA keypair for ActivityPub
+    const { publicKey, privateKey } = generateRSAKeypair();
+    const importedTimezone = "Etc/UTC"; // TODO: get timezone from ics file
+    const startUTC = moment.tz(importedEventData.start, importedTimezone);
+    const endUTC = moment.tz(importedEventData.end, importedTimezone);
+
     const event = new Event({
       id: eventID,
       type: "public",
@@ -674,7 +680,7 @@ router.post(
       location: importedEventData.location,
       start: importedEventData.start,
       end: importedEventData.end,
-      timezone: "Etc/UTC", // TODO: get timezone from ics file
+      timezone: importedTimezone,
       description: importedEventData.description,
       image: "",
       creatorEmail,
@@ -687,6 +693,34 @@ router.post(
       showUsersList: false,
       usersCanComment: false,
       firstLoad: true,
+      activityPubActor: createActivityPubActor(
+        eventID,
+        res.locals.config?.general.domain,
+        publicKey,
+        markdownToSanitizedHTML(importedEventData.description || ""),
+        importedEventData.summary || "",
+        importedEventData.location || null,
+        undefined,
+        startUTC,
+        endUTC,
+        importedTimezone,
+      ),
+      activityPubEvent: createActivityPubEvent(
+        importedEventData.summary || "",
+        startUTC,
+        endUTC,
+        importedTimezone,
+        importedEventData.description || "",
+        importedEventData.location || null,
+      ),
+      activityPubMessages: [
+        {
+          id: `https://${res.locals.config?.general.domain}/${eventID}/m/featuredPost`,
+          content: JSON.stringify(createFeaturedPost(eventID)),
+        },
+      ],
+      publicKey,
+      privateKey,
     });
     try {
       await event.save();
