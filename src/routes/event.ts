@@ -28,7 +28,7 @@ import {
   updateActivityPubEvent,
 } from "../activitypub.js";
 import crypto from "node:crypto";
-import ical from "ical";
+import { parseEventFromIcs } from "../lib/importIcs.js";
 import { markdownToSanitizedHTML } from "../util/markdown.js";
 import { checkMagicLink, getConfigMiddleware } from "../lib/middleware.js";
 import { frontendConfig, getConfig } from "../lib/config.js";
@@ -643,45 +643,39 @@ router.post(
     const eventID = generateEventID();
     const editToken = generateEditToken();
 
-    const iCalObject = ical.parseICS(req.file.buffer.toString("utf8"));
-
-    const importedEventData = iCalObject[Object.keys(iCalObject)[0]];
-
-    let creatorEmail: string | undefined;
-    if (req.body.creatorEmail) {
-      creatorEmail = req.body.creatorEmail;
-    } else if (importedEventData.organizer) {
-      if (typeof importedEventData.organizer === "string") {
-        creatorEmail = importedEventData.organizer.replace("MAILTO:", "");
-      } else {
-        creatorEmail = importedEventData.organizer.val.replace("MAILTO:", "");
-      }
+    const parsed = parseEventFromIcs(req.file.buffer.toString("utf8"));
+    if ("error" in parsed) {
+      return res.status(400).json({
+        errors: [
+          {
+            message: parsed.error,
+          },
+        ],
+      });
+    }
+    for (const tzid of parsed.unresolvedTzids) {
+      addToLog(
+        "importEvent",
+        "warning",
+        `Could not resolve TZID "${tzid}" for imported event ${eventID}; falling back to Etc/UTC`,
+      );
     }
 
-    let hostName: string | undefined;
-    if (importedEventData.organizer) {
-      if (typeof importedEventData.organizer === "string") {
-        hostName = importedEventData.organizer.replace(/["]+/g, "");
-      } else {
-        hostName = importedEventData.organizer.params.CN.replace(/["]+/g, "");
-      }
-    }
+    const creatorEmail = req.body.creatorEmail || parsed.organizerEmail;
+    const hostName = parsed.organizerName;
 
     // generate RSA keypair for ActivityPub
     const { publicKey, privateKey } = generateRSAKeypair();
-    const importedTimezone = "Etc/UTC"; // TODO: get timezone from ics file
-    const startUTC = moment.tz(importedEventData.start, importedTimezone);
-    const endUTC = moment.tz(importedEventData.end, importedTimezone);
 
     const event = new Event({
       id: eventID,
       type: "public",
-      name: importedEventData.summary,
-      location: importedEventData.location,
-      start: importedEventData.start,
-      end: importedEventData.end,
-      timezone: importedTimezone,
-      description: importedEventData.description,
+      name: parsed.name,
+      location: parsed.location,
+      start: parsed.startUTC,
+      end: parsed.endUTC,
+      timezone: parsed.timezone,
+      description: parsed.description,
       image: "",
       creatorEmail,
       url: "",
@@ -697,21 +691,21 @@ router.post(
         eventID,
         res.locals.config?.general.domain,
         publicKey,
-        markdownToSanitizedHTML(importedEventData.description || ""),
-        importedEventData.summary || "",
-        importedEventData.location || null,
+        markdownToSanitizedHTML(parsed.description),
+        parsed.name,
+        parsed.location,
         undefined,
-        startUTC,
-        endUTC,
-        importedTimezone,
+        parsed.startUTC,
+        parsed.endUTC,
+        parsed.timezone,
       ),
       activityPubEvent: createActivityPubEvent(
-        importedEventData.summary || "",
-        startUTC,
-        endUTC,
-        importedTimezone,
-        importedEventData.description || "",
-        importedEventData.location || null,
+        parsed.name,
+        parsed.startUTC,
+        parsed.endUTC,
+        parsed.timezone,
+        parsed.description,
+        parsed.location,
       ),
       activityPubMessages: [
         {
@@ -724,12 +718,12 @@ router.post(
     });
     try {
       await event.save();
-      addToLog("createEvent", "success", `Event ${eventID} created`);
+      addToLog("createEvent", "success", `Imported event ${eventID} created`);
       // Send email with edit link
       if (creatorEmail) {
         req.emailService.sendEmailFromTemplate({
           to: creatorEmail,
-          subject: importedEventData.summary || "",
+          subject: parsed.name,
           templateName: "createEvent",
           templateData: {
             eventID,
@@ -747,12 +741,13 @@ router.post(
       addToLog(
         "createEvent",
         "error",
-        "Attempt to create event failed with error: " + err,
+        "Attempt to create imported event failed with error: " + err,
       );
+      // A raw Error JSON-serializes to {}, so send its message text instead
       return res.status(500).json({
         errors: [
           {
-            message: err,
+            message: err instanceof Error ? err.message : String(err),
           },
         ],
       });

@@ -7,11 +7,13 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/start.js",
+    "backfill:ap": "node dist/scripts/backfillActivityPubActors.js",
     "dev": "nodemon -e ts,js --watch src --exec \"pnpm run build ; pnpm run start\"",
     "lint": "eslint && prettier --check .",
     "lint:fix": "eslint --fix && prettier --write .",
     "test:dev": "CYPRESS=true pnpm run dev & wait-on http://localhost:3000 && cypress open --e2e --browser chrome",
-    "test": "pnpm run build || true && CYPRESS=true pnpm run start & wait-on http://localhost:3000 && cypress run --e2e --browser chrome"
+    "test": "pnpm run build || true && CYPRESS=true pnpm run start & wait-on http://localhost:3000 && cypress run --e2e --browser chrome",
+    "test:unit": "pnpm run build && node --test \"dist/**/*.test.js\""
   },
   "engines": {
     "node": ">=22"
@@ -58,7 +60,8 @@
     "toml": "^3.0.0",
     "ts-deepmerge": "^7.0.2",
     "typescript": "^5.4.5",
-    "wait-on": "^7.2.0"
+    "wait-on": "^7.2.0",
+    "windows-iana": "^5.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.1",
