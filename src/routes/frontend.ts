@@ -715,7 +715,7 @@ router.get("/admin/:magicLinkToken", async (req: Request, res: Response) => {
   });
 });
 
-router.get("/events", async (_: Request, res: Response) => {
+router.get("/events", async (req: Request, res: Response) => {
   if (!res.locals.config?.general.show_public_event_list) {
     return res.status(404).render("404", frontendConfig(res));
   }
@@ -769,6 +769,33 @@ router.get("/events", async (_: Request, res: Response) => {
       };
     },
   );
+
+  // Content-negotiate: browsers asking for ActivityPub get the whole public
+  // event list as an OrderedCollection of Event objects (scrapeable embeds).
+  if (acceptsActivityPub(req)) {
+    const domain = res.locals.config?.general.domain;
+    const orderedItems = updatedEvents.map((event) => ({
+      "@context": "https://www.w3.org/ns/activitystreams",
+      type: "Event",
+      id: `https://${domain}/${event.id}`,
+      url: `https://${domain}/${event.id}`,
+      name: event.name,
+      location: event.location,
+      startTime: event.startMoment.toISOString(),
+      endTime: event.endMoment.toISOString(),
+    }));
+    return res
+      .header("Content-Type", activityPubContentType)
+      .send(
+        JSON.stringify({
+          "@context": "https://www.w3.org/ns/activitystreams",
+          type: "OrderedCollection",
+          id: `https://${domain}/events`,
+          totalItems: orderedItems.length,
+          orderedItems,
+        }),
+      );
+  }
 
   res.render("publicEventList", {
     title: i18next.t("frontend.publicevents"),

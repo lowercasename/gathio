@@ -40,6 +40,28 @@ async function initializeApp() {
   // Cookies //
   app.use(cookieParser());
 
+  // CORS //
+  // Allow embeds (e.g. event lists on Neocities pages) to read public
+  // ActivityPub/JSON endpoints cross-origin.
+  const CORS_ALLOW_ORIGINS = [
+    /^https?:\/\/([a-z0-9-]+\.)*neocities\.org$/i,
+  ];
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (
+      typeof origin === "string" &&
+      CORS_ALLOW_ORIGINS.some((re) => re.test(origin))
+    ) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+      res.setHeader("Vary", "Origin");
+      if (req.method === "OPTIONS") {
+        return res.status(204).end();
+      }
+    }
+    next();
+  });
+
   // i18next configuration
   await i18next
     .use(Backend)
