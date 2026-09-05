@@ -235,7 +235,9 @@ export async function signAndSend(
   const signature = signer.sign(privateKey);
   const signature_b64 = signature.toString("base64");
   const algorithm = "rsa-sha256";
-  const header = `keyId="https://${domain}/${eventID}",algorithm="${algorithm}",headers="(request-target) host date digest",signature="${signature_b64}"`;
+  // keyId must exactly match the `publicKey.id` advertised on our actor (including
+  // the `#main-key` fragment).
+  const header = `keyId="https://${domain}/${eventID}#main-key",algorithm="${algorithm}",headers="(request-target) host date digest",signature="${signature_b64}"`;
   // Store the message in the database before sending, so that reply-matching
   // (e.g. poll responses referencing this message ID) works even if delivery fails
   const newMessage = {
@@ -520,12 +522,21 @@ async function _handleFollow(req: Request, res: Response) {
   const event = await Event.findOne({ id: eventID });
   if (!event) return res.sendStatus(404);
 
-  // Already a follower — just say OK
-  if (event.followers?.map((el) => el.actorId).includes(req.body.actor)) {
-    return res.sendStatus(200);
+  // If this actor already follows the event, this is most likely a
+  // redelivery of a Follow whose Accept we failed to send (remote servers
+  // retry on a non-2xx response). Refresh the stored record and carry on so
+  // the Accept, event DM and RSVP poll are (re)sent rather than leaving the
+  // follow request pending on the remote instance forever.
+  const existingFollower = event.followers?.find(
+    (el) => el.actorId === req.body.actor,
+  );
+  if (existingFollower) {
+    existingFollower.followId = newFollower.followId;
+    existingFollower.name = newFollower.name;
+    existingFollower.actorJson = newFollower.actorJson;
+  } else {
+    event.followers?.push(newFollower);
   }
-
-  event.followers?.push(newFollower);
   try {
     await event.save();
   } catch (err) {
@@ -536,7 +547,13 @@ async function _handleFollow(req: Request, res: Response) {
     );
     return res.status(500).send("Database error, please try again :(");
   }
-  addToLog("addEventFollower", "success", `Follower added to event ${eventID}`);
+  addToLog(
+    "addEventFollower",
+    "success",
+    existingFollower
+      ? `Existing follower refreshed on event ${eventID}`
+      : `Follower added to event ${eventID}`,
+  );
 
   // Accept the follow request
   try {
@@ -623,9 +640,9 @@ async function _handleUndoFollow(req: Request, res: Response) {
           "removeEventFollower",
           "error",
           "Attempt to remove follower from event " +
-            eventID +
-            " failed with error: " +
-            err,
+          eventID +
+          " failed with error: " +
+          err,
         );
         return res.status(500).send("Database error, please try again :(");
       }
@@ -742,9 +759,9 @@ async function _handleAcceptEvent(req: Request, res: Response) {
           "addEventAttendee",
           "error",
           "Attempt to add attendee to event " +
-            eventID +
-            " failed with error: " +
-            err,
+          eventID +
+          " failed with error: " +
+          err,
         );
         return res.status(500).send("Database error, please try again :(");
       }
@@ -833,11 +850,11 @@ async function _handleDelete(req: Request, res: Response) {
       "deleteComment",
       "error",
       "Attempt to delete comment " +
-        req.body.object.id +
-        "from event " +
-        eventWithComment.id +
-        " failed with error: " +
-        err,
+      req.body.object.id +
+      "from event " +
+      eventWithComment.id +
+      " failed with error: " +
+      err,
     );
     return res.sendStatus(500);
   }
@@ -943,9 +960,9 @@ async function _handleCreateNoteComment(req: Request, res: Response) {
         "addEventComment",
         "error",
         "Attempt to add comment to event " +
-          eventID +
-          " failed with error: " +
-          err,
+        eventID +
+        " failed with error: " +
+        err,
       );
       return res.status(500).send(`Database error, please try again :(${err}`);
     }
