@@ -640,9 +640,9 @@ async function _handleUndoFollow(req: Request, res: Response) {
           "removeEventFollower",
           "error",
           "Attempt to remove follower from event " +
-          eventID +
-          " failed with error: " +
-          err,
+            eventID +
+            " failed with error: " +
+            err,
         );
         return res.status(500).send("Database error, please try again :(");
       }
@@ -759,9 +759,9 @@ async function _handleAcceptEvent(req: Request, res: Response) {
           "addEventAttendee",
           "error",
           "Attempt to add attendee to event " +
-          eventID +
-          " failed with error: " +
-          err,
+            eventID +
+            " failed with error: " +
+            err,
         );
         return res.status(500).send("Database error, please try again :(");
       }
@@ -850,11 +850,11 @@ async function _handleDelete(req: Request, res: Response) {
       "deleteComment",
       "error",
       "Attempt to delete comment " +
-      req.body.object.id +
-      "from event " +
-      eventWithComment.id +
-      " failed with error: " +
-      err,
+        req.body.object.id +
+        "from event " +
+        eventWithComment.id +
+        " failed with error: " +
+        err,
     );
     return res.sendStatus(500);
   }
@@ -960,9 +960,9 @@ async function _handleCreateNoteComment(req: Request, res: Response) {
         "addEventComment",
         "error",
         "Attempt to add comment to event " +
-        eventID +
-        " failed with error: " +
-        err,
+          eventID +
+          " failed with error: " +
+          err,
       );
       return res.status(500).send(`Database error, please try again :(${err}`);
     }
