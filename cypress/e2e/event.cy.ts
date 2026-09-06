@@ -96,16 +96,18 @@ describe("Events", () => {
     cy.get(".attendeesList").should("contain.text", "hidden");
   });
 
-  it("allows you to comment on an event", function () {
+  it("allows you to comment on an event with line breaks", function () {
     cy.get("#commentAuthor").type("Test Author");
-    cy.get("#commentContent").type("Test Comment");
+    cy.get("#commentContent").type("First Line{enter}Second Line");
     cy.get("#postComment").click();
     cy.get(".comment").should("contain.text", "Test Author");
-    cy.get(".comment").should("contain.text", "Test Comment");
+    cy.get(".commentContent")
+      .should("contain.text", "First Line\nSecond Line")
+      .and("have.css", "white-space", "pre-line");
   });
 
   // Regression test for #250, where every reply failed with a database error
-  it("allows you to reply to a comment", function () {
+  it("allows you to reply to a comment with line breaks", function () {
     cy.get("#commentAuthor").type("Test Author");
     cy.get("#commentContent").type("Test Comment");
     cy.get("#postComment").click();
@@ -113,12 +115,13 @@ describe("Events", () => {
 
     cy.get(".comment .openReplyBox").first().click();
     cy.get(".comment #replyAuthor").type("Reply Author");
-    cy.get(".comment #replyContent").type("Test Reply");
+    cy.get(".comment #replyContent").type("First Line{enter}Second Line");
     cy.get(".comment #postReply").click();
 
-    cy.get(".comment .repliesContainer")
-      .should("contain.text", "Reply Author")
-      .and("contain.text", "Test Reply");
+    cy.get(".comment .repliesContainer").should("contain.text", "Reply Author");
+    cy.get(".comment .repliesContainer .commentContent")
+      .should("contain.text", "First Line\nSecond Line")
+      .and("have.css", "white-space", "pre-line");
     cy.contains("Database error").should("not.exist");
   });
 
