@@ -804,6 +804,10 @@ ul#sidebar__nav a {
   border: 1px solid #dfdfdf;
 }
 
+.commentContent {
+  white-space: pre-line;
+}
+
 .replyContainer {
   display: none;
   background: #efefef;

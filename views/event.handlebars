@@ -403,13 +403,13 @@
               {{else}}
                 <p class="mb-0"><strong>{{this.author}}</strong> <small class="commentTimestamp text-muted">{{this.timestamp}}</small></p>
               {{/if}}
-              <p>{{this.content}}</p>
+              <p class="commentContent">{{this.content}}</p>
               {{#if this.replies}}
                 <hr>
                 <div class="repliesContainer">
                   {{#each this.replies}}
                     <p class="mb-0"><strong><i class="fas fa-reply text-muted"></i> {{this.author}}</strong> <small class="commentTimestamp text-muted">{{this.timestamp}}</small></p>
-                    <p>{{this.content}}</p>
+                    <p class="commentContent">{{this.content}}</p>
                   {{/each}}
                 </div>
               {{/if}}
