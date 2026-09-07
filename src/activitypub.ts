@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import { customAlphabet } from "nanoid";
 import moment from "moment-timezone";
 import i18next from "i18next";
-import sanitizeHtml from "sanitize-html";
+import { convert } from "html-to-text";
 import { getConfig, getMaxCommentLength } from "./lib/config.js";
 const config = getConfig();
 const domain = config.general.domain;
@@ -901,9 +901,13 @@ async function _handleCreateNoteComment(req: Request, res: Response) {
     const parsedActor = await signedFetch(req.body.actor, eventID);
     const name =
       parsedActor.preferredUsername || parsedActor.name || req.body.actor;
-    const content = sanitizeHtml(req.body.object.content, {
-      allowedTags: [],
-      allowedAttributes: {},
+    // Mastodon and friends send HTML; store plain text but keep line breaks
+    const content = convert(req.body.object.content, {
+      wordwrap: false,
+      selectors: [
+        { selector: "a", options: { ignoreHref: true } },
+        { selector: "img", format: "skip" },
+      ],
     }).replace(`@${eventID}`, "");
     const maxCommentLength = getMaxCommentLength(res.locals.config);
     if (content.length > maxCommentLength) {
