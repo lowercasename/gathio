@@ -45,6 +45,7 @@ function editEventForm() {
       interactionCheckbox: window.eventData.usersCanComment,
       joinCheckbox: window.eventData.usersCanAttend,
       maxAttendees: window.eventData.maxAttendees,
+      maxPlusOnes: window.eventData.maxPlusOnes ?? "",
       approveRegistrationsCheckbox: window.eventData.approveRegistrations,
     },
     ...customQuestionsForm(window.eventData.customQuestions),

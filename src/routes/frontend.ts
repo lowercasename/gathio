@@ -545,6 +545,10 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         noMoreSpots = true;
       }
     }
+    const partySizeLimit =
+      event.maxPlusOnes !== null && event.maxPlusOnes !== undefined
+        ? event.maxPlusOnes + 1
+        : undefined;
     const metadata = {
       title: event.name,
       description: (
@@ -594,6 +598,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         numberOfHiddenAttendees,
         spotsRemaining: spotsRemaining,
         noMoreSpots: noMoreSpots,
+        partySizeLimit,
         eventStartISO: eventStartISO,
         eventEndISO: eventEndISO,
         parsedLocation: parsedLocation,
@@ -639,6 +644,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
           usersCanAttend: event.usersCanAttend,
           usersCanComment: event.usersCanComment,
           maxAttendees: event.maxAttendees,
+          maxPlusOnes: event.maxPlusOnes,
           approveRegistrations: event.approveRegistrations || false,
           startISO: eventStartISO,
           endISO: eventEndISO,
