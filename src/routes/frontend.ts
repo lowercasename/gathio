@@ -549,6 +549,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
       event.maxPlusOnes !== null && event.maxPlusOnes !== undefined
         ? event.maxPlusOnes + 1
         : undefined;
+    const allowsPlusOnes = event.maxPlusOnes !== 0;
     const metadata = {
       title: event.name,
       description: (
@@ -599,6 +600,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         spotsRemaining: spotsRemaining,
         noMoreSpots: noMoreSpots,
         partySizeLimit,
+        allowsPlusOnes,
         eventStartISO: eventStartISO,
         eventEndISO: eventEndISO,
         parsedLocation: parsedLocation,

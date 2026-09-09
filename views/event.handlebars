@@ -280,12 +280,16 @@
           <input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="{{t "views.event.attendeenamedesc" }}" data-validation="required length" data-validation-length="1-30">
         </div>
       </div>
-      <div class="form-group">
-        <label for="attendeeNumber">{{t "views.event.attendeenum" }}</label>
+      {{#if allowsPlusOnes}}
         <div class="form-group">
-          <input type="number" min="1" {{#if partySizeLimit}}max="{{partySizeLimit}}"{{/if}} class="form-control" id="attendeeNumber" name="attendeeNumber" value="1" data-validation="required number" >
+          <label for="attendeeNumber">{{t "views.event.attendeenum" }}</label>
+          <div class="form-group">
+            <input type="number" min="1" {{#if partySizeLimit}}max="{{partySizeLimit}}"{{/if}} class="form-control" id="attendeeNumber" name="attendeeNumber" value="1" data-validation="required number" >
+          </div>
         </div>
-      </div>
+      {{else}}
+        <input type="hidden" id="attendeeNumber" name="attendeeNumber" value="1">
+      {{/if}}
       <div class="form-group">
         <label for="attendeeEmail">{{t "views.event.attendeeemail" }}</label>
         <p class="form-text small">{{t "views.event.joinemaildesc" }}</p>
