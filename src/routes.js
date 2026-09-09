@@ -529,7 +529,11 @@ router.post("/attendee/provision", async (req, res) => {
   } else {
     freeSpots = undefined;
   }
-  return res.json({ removalPassword, freeSpots });
+  const maxPartySize =
+    event.maxPlusOnes !== null && event.maxPlusOnes !== undefined
+      ? event.maxPlusOnes + 1
+      : undefined;
+  return res.json({ removalPassword, freeSpots, maxPartySize });
 });
 
 // this is a one-click unattend that requires a secret URL that only the person who RSVPed over

@@ -36,6 +36,7 @@ describe("Events", () => {
     if (eventData.maxAttendeesCheckbox) {
       cy.get("#maxAttendees").type(eventData.maxAttendees.toString());
     }
+    cy.get("#maxPlusOnes").select(eventData.maxPlusOnes.toString());
 
     // Submit the form
     cy.get("#newEventFormSubmit").click();
@@ -94,6 +95,32 @@ describe("Events", () => {
     cy.get("#attendees-alert").should("contain.text", "8 spots remaining");
     cy.get(".attendeesList").should("contain.text", "Test Attendee");
     cy.get(".attendeesList").should("contain.text", "hidden");
+  });
+
+  it("limits plus ones per RSVP", function () {
+    cy.get("button#attendEvent").click();
+    cy.get("#attendModal").should("be.visible");
+    cy.get("#attendeeNumber").should("have.attr", "max", "2");
+
+    cy.get<string>("@eventID").then((eventID) => {
+      cy.request("POST", `/attendee/provision?eventID=${eventID}`).then(
+        ({ body }) => {
+          cy.request({
+            method: "POST",
+            url: `/event/${eventID}/attendee`,
+            form: true,
+            failOnStatusCode: false,
+            body: {
+              removalPassword: body.removalPassword,
+              attendeeName: "Oversized Party",
+              attendeeNumber: "3",
+            },
+          })
+            .its("status")
+            .should("eq", 403);
+        },
+      );
+    });
   });
 
   it("allows you to comment on an event with line breaks", function () {

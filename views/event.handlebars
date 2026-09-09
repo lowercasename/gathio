@@ -280,12 +280,16 @@
           <input type="text" class="form-control" id="attendeeName" name="attendeeName" placeholder="{{t "views.event.attendeenamedesc" }}" data-validation="required length" data-validation-length="1-30">
         </div>
       </div>
-      <div class="form-group">
-        <label for="attendeeNumber">{{t "views.event.attendeenum" }}</label>
+      {{#if allowsPlusOnes}}
         <div class="form-group">
-          <input type="number" class="form-control" id="attendeeNumber" name="attendeeNumber" value="1" data-validation="required number" >
+          <label for="attendeeNumber">{{t "views.event.attendeenum" }}</label>
+          <div class="form-group">
+            <input type="number" min="1" {{#if partySizeLimit}}max="{{partySizeLimit}}"{{/if}} class="form-control" id="attendeeNumber" name="attendeeNumber" value="1" data-validation="required number" >
+          </div>
         </div>
-      </div>
+      {{else}}
+        <input type="hidden" id="attendeeNumber" name="attendeeNumber" value="1">
+      {{/if}}
       <div class="form-group">
         <label for="attendeeEmail">{{t "views.event.attendeeemail" }}</label>
         <p class="form-text small">{{t "views.event.joinemaildesc" }}</p>
@@ -716,11 +720,16 @@ window.eventData = {{{ json jsonData }}};
             rpStore[eventID] = response.data.removalPassword;
             localStorage.setItem('gathioRemovalPasswords', JSON.stringify(rpStore));
           } catch(e) { /* ignore persistence errors */ }
-          // If there is a limit on the number of attendees, the provisioned endpoint will return freeSpots;
-          // otherwise, freeSpots will be undefined.
-          if (response.data.freeSpots !== undefined) {
+          // Apply whichever is tighter: remaining event capacity or the
+          // event's per-RSVP party-size limit.
+          const partySizeLimit = Math.min(
+            response.data.freeSpots ?? Infinity,
+            response.data.maxPartySize ?? Infinity
+          );
+          if (Number.isFinite(partySizeLimit)) {
             modal.find('#attendeeNumber')
-              .attr('data-validation-allowing', `range[1;${response.data.freeSpots}]`)
+              .attr('max', partySizeLimit)
+              .attr('data-validation-allowing', `range[1;${partySizeLimit}]`)
               .attr('data-validation-error-msg', `{{t "views.event.numlimit" }}`);
           }
           modal.modal();
