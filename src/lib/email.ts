@@ -179,7 +179,7 @@ export class EmailService {
           from: config.general.email,
           to,
           bcc,
-          subject: `${config.general.site_name}: ${subject}`,
+          subject,
           text,
           html,
         });
