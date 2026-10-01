@@ -5,6 +5,7 @@ import {
   maxCustomQuestions,
   maxCustomQuestionOptions,
   maxCustomQuestionPromptLength,
+  maxPlusOnesLimit,
 } from "../models/Event.js";
 import { generateEventID } from "./generator.js";
 
@@ -42,6 +43,7 @@ interface EventData {
   joinCheckbox: string;
   maxAttendeesCheckbox: string;
   maxAttendees: number;
+  maxPlusOnes?: string | number;
   approveRegistrationsCheckbox?: string; // optional checkbox value
   customQuestions?: string; // JSON-encoded array of questions
 }
@@ -55,6 +57,7 @@ export type ValidatedEventData = Omit<
   | "joinCheckbox"
   | "maxAttendeesCheckbox"
   | "approveRegistrationsCheckbox"
+  | "maxPlusOnes"
   | "customQuestions"
 > & {
   publicBoolean: boolean;
@@ -62,6 +65,7 @@ export type ValidatedEventData = Omit<
   interactionBoolean: boolean;
   joinBoolean: boolean;
   maxAttendeesBoolean: boolean;
+  maxPlusOnes: number | null;
   approveRegistrationsBoolean: boolean;
   customQuestions: ICustomQuestion[];
 };
@@ -258,6 +262,12 @@ export const validateCustomQuestions = (
 export const validateEventData = (
   eventData: EventData,
 ): EventValidationResponse => {
+  const rawMaxPlusOnes = eventData.maxPlusOnes;
+  const hasMaxPlusOnes =
+    rawMaxPlusOnes !== undefined &&
+    rawMaxPlusOnes !== null &&
+    String(rawMaxPlusOnes) !== "";
+  const parsedMaxPlusOnes = hasMaxPlusOnes ? Number(rawMaxPlusOnes) : null;
   const customQuestionValidation = validateCustomQuestions(
     eventData.customQuestions,
   );
@@ -268,11 +278,25 @@ export const validateEventData = (
     interactionBoolean: eventData.interactionCheckbox === "true",
     joinBoolean: eventData.joinCheckbox === "true",
     maxAttendeesBoolean: eventData.maxAttendeesCheckbox === "true",
+    maxPlusOnes: parsedMaxPlusOnes,
     approveRegistrationsBoolean:
       eventData.approveRegistrationsCheckbox === "true",
     customQuestions: customQuestionValidation.questions,
   };
   const errors: Error[] = [...customQuestionValidation.errors];
+  if (
+    parsedMaxPlusOnes !== null &&
+    (!Number.isInteger(parsedMaxPlusOnes) ||
+      parsedMaxPlusOnes < 0 ||
+      parsedMaxPlusOnes > maxPlusOnesLimit)
+  ) {
+    errors.push({
+      message: i18next.t("util.validation.eventdata.maxplusones", {
+        max: maxPlusOnesLimit,
+      }),
+      field: "maxPlusOnes",
+    });
+  }
   if (!validatedData.eventName) {
     errors.push({
       message: i18next.t("util.validation.eventdata.eventname"),

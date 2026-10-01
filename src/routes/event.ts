@@ -192,6 +192,7 @@ router.post(
       showUsersList: false, // Backwards compatibility
       usersCanComment: eventData.interactionBoolean ? true : false,
       maxAttendees: eventData.maxAttendees,
+      maxPlusOnes: eventData.maxPlusOnes,
       firstLoad: true,
       activityPubActor: createActivityPubActor(
         eventID,
@@ -410,6 +411,7 @@ router.put(
         maxAttendees: eventData.maxAttendeesBoolean
           ? eventData.maxAttendees
           : undefined,
+        maxPlusOnes: eventData.maxPlusOnes,
         eventGroup: isPartOfEventGroup ? eventGroup?._id : null,
         activityPubActor: event.activityPubActor
           ? updateActivityPubActor(
@@ -885,10 +887,27 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Attendee not found." });
     }
 
+    const parsedAttendeeNumber = Number(attendeeNumber);
+    if (!Number.isInteger(parsedAttendeeNumber) || parsedAttendeeNumber < 1) {
+      return res
+        .status(400)
+        .json({ error: "Party size must be a whole number." });
+    }
+
+    if (
+      event.maxPlusOnes !== null &&
+      event.maxPlusOnes !== undefined &&
+      parsedAttendeeNumber > event.maxPlusOnes + 1
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Party size exceeds the event limit." });
+    }
+
     // Check capacity - for approval-required events, only count approved attendees
     if (event.maxAttendees !== null && event.maxAttendees !== undefined) {
       const freeSpots = event.maxAttendees - getApprovedAttendeeCount(event);
-      if (attendeeNumber > freeSpots) {
+      if (parsedAttendeeNumber > freeSpots) {
         return res.status(403).json({ error: "Not enough spots available." });
       }
     }
@@ -909,7 +928,7 @@ router.post("/event/:eventID/attendee", async (req: Request, res: Response) => {
     attendee.status = "attending";
     attendee.name = attendeeName;
     attendee.email = attendeeEmail;
-    attendee.number = parseInt(attendeeNumber, 10) || 1;
+    attendee.number = parsedAttendeeNumber;
     attendee.visibility = attendeeVisible ? "public" : "private";
     attendee.answers = answers;
 

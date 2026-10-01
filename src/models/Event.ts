@@ -20,6 +20,7 @@ export const maxCustomQuestions = 6;
 export const maxCustomQuestionOptions = 10;
 export const maxCustomQuestionPromptLength = 200;
 export const maxCustomQuestionAnswerLength = 500;
+export const maxPlusOnesLimit = 10;
 
 export interface IAttendee {
   name: string;
@@ -89,6 +90,7 @@ export interface IEvent extends mongoose.Document {
   firstLoad?: boolean;
   attendees?: IAttendee[];
   maxAttendees?: number;
+  maxPlusOnes?: number | null;
   comments?: IComment[];
   activityPubActor?: string;
   activityPubEvent?: string;
@@ -408,6 +410,12 @@ const EventSchema = new mongoose.Schema({
   attendees: [Attendees],
   maxAttendees: {
     type: Number,
+  },
+  maxPlusOnes: {
+    type: Number,
+    min: 0,
+    max: maxPlusOnesLimit,
+    default: null,
   },
   comments: [CommentSchema],
   activityPubActor: {
