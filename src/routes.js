@@ -615,7 +615,7 @@ router.post("/subscribe/:eventGroupID", async (req, res) => {
       return res.sendStatus(404);
     }
     eventGroup.subscribers.push(subscriber);
-    eventGroup.save();
+    await eventGroup.save();
 
     try {
       await req.emailService.sendEmailFromTemplate({
@@ -629,11 +629,8 @@ router.post("/subscribe/:eventGroupID", async (req, res) => {
         },
       });
     } catch (e) {
-      console.error(
-        "error sending removeEventAttendeeHtml email",
-        e.toString(),
-      );
-      res.status(500).end();
+      console.error("error sending subscribed email", e.toString());
+      return res.status(500).end();
     }
 
     return res.redirect(`/group/${eventGroup.id}`);
