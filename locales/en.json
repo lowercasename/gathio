@@ -387,5 +387,7 @@
   "views.publiceventlist.upcomingevents": "Upcoming events",
   "views.right": "Get it right!",
   "views.event.location_hidden": "Location hidden",
-  "views.event.location_hidden_desc": "To see the location, RSVP to the event below."
+  "views.event.location_hidden_desc": "To see the location, RSVP to the event below.",
+  "util.validation.imageformat": "Unsupported image format. Please choose a JPEG, PNG or GIF image.",
+  "views.partials.supportedimageformats": "Supported formats: JPEG, PNG and GIF."
 }

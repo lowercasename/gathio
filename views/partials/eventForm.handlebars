@@ -50,7 +50,7 @@
       <label for="image-upload" id="event-image-label">{{t "views.partials.choosefile" }}</label>
       <input type="file" name="imageUpload" id="event-image-upload" accept="image/jpeg,image/gif,image/png" x-ref="eventImageUpload" />
     </div>
-    <small class="form-text">{{t "views.partials.recommendeddimensions" }}</small>
+    <small class="form-text">{{t "views.partials.recommendeddimensions" }} {{t "views.partials.supportedimageformats" }}</small>
     {{#if eventData.image}}
       <div class="form-group my-2">
         <button type="button" class="button button--danger" id="deleteImage">{{t "views.partials.delimg" }}</button>

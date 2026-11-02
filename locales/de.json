@@ -308,5 +308,7 @@
   "views.publiceventlist.numoevents_zero": "Keine Veranstaltung",
   "views.publiceventlist.pastevents": "Vergangene Veranstaltungen",
   "views.publiceventlist.upcomingevents": "Kommende Veranstaltungen",
-  "views.right": "Mach es richtig!"
+  "views.right": "Mach es richtig!",
+  "util.validation.imageformat": "Nicht unterstütztes Bildformat. Bitte wähle ein JPEG-, PNG- oder GIF-Bild.",
+  "views.partials.supportedimageformats": "Unterstützte Formate: JPEG, PNG und GIF."
 }

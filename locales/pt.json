@@ -389,5 +389,7 @@
   "views.publiceventlist.upcomingevents": "Próximos eventos",
   "views.right": "Capriche!",
   "views.event.location_hidden": "Local oculto",
-  "views.event.location_hidden_desc": "Para ver o local, confirme sua presença no evento abaixo."
+  "views.event.location_hidden_desc": "Para ver o local, confirme sua presença no evento abaixo.",
+  "util.validation.imageformat": "Formato de imagem não suportado. Escolha uma imagem JPEG, PNG ou GIF.",
+  "views.partials.supportedimageformats": "Formatos suportados: JPEG, PNG e GIF."
 }

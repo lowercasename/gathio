@@ -308,5 +308,7 @@
   "views.publiceventlist.numoevents_zero": "イベントなし",
   "views.publiceventlist.pastevents": "過去の公開イベント",
   "views.publiceventlist.upcomingevents": "今後の公開イベント",
-  "views.right": "了解！"
+  "views.right": "了解！",
+  "util.validation.imageformat": "対応していない画像形式です。JPEG、PNG、GIFのいずれかの画像を選択してください。",
+  "views.partials.supportedimageformats": "対応形式：JPEG、PNG、GIF。"
 }
