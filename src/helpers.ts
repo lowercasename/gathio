@@ -75,25 +75,35 @@ export function exportIcal(
 }
 
 interface I18nHelpers {
-  t: (key: string, options?: object) => string;
-  tn: (key: string, options?: object) => string;
+  t: (
+    this: Record<string, unknown>,
+    key: string,
+    options?: Handlebars.HelperOptions,
+  ) => string;
+  tn: (
+    this: Record<string, unknown>,
+    key: string,
+    options?: Handlebars.HelperOptions,
+  ) => string;
   count?: number;
 }
 
 export function getI18nHelpers(): I18nHelpers {
   return {
-    t: function (key: string, options?: object) {
-      const translation = i18next.t(key, { ...this, ...options });
+    t: function (key: string, options?: Handlebars.HelperOptions) {
+      const interpolationValues = { ...this, ...options?.hash };
+      const translation = i18next.t(key, interpolationValues);
       const template = handlebars.compile(translation);
-      return template(this);
+      return template(interpolationValues);
     },
-    tn: function (key: string, options?: object) {
+    tn: function (key: string, options?: Handlebars.HelperOptions) {
+      const interpolationValues = { ...this, ...options?.hash };
       const translation = i18next.t(key, {
         count: this.count,
-        ...options,
+        ...interpolationValues,
       });
       const template = handlebars.compile(translation);
-      return template(this);
+      return template(interpolationValues);
     },
   };
 }

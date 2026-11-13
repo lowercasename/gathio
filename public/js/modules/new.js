@@ -49,6 +49,7 @@ function newEventForm() {
       interactionCheckbox: false,
       joinCheckbox: false,
       maxAttendees: "",
+      maxPlusOnes: "",
       approveRegistrationsCheckbox: false,
     },
     ...customQuestionsForm([]),

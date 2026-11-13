@@ -11,6 +11,7 @@
   "joinCheckbox": true,
   "maxAttendeesCheckbox": true,
   "maxAttendees": 10,
+  "maxPlusOnes": 1,
   "eventStart": "2030-01-01T00:00",
   "eventEnd": "2030-01-01T01:00"
 }
