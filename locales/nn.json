@@ -308,5 +308,7 @@
   "views.publiceventlist.numoevents_zero": "Ingen arrangement",
   "views.publiceventlist.pastevents": "Tidlegare arrangement",
   "views.publiceventlist.upcomingevents": "Komande arrangement",
-  "views.right": "Få det rett!"
+  "views.right": "Få det rett!",
+  "util.validation.imageformat": "Biletformatet er ikkje støtta. Vel eit JPEG-, PNG- eller GIF-bilete.",
+  "views.partials.supportedimageformats": "Støtta format: JPEG, PNG og GIF."
 }

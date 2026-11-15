@@ -1,4 +1,9 @@
-import { Router, type Response, type Request } from "express";
+import {
+  Router,
+  type Response,
+  type Request,
+  type ErrorRequestHandler,
+} from "express";
 import multer from "multer";
 import Jimp from "jimp";
 import moment from "moment-timezone";
@@ -39,6 +44,8 @@ import i18next from "i18next";
 moment.locale(i18next.language);
 const config = getConfig();
 
+class UnsupportedImageTypeError extends Error {}
+
 const storage = multer.memoryStorage();
 // Accept only JPEG, GIF or PNG images, up to 10MB
 const upload = multer({
@@ -48,11 +55,28 @@ const upload = multer({
     const filetypes = /jpeg|jpg|png|gif/;
     const mimetype = filetypes.test(file.mimetype);
     if (!mimetype) {
-      return cb(new Error("Only JPEG, PNG and GIF images are allowed."));
+      return cb(
+        new UnsupportedImageTypeError(
+          "Only JPEG, PNG and GIF images are allowed.",
+        ),
+      );
     }
     cb(null, true);
   },
 });
+const handleImageUploadError: ErrorRequestHandler = (error, req, res, next) => {
+  if (!(error instanceof UnsupportedImageTypeError)) {
+    return next(error);
+  }
+  return res.status(400).json({
+    errors: [
+      {
+        field: "event-image-upload",
+        message: req.t("util.validation.imageformat"),
+      },
+    ],
+  });
+};
 const icsUpload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -106,6 +130,7 @@ router.use(getConfigMiddleware);
 router.post(
   "/event",
   upload.single("imageUpload"),
+  handleImageUploadError,
   checkMagicLink,
   async (req: Request, res: Response) => {
     const { data: eventData, errors } = validateEventData(req.body);
@@ -313,6 +338,7 @@ router.post(
 router.put(
   "/event/:eventID",
   upload.single("imageUpload"),
+  handleImageUploadError,
   async (req: Request, res: Response) => {
     const { data: eventData, errors } = validateEventData(req.body);
     if (errors && errors.length > 0) {
