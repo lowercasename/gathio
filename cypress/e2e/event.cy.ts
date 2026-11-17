@@ -279,6 +279,7 @@ describe("Events", () => {
     const startedEventEnd = toDatetimeLocalUTC(new Date(Date.now() + oneHour));
 
     cy.get("#editEvent").click();
+    cy.get("#editModal").should("have.focus");
 
     cy.get("#editEventForm #eventName").focus();
     cy.get("#editEventForm #eventName").clear();
@@ -300,6 +301,72 @@ describe("Events", () => {
     cy.get("#editEventForm").submit();
 
     cy.get(".p-name").should("have.text", updatedEventName);
+  });
+
+  it("allows editing an event after it ends, and closes its comments", function () {
+    const oneHour = 60 * 60 * 1000;
+    const endedEventStart = toDatetimeLocalUTC(
+      new Date(Date.now() - 2 * oneHour),
+    );
+    const endedEventEnd = toDatetimeLocalUTC(new Date(Date.now() - oneHour));
+
+    // The event has not ended yet, so comments are open
+    cy.get("#postComment").should("exist");
+
+    cy.get("#editEvent").click();
+    cy.get("#editModal").should("have.focus");
+
+    // Comments stay open after the event by default; switch that off
+    cy.get("#editEventForm #commentsAfterEndCheckbox").should("be.checked");
+    cy.get("#editEventForm #commentsAfterEndCheckbox").uncheck();
+
+    cy.get("#editEventForm #eventStart").focus();
+    cy.get("#editEventForm #eventStart").clear();
+    cy.get("#editEventForm #eventStart").type(endedEventStart);
+
+    cy.get("#editEventForm #eventEnd").focus();
+    cy.get("#editEventForm #eventEnd").clear();
+    cy.get("#editEventForm #eventEnd").type(endedEventEnd);
+
+    cy.get("#editEventForm select#timezone + span.select2").click();
+    cy.get(".select2-results__option")
+      .contains("Etc/UTC")
+      .click({ force: true });
+
+    cy.get("#editEventForm").submit();
+
+    // Comments are closed now that the event has ended...
+    cy.get("#commentsClosed").should("be.visible");
+    cy.get("#postComment").should("not.exist");
+    // ...and not just in the UI
+    cy.request({
+      method: "POST",
+      url: `/post/comment/${this.eventID}/`,
+      form: true,
+      failOnStatusCode: false,
+      body: {
+        commentAuthor: "Spam Bot",
+        commentContent: "Spam",
+      },
+    }).then((response) => {
+      expect(response.status).to.eq(403);
+    });
+
+    // The event is still editable, so the host can reopen comments
+    cy.get("#editEvent").should("not.be.disabled").click();
+    cy.get("#editModal").should("have.focus");
+    cy.get("#editEventForm #eventName").focus();
+    cy.get("#editEventForm #eventName").clear();
+    cy.get("#editEventForm #eventName").type("Edited After");
+    cy.get("#editEventForm #commentsAfterEndCheckbox").check();
+    cy.get("#editEventForm").submit();
+
+    cy.get(".p-name").should("have.text", "Edited After");
+    cy.get("#commentsClosed").should("not.exist");
+    cy.get("#commentAuthor").type("Test Author");
+    cy.get("#commentContent").type("Thanks for coming!");
+    cy.get("#postComment").click();
+    cy.get(".comment").should("contain.text", "Thanks for coming!");
   });
 
   it("sets a group for an event", function () {

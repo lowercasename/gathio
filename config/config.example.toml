@@ -25,6 +25,9 @@ show_kofi = false
 show_public_event_list = false
 # Maximum number of characters allowed in an event comment or reply.
 max_comment_length = 5000
+# Whether the 'Keep comments open after the event ends' option is on
+# by default for new events.
+allow_comments_after_event_default = true
 # Which mail service to use to send emails to hosts and attendees. Options are
 # 'nodemailer', 'sendgrid', or 'none'. Configure settings for this mail
 # service below.

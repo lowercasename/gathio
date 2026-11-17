@@ -2,6 +2,29 @@ import i18next from "i18next";
 import { ICustomQuestion, IEvent } from "../models/Event.js";
 import { IEventGroup } from "../models/EventGroup.js";
 
+type CommentSettings = Pick<
+  IEvent,
+  "usersCanComment" | "usersCanCommentAfterEnd" | "end"
+>;
+
+// Whether comments stay open once the event has ended. Events created before
+// this was a per-event option don't have a DB value for this so we let them
+// keep the value they were created with, which is that comments stay open
+// after the event ends.
+export const commentsAllowedAfterEnd = (
+  event: Pick<IEvent, "usersCanCommentAfterEnd">,
+): boolean => event.usersCanCommentAfterEnd ?? true;
+
+// Whether a new comment or reply can be posted on the event
+export const eventAcceptsComments = (
+  event: CommentSettings,
+  now: Date = new Date(),
+): boolean => {
+  if (!event.usersCanComment) return false;
+  const hasEnded = new Date(event.end).getTime() < now.getTime();
+  return !hasEnded || commentsAllowedAfterEnd(event);
+};
+
 // A custom question as the templates want it: the event page's RSVP modal,
 // the standalone answers form, and the event form's Alpine component all
 // consume this shape. `isMultipleChoice` exists because Handlebars can't

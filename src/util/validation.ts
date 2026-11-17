@@ -39,6 +39,7 @@ interface EventData {
   eventGroupID: string;
   eventGroupEditToken: string;
   interactionCheckbox: string;
+  commentsAfterEndCheckbox?: string; // optional checkbox value
   joinCheckbox: string;
   maxAttendeesCheckbox: string;
   maxAttendees: number;
@@ -52,6 +53,7 @@ export type ValidatedEventData = Omit<
   | "publicCheckbox"
   | "eventGroupCheckbox"
   | "interactionCheckbox"
+  | "commentsAfterEndCheckbox"
   | "joinCheckbox"
   | "maxAttendeesCheckbox"
   | "approveRegistrationsCheckbox"
@@ -60,6 +62,7 @@ export type ValidatedEventData = Omit<
   publicBoolean: boolean;
   eventGroupBoolean: boolean;
   interactionBoolean: boolean;
+  commentsAfterEndBoolean: boolean;
   joinBoolean: boolean;
   maxAttendeesBoolean: boolean;
   approveRegistrationsBoolean: boolean;
@@ -105,6 +108,7 @@ export const validateEventTime = (
   start: string,
   end: string,
   timezone: string,
+  { allowPastEnd = false }: { allowPastEnd?: boolean } = {},
 ): Error | boolean => {
   // Parse the datetime-local values in the event's timezone
   const startMoment = moment.tz(start, timezone);
@@ -117,7 +121,7 @@ export const validateEventTime = (
       field: "eventStart",
     };
   }
-  if (endMoment.isBefore(now)) {
+  if (!allowPastEnd && endMoment.isBefore(now)) {
     return {
       message: i18next.t("util.validation.eventtime.endisbefore"),
       field: "eventEnd",
@@ -255,8 +259,11 @@ export const validateCustomQuestions = (
   return { questions, errors };
 };
 
+// `allowPastEnd` is for edits: an event stays editable after it has ended, so
+// its (unchanged) end time is allowed to be in the past.
 export const validateEventData = (
   eventData: EventData,
+  options: { allowPastEnd?: boolean } = {},
 ): EventValidationResponse => {
   const customQuestionValidation = validateCustomQuestions(
     eventData.customQuestions,
@@ -266,6 +273,7 @@ export const validateEventData = (
     publicBoolean: eventData.publicCheckbox === "true",
     eventGroupBoolean: eventData.eventGroupCheckbox === "true",
     interactionBoolean: eventData.interactionCheckbox === "true",
+    commentsAfterEndBoolean: eventData.commentsAfterEndCheckbox === "true",
     joinBoolean: eventData.joinCheckbox === "true",
     maxAttendeesBoolean: eventData.maxAttendeesCheckbox === "true",
     approveRegistrationsBoolean:
@@ -301,6 +309,7 @@ export const validateEventData = (
     validatedData.eventStart,
     validatedData.eventEnd,
     validatedData.timezone,
+    options,
   );
   if (timeValidation !== true && timeValidation !== false) {
     errors.push({
