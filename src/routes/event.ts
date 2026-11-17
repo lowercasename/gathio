@@ -792,7 +792,7 @@ router.delete(
         { id: req.params.eventID },
         { $pull: { attendees: { removalPassword } } },
       );
-      if (removalResponse.nModified === 0) {
+      if (removalResponse.modifiedCount === 0) {
         return res.status(404).json({
           error: "No attendee found with that removal password.",
         });

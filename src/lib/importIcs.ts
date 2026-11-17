@@ -110,8 +110,9 @@ export const parseEventFromIcs = (
       organizerName = vevent.organizer.params?.CN?.replace(/["]+/g, "");
     }
   }
-  // The parser garbles ORGANIZER lines whose params contain quoted colons
-  // (e.g. SENT-BY="MAILTO:..."), so only keep an email-shaped result
+  // Only keep a result that looks like an email, in case the parser gives us nonsense
+  // (older versions of the ical package garbled values for params containing quoted colons, e.g.
+  // SENT-BY="MAILTO:...")
   if (organizerEmail && !/^[^@\s"]+@[^@\s"]+\.[^@\s"]+$/.test(organizerEmail)) {
     organizerEmail = undefined;
   }

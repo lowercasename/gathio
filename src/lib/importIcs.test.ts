@@ -166,9 +166,9 @@ END:VEVENT`),
     assert.equal(result.organizerName, "Test Host");
   });
 
-  it("does not crash on an organizer with params but no CN, and drops the garbled email", () => {
-    // The ical parser garbles params containing quoted colons (SENT-BY), so
-    // the derived email is not usable - it must be dropped, not kept
+  it("reads the organizer email past params containing quoted colons, with no CN", () => {
+    // Older versions of the ical parser garbled params containing quoted
+    // colons (SENT-BY). We need to keep the organiser's own address.
     const result = parseEventFromIcs(
       ics(`BEGIN:VEVENT
 UID:nocn@test
@@ -179,7 +179,7 @@ DTEND:20260910T203000Z
 END:VEVENT`),
     );
     assert.ok(!("error" in result));
-    assert.equal(result.organizerEmail, undefined);
+    assert.equal(result.organizerEmail, "host@example.com");
     assert.equal(result.organizerName, undefined);
   });
 
