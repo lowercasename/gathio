@@ -86,6 +86,7 @@ export interface IEvent extends mongoose.Document {
   usersCanAttend?: boolean;
   showUsersList?: boolean;
   usersCanComment?: boolean;
+  usersCanCommentAfterEnd?: boolean;
   firstLoad?: boolean;
   attendees?: IAttendee[];
   maxAttendees?: number;
@@ -399,6 +400,10 @@ const EventSchema = new mongoose.Schema({
     type: Boolean,
     trim: true,
     default: false,
+  },
+  // Deliberately has no default (see IEvent)
+  usersCanCommentAfterEnd: {
+    type: Boolean,
   },
   firstLoad: {
     type: Boolean,

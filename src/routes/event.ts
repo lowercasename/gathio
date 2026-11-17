@@ -191,6 +191,7 @@ router.post(
       usersCanAttend: eventData.joinBoolean ? true : false,
       showUsersList: false, // Backwards compatibility
       usersCanComment: eventData.interactionBoolean ? true : false,
+      usersCanCommentAfterEnd: eventData.commentsAfterEndBoolean,
       maxAttendees: eventData.maxAttendees,
       firstLoad: true,
       activityPubActor: createActivityPubActor(
@@ -314,7 +315,9 @@ router.put(
   "/event/:eventID",
   upload.single("imageUpload"),
   async (req: Request, res: Response) => {
-    const { data: eventData, errors } = validateEventData(req.body);
+    const { data: eventData, errors } = validateEventData(req.body, {
+      allowPastEnd: true,
+    });
     if (errors && errors.length > 0) {
       return res.status(400).json({ errors });
     }
@@ -407,6 +410,7 @@ router.put(
         usersCanAttend: eventData.joinBoolean,
         showUsersList: false, // Backwards compatibility
         usersCanComment: eventData.interactionBoolean,
+        usersCanCommentAfterEnd: eventData.commentsAfterEndBoolean,
         maxAttendees: eventData.maxAttendeesBoolean
           ? eventData.maxAttendees
           : undefined,

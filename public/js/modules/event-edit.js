@@ -43,6 +43,7 @@ function editEventForm() {
       eventGroupEditToken: window.eventData.eventGroupEditToken,
       publicCheckbox: window.eventData.showOnPublicList,
       interactionCheckbox: window.eventData.usersCanComment,
+      commentsAfterEndCheckbox: window.eventData.usersCanCommentAfterEnd,
       joinCheckbox: window.eventData.usersCanAttend,
       maxAttendees: window.eventData.maxAttendees,
       approveRegistrationsCheckbox: window.eventData.approveRegistrations,
@@ -61,6 +62,8 @@ function editEventForm() {
       // Set checkboxes
       this.data.eventGroupCheckbox = !!window.eventData.eventGroupID;
       this.data.interactionCheckbox = window.eventData.usersCanComment;
+      this.data.commentsAfterEndCheckbox =
+        window.eventData.usersCanCommentAfterEnd;
       this.data.joinCheckbox = window.eventData.usersCanAttend;
       this.data.publicCheckbox = window.eventData.showOnPublicList;
       this.data.approveRegistrationsCheckbox =

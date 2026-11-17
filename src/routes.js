@@ -18,6 +18,7 @@ import {
   broadcastDeleteMessage,
 } from "./activitypub.js";
 import Event from "./models/Event.js";
+import { eventAcceptsComments } from "./lib/event.js";
 import EventGroup from "./models/EventGroup.js";
 import path from "path";
 import i18next from "i18next";
@@ -719,6 +720,9 @@ router.post("/post/comment/:eventID", (req, res) => {
       if (!event) {
         return res.sendStatus(404);
       }
+      if (!eventAcceptsComments(event)) {
+        return res.status(403).send(i18next.t("routes.commentsclosed"));
+      }
       event.comments.push(newComment);
 
       try {
@@ -820,6 +824,9 @@ router.post("/post/reply/:eventID/:commentID", (req, res) => {
     async function (err, event) {
       if (!event) {
         return res.sendStatus(404);
+      }
+      if (!eventAcceptsComments(event)) {
+        return res.status(403).send(i18next.t("routes.commentsclosed"));
       }
       var parentComment = event.comments.id(commentID);
       parentComment.replies.push(newReply);

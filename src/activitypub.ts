@@ -6,6 +6,7 @@ import moment from "moment-timezone";
 import i18next from "i18next";
 import { convert } from "html-to-text";
 import { getConfig, getMaxCommentLength } from "./lib/config.js";
+import { eventAcceptsComments } from "./lib/event.js";
 const config = getConfig();
 const domain = config.general.domain;
 const siteName = config.general.site_name;
@@ -930,7 +931,7 @@ async function _handleCreateNoteComment(req: Request, res: Response) {
     if (!event) {
       return res.sendStatus(404);
     }
-    if (!event.usersCanComment) {
+    if (!eventAcceptsComments(event)) {
       return res.sendStatus(200);
     }
     event.comments?.push(newComment);

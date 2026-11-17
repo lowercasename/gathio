@@ -18,7 +18,7 @@
   </div>
   <div class="col-lg-4 ml-2 edit-buttons">
     {{#if editingEnabled}}
-      <button type="button" id="editEvent" class="button button--primary ml-auto d-block" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{t "views.event.edit" }}</button>
+      <button type="button" id="editEvent" class="button button--primary ml-auto d-block" data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> {{t "views.event.edit" }}</button>
     {{/if}}
   </div>
 </div>
@@ -125,7 +125,7 @@
       </div>
 
     {{#unless editingEnabled}}
-        <button type="button" id="editEvent" class="button button--outline-secondary button--sm" {{#if eventHasConcluded}}disabled{{/if}} data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{t "views.eventgroup.editmode" }}</button>
+        <button type="button" id="editEvent" class="button button--outline-secondary button--sm" data-event-id="{{eventData.id}}" data-toggle="modal" data-target="#editTokenModal"><i class="fas fa-edit"></i> {{t "views.eventgroup.editmode" }}</button>
     {{/unless}}
   </aside> <!-- #event__actions -->
 </div>
@@ -376,6 +376,7 @@
 <div class="card mb-4" id="eventComments">
   <h5 class="card-header">{{t "views.event.discussion" }}</h5>
   <div class="card-body">
+    {{#if commentsOpen}}
     <form id="commentForm" action="/post/comment/{{eventData.id}}/" method="post">
       <label for="commentAuthor">{{t "views.event.commentauthor" }}</label>
       <div class="form-group">
@@ -391,6 +392,9 @@
         </div>
       </div>
     </form>
+    {{else}}
+    <p class="text-muted mb-0" id="commentsClosed"><i class="fas fa-lock"></i> {{t "views.event.commentsclosed" }}</p>
+    {{/if}}
     {{#if eventData.comments}}
       <hr style="border-style:dashed;">
       <div class="container commentsList">
@@ -415,9 +419,11 @@
               {{/if}}
             </div>
             <div class="col-lg-3 commentMetadata text-right">
+              {{#if ../commentsOpen}}
               <button type="button" class="button button--outline button--sm openReplyBox">
                 <i class="fas fa-comment"></i> {{t "views.event.reply" }}
               </button>
+              {{/if}}
               {{#if ../editingEnabled}}
                 <form class="d-inline" action="/deletecomment/{{../eventData.id}}/{{this._id}}/{{../eventData.editToken}}" method="post">
                   <button type="submit" class="button button--outline button--sm deleteComment">
@@ -427,6 +433,7 @@
               {{/if}}
             </div>
           </div>
+          {{#if ../commentsOpen}}
           <div class="row replyContainer">
             <div class="col-md">
               <form id="replyForm" action="/post/reply/{{../eventData.id}}/{{this._id}}" method="post">
@@ -444,6 +451,7 @@
               </form>
             </div>
           </div>
+          {{/if}}
         </div>
       {{/each}}
       </div>
@@ -515,9 +523,7 @@
 </div>
 
 {{#if editingEnabled}}
-{{#unless eventHasConcluded}}
 {{> editeventmodal }}
-{{/unless}}
 
 <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">

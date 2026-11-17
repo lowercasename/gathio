@@ -116,7 +116,7 @@ Next we confirm that the user has RSVPed. We do this by sending them a `Create/N
 
 ### Comment on an event
 
-If we are CC'ed on a _public or unlisted_ `Create/Note`, then that is considered to be a comment on the event, which we store in our database and render on the event page if the administrator has enabled commenting.
+If we are CC'ed on a _public or unlisted_ `Create/Note`, then that is considered to be a comment on the event, which we store in our database and render on the event page if the administrator has enabled commenting. If the administrator has switched off "Keep comments open after the event ends" and the event has ended, the `Note` is accepted but not stored.
 
 After the comment is added and rendered on the front page, we also broadcast to our followers an `Announce/Note`, containing a copy of the `Note` we just received. Some implementations treat this as a "boost", where people following our account, but not necessarily following the account that wrote the `Note`, will see the `Note` rendered with credit to the original author, promoted on behalf of our account.
 

@@ -47,6 +47,7 @@ function newEventForm() {
       eventGroupEditToken: "",
       publicCheckbox: false,
       interactionCheckbox: false,
+      commentsAfterEndCheckbox: false,
       joinCheckbox: false,
       maxAttendees: "",
       approveRegistrationsCheckbox: false,
@@ -65,6 +66,9 @@ function newEventForm() {
       // Reset checkboxes
       this.data.eventGroupCheckbox = false;
       this.data.interactionCheckbox = false;
+      // The instance decides whether this starts switched on
+      this.data.commentsAfterEndCheckbox =
+        this.$el.dataset.commentsAfterEndDefault === "true";
       this.data.joinCheckbox = false;
       this.data.publicCheckbox = false;
       this.data.approveRegistrationsCheckbox = false;
