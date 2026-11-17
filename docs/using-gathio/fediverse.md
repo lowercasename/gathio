@@ -20,7 +20,7 @@ Each event created on Gathio has a randomly-generated handle that looks somethin
 
 2. Regardless of whether you RSVP, following the account means that you will see any updates made by the organiser in your home timeline, like following any normal account. The event account will also automatically boost any conversation about the event so you can see what people are talking about. (This is subject to the same moderation as any Gathio event: if the event organiser deletes the comment from the event page, then the boost will be un-boosted as well.)
 
-If you'd like to comment on the event, you can simply @ the event handle. If the event organiser has enabled commenting on the event, then your comment will automatically appear on the "comments" section of the page. Comments made via @ notification _must_ be public or unlisted, since all Gathio events are public and we don't want to post your private message where everyone can see. If you try to make a DM comment, you'll get a reply back saying that you should contact the event organiser directly.
+If you'd like to comment on the event, you can simply @ the event handle. If the event organiser has enabled commenting on the event, then your comment will automatically appear on the "comments" section of the page. If the organiser has chosen to close comments once the event ends, comments sent after that point are not added. Comments made via @ notification _must_ be public or unlisted, since all Gathio events are public and we don't want to post your private message where everyone can see. If you try to make a DM comment, you'll get a reply back saying that you should contact the event organiser directly.
 
 ## Friendica
 

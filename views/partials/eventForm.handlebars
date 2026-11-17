@@ -94,6 +94,17 @@
       </span>
       <input class="feature-card__toggle" type="checkbox" id="interactionCheckbox" name="interactionCheckbox" x-model="data.interactionCheckbox">
     </label>
+    <div class="feature-card__body" x-show="data.interactionCheckbox">
+      <div class="feature-card feature-card--nested mb-0" :class="data.commentsAfterEndCheckbox && 'feature-card--active'">
+        <label class="feature-card__header">
+          <span class="feature-card__text">
+            <span class="feature-card__title">{{t "views.partials.eventform.featurecommentsafterendtitle" }}</span>
+            <span class="feature-card__desc">{{t "views.partials.eventform.featurecommentsafterenddesc" }}</span>
+          </span>
+          <input class="feature-card__toggle" type="checkbox" id="commentsAfterEndCheckbox" name="commentsAfterEndCheckbox" x-model="data.commentsAfterEndCheckbox">
+        </label>
+      </div>
+    </div>
   </div>
   <div class="feature-card" :class="data.joinCheckbox && 'feature-card--active'">
     <label class="feature-card__header">

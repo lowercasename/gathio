@@ -22,6 +22,8 @@ import {
   type CustomQuestionView,
   type EventListEvent,
   bucketEventsByMonth,
+  commentsAllowedAfterEnd,
+  eventAcceptsComments,
   getCustomQuestionsForDisplay,
 } from "../lib/event.js";
 import i18next from "i18next";
@@ -612,6 +614,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
         firstLoad: firstLoad,
         eventHasConcluded: eventHasConcluded,
         eventHasBegun: eventHasBegun,
+        commentsOpen: eventAcceptsComments(event),
         eventWillBeDeleted:
           (res.locals.config?.general.delete_after_days || 0) > 0,
         daysUntilDeletion: moment
@@ -638,6 +641,7 @@ router.get("/:eventID", async (req: Request, res: Response) => {
               : null,
           usersCanAttend: event.usersCanAttend,
           usersCanComment: event.usersCanComment,
+          usersCanCommentAfterEnd: commentsAllowedAfterEnd(event),
           maxAttendees: event.maxAttendees,
           approveRegistrations: event.approveRegistrations || false,
           startISO: eventStartISO,

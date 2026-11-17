@@ -23,6 +23,7 @@
   <form
     id="newEventForm"
     enctype="multipart/form-data"
+    data-comments-after-end-default="{{allowCommentsAfterEventDefault}}"
     x-data="newEventForm()"
     x-init="init()"
     @submit.prevent="submitForm"

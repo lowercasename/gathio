@@ -23,6 +23,7 @@ export interface GathioConfig {
     show_kofi: boolean;
     show_public_event_list: boolean;
     max_comment_length: number;
+    allow_comments_after_event_default: boolean;
     mail_service: "nodemailer" | "sendgrid" | "mailgun" | "none";
     creator_email_addresses: string[];
   };
@@ -56,6 +57,7 @@ interface FrontendConfig {
   showPublicEventList: boolean;
   showInstanceInformation: boolean;
   maxCommentLength: number;
+  allowCommentsAfterEventDefault: boolean;
   staticPages?: StaticPage[];
   version: string;
 }
@@ -74,6 +76,7 @@ const defaultConfig: GathioConfig = {
     show_public_event_list: false,
     show_kofi: false,
     max_comment_length: DEFAULT_MAX_COMMENT_LENGTH,
+    allow_comments_after_event_default: true,
     mail_service: "none",
     creator_email_addresses: [],
   },
@@ -94,6 +97,8 @@ export const frontendConfig = (res: Response): FrontendConfig => {
       showKofi: defaultConfig.general.show_kofi,
       showInstanceInformation: false,
       maxCommentLength: getMaxCommentLength(),
+      allowCommentsAfterEventDefault:
+        defaultConfig.general.allow_comments_after_event_default,
       staticPages: [],
       version: process.env.npm_package_version || "unknown",
     };
@@ -107,6 +112,11 @@ export const frontendConfig = (res: Response): FrontendConfig => {
     showKofi: !!config.general.show_kofi,
     showInstanceInformation: !!config.static_pages?.length,
     maxCommentLength: getMaxCommentLength(config),
+    // True (on) unless explicitly switched off, to support backwards
+    // compatibility for instances that don't have this entry in their
+    // config file (because it was added later)
+    allowCommentsAfterEventDefault:
+      config.general.allow_comments_after_event_default !== false,
     staticPages: config.static_pages,
     version: process.env.npm_package_version || "unknown",
   };
