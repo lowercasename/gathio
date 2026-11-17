@@ -8,7 +8,10 @@ import {
   instanceRules,
 } from "../lib/config.js";
 import { addToLog, exportIcal, type ICalEvent } from "../helpers.js";
-import Event, { getApprovedAttendeeCount } from "../models/Event.js";
+import Event, {
+  getApprovedAttendeeCount,
+  type IEvent,
+} from "../models/Event.js";
 import EventGroup, { type IEventGroup } from "../models/EventGroup.js";
 import type mongoose from "mongoose";
 import {
@@ -812,7 +815,7 @@ router.get(
         }
         // If approvals are required and viewer is not host, strip locations
         const sanitizedEvents: ICalEvent[] = events.map((ev) => {
-          const evObj = ev.toObject?.() || ev;
+          const evObj = ev.toObject<IEvent>();
           const needsHide = evObj.approveRegistrations && !editingEnabled;
           return needsHide
             ? {
@@ -847,7 +850,7 @@ router.get("/export/event/:eventID", async (req: Request, res: Response) => {
         event,
         req.query as Record<string, string | string[] | undefined>,
       );
-      const evObj = event.toObject?.() || event;
+      const evObj = event.toObject<IEvent>();
       const sanitizedEvent: ICalEvent = viewerApprovedForLocation
         ? evObj
         : {
@@ -885,7 +888,7 @@ router.get(
           editingEnabled = true;
         }
         const sanitizedEvents: ICalEvent[] = events.map((ev) => {
-          const evObj = ev.toObject?.() || ev;
+          const evObj = ev.toObject<IEvent>();
           const needsHide = evObj.approveRegistrations && !editingEnabled;
           return needsHide
             ? {

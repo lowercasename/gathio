@@ -4,13 +4,11 @@ import app from "./app.js";
 
 const config = getConfig();
 
-mongoose.connect(config.database.mongodb_url, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-mongoose.set("useCreateIndex", true);
-mongoose.set("useFindAndModify", false);
-mongoose.Promise = global.Promise;
+// This keeps Mongoose 5's behaviour: query filters on paths that aren't in the
+// schema are sent to MongoDB as written rather than silently dropped
+// TODO: Arguably we don't keep doing this for ever
+mongoose.set("strictQuery", false);
+mongoose.connect(config.database.mongodb_url);
 mongoose.connection
   .on("connected", () => {
     console.log("Mongoose connection open!");
